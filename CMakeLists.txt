@@ -34,8 +34,8 @@ myproject_setup_dependencies()
 
 myproject_local_options()
 
-# don't know if this should be set globally from here or not...
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+# Potentially useful, see: https://gcc.gnu.org/wiki/Visibility
+# set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 set(GIT_SHA
     "Unknown"
