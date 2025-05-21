@@ -124,7 +124,7 @@ macro(myproject_global_options)
 
   if(myproject_ENABLE_HARDENING AND myproject_ENABLE_GLOBAL_HARDENING)
     include(cmake/Hardening.cmake)
-    if(NOT SUPPORTS_UBSAN 
+    if(NOT SUPPORTS_UBSAN
        OR myproject_ENABLE_SANITIZER_UNDEFINED
        OR myproject_ENABLE_SANITIZER_ADDRESS
        OR myproject_ENABLE_SANITIZER_THREAD
@@ -133,7 +133,9 @@ macro(myproject_global_options)
     else()
       set(ENABLE_UBSAN_MINIMAL_RUNTIME TRUE)
     endif()
-    message("${myproject_ENABLE_HARDENING} ${ENABLE_UBSAN_MINIMAL_RUNTIME} ${myproject_ENABLE_SANITIZER_UNDEFINED}")
+    message("enable hardening: ${myproject_ENABLE_HARDENING}")
+    message("enable ubsan minimal runtime: ${ENABLE_UBSAN_MINIMAL_RUNTIME}")
+    message("enable sanitizer undefined: ${myproject_ENABLE_SANITIZER_UNDEFINED}")
     myproject_enable_hardening(myproject_options ON ${ENABLE_UBSAN_MINIMAL_RUNTIME})
   endif()
 endmacro()
