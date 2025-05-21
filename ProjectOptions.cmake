@@ -90,7 +90,7 @@ macro(myproject_setup_options)
     option(myproject_ENABLE_UNITY_BUILD "Enable unity builds" OFF)
     option(myproject_ENABLE_CLANG_TIDY "Enable clang-tidy" ON)
     option(myproject_ENABLE_CPPCHECK "Enable cpp-check analysis" ON)
-    option(myproject_ENABLE_CACHE "Enable ccache" ON)
+    option(myproject_ENABLE_CACHE "Enable ccache" OFF)
   endif()
 
   if(NOT PROJECT_IS_TOP_LEVEL)
