@@ -1,7 +1,7 @@
 add_library(sample_library)
 add_library(myproject::sample_library ALIAS sample_library)
 
-target_source(
+target_sources(
     sample_library
     PRIVATE
     ${PROJECT_SOURCE_DIR}/src/sample_library.c++
