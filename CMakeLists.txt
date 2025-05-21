@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.21)
 # manual dependency management
 
 # Only set the cxx_standard if it is not set by someone else
-if (NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 23)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 23)
 endif()
 
 # strongly encouraged to enable this globally to avoid conflicts between
@@ -16,15 +16,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set the project name and language
 project(
-  tyvi
-  VERSION 0.0.1
-  DESCRIPTION ""
-  HOMEPAGE_URL "https://github.com/hel-astro-lab"
-  LANGUAGES CXX)
+    tyvi
+    VERSION 0.0.1
+    DESCRIPTION ""
+    HOMEPAGE_URL "https://github.com/hel-astro-lab"
+    LANGUAGES CXX
+)
 
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
-
 
 myproject_setup_options()
 
@@ -39,12 +39,14 @@ myproject_local_options()
 
 set(GIT_SHA
     "Unknown"
-    CACHE STRING "SHA this build was generated from")
+    CACHE STRING "SHA this build was generated from"
+)
 string(
-  SUBSTRING "${GIT_SHA}"
-            0
-            8
-            GIT_SHORT_SHA)
+    SUBSTRING "${GIT_SHA}"
+              0
+              8
+              GIT_SHORT_SHA
+)
 
 target_compile_features(myproject_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
@@ -56,19 +58,19 @@ add_subdirectory(src)
 
 # Don't even look at tests if we're not top level
 if(NOT PROJECT_IS_TOP_LEVEL)
-  return()
+    return()
 endif()
 
 # Adding the tests:
 include(CTest)
 
 if(BUILD_TESTING)
-  message(AUTHOR_WARNING "Building Tests.")
-  add_subdirectory(test)
+    message(AUTHOR_WARNING "Building Tests.")
+    add_subdirectory(test)
 endif()
 
 if(CMAKE_SKIP_INSTALL_RULES)
-  return()
+    return()
 endif()
 
 # Setup project installation here (if neccesseary).
