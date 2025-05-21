@@ -107,7 +107,6 @@ macro(myproject_setup_options)
       myproject_ENABLE_CLANG_TIDY
       myproject_ENABLE_CPPCHECK
       myproject_ENABLE_COVERAGE
-      myproject_ENABLE_PCH
       myproject_ENABLE_CACHE)
   endif()
 endmacro()
@@ -170,15 +169,6 @@ macro(myproject_local_options)
     ${myproject_ENABLE_SANITIZER_MEMORY})
 
   set_target_properties(myproject_options PROPERTIES UNITY_BUILD ${myproject_ENABLE_UNITY_BUILD})
-
-  if(myproject_ENABLE_PCH)
-    target_precompile_headers(
-      myproject_options
-      INTERFACE
-      <vector>
-      <string>
-      <utility>)
-  endif()
 
   if(myproject_ENABLE_CACHE)
     include(cmake/Cache.cmake)
