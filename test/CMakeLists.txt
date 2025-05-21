@@ -15,5 +15,5 @@ target_link_libraries(
 )
 
 # Provide a simple smoke test to make sure that the CLI works and can display a --help message
-add_test(NAME test_unit_testing COMMAND test_unit_testing --help)
-add_test(NAME test_unit_testing)
+add_test(NAME unit_test_cli COMMAND test_unit_testing --help)
+add_test(NAME unit_testing COMMAND test_unit_testing)
