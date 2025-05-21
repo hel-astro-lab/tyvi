@@ -10,17 +10,13 @@ call_expect_with(const bool x) {
     boost::ut::expect(x);
 }
 
-boost::ut::suite<"test_unit_testing"> _ = [] {
-    using namespace boost::ut;
-
+int
+main() {
     "sum"_test = [] {
         expect(sum(0) == 0_i);
         expect(sum(1, 2) == 3_i);
-        expect(sum(1, 2) > 0_i and 42_i == sum(40, 2));
+        expect(sum(1, 2) > 0_i and 4_i == sum(2, 2));
     };
 
     "subfunctions"_test = [] { call_expect_with(true); };
-};
-
-int
-main() {}
+}
