@@ -30,6 +30,7 @@ tyvi_declare_options()
 
 tyvi_setup_global_options()
 include(Dependencies.cmake)
+
 tyvi_setup_dependencies()
 
 tyvi_setup_local_options()

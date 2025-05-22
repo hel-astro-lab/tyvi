@@ -10,10 +10,7 @@ include(CheckCXXSourceCompiles)
 # SUPPORTS_ASAN = <ON|OFF>
 macro(TYVI_CHECK_SANITIZER_SUPPORT)
     if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*")
-        message(STATUS [[
-Sanity checking UndefinedBehaviorSanitizer, it should be supported on this platform.
-]]
-        )
+        message(VERBOSE "Sanity checking ubsan, it should be supported on this platform.")
         set(TEST_PROGRAM "int main() { return 0; }")
 
         # Check if UndefinedBehaviorSanitizer works at link time
@@ -141,9 +138,9 @@ macro(TYVI_SETUP_GLOBAL_OPTIONS)
         else()
             set(ENABLE_UBSAN_MINIMAL_RUNTIME TRUE)
         endif()
-        message("enable hardening: ${tyvi_ENABLE_HARDENING}")
-        message("enable ubsan minimal runtime: ${ENABLE_UBSAN_MINIMAL_RUNTIME}")
-        message("enable sanitizer undefined: ${tyvi_ENABLE_SANITIZER_UNDEFINED}")
+        message(STATUS "hardening: ${tyvi_ENABLE_HARDENING}")
+        message(STATUS "ubsan minimal runtime: ${ENABLE_UBSAN_MINIMAL_RUNTIME}")
+        message(STATUS "sanitizer undefined: ${tyvi_ENABLE_SANITIZER_UNDEFINED}")
         tyvi_setup_hardening(tyvi_options ON ${ENABLE_UBSAN_MINIMAL_RUNTIME})
     endif()
 endmacro()
