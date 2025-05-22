@@ -8,7 +8,7 @@ include(CheckCXXSourceCompiles)
 #
 # SUPPORTS_UBSAN = <ON|OFF>
 # SUPPORTS_ASAN = <ON|OFF>
-macro(MYPROJECT_CHECK_SANITIZER_SUPPORT)
+macro(TYVI_CHECK_SANITIZER_SUPPORT)
     if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*")
         message(STATUS [[
 Sanity checking UndefinedBehaviorSanitizer, it should be supported on this platform.
@@ -60,162 +60,162 @@ Sanity checking UndefinedBehaviorSanitizer, it should be supported on this platf
 endmacro()
 
 # Declares options for the project.
-macro(MYPROJECT_DECLARE_OPTIONS)
-    option(myproject_ENABLE_HARDENING "Enable hardening" ON)
-    option(myproject_ENABLE_COVERAGE "Enable coverage reporting" OFF)
+macro(TYVI_DECLARE_OPTIONS)
+    option(tyvi_ENABLE_HARDENING "Enable hardening" ON)
+    option(tyvi_ENABLE_COVERAGE "Enable coverage reporting" OFF)
     cmake_dependent_option(
-        myproject_ENABLE_GLOBAL_HARDENING
+        tyvi_ENABLE_GLOBAL_HARDENING
         "Attempt to push hardening options to built dependencies"
         ON
-        myproject_ENABLE_HARDENING
+        tyvi_ENABLE_HARDENING
         OFF
     )
 
-    myproject_check_sanitizer_support()
+    tyvi_check_sanitizer_support()
 
-    if(NOT PROJECT_IS_TOP_LEVEL OR myproject_PACKAGING_MAINTAINER_MODE)
-        option(myproject_ENABLE_IPO "Enable IPO/LTO" OFF)
-        option(myproject_WARNINGS_AS_ERRORS "Treat Warnings As Errors" OFF)
-        option(myproject_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
-        option(myproject_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" OFF)
-        option(myproject_ENABLE_SANITIZER_LEAK "Enable leak sanitizer" OFF)
-        option(myproject_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" OFF)
-        option(myproject_ENABLE_SANITIZER_THREAD "Enable thread sanitizer" OFF)
-        option(myproject_ENABLE_SANITIZER_MEMORY "Enable memory sanitizer" OFF)
-        option(myproject_ENABLE_UNITY_BUILD "Enable unity builds" OFF)
-        option(myproject_ENABLE_CLANG_TIDY "Enable clang-tidy" OFF)
-        option(myproject_ENABLE_CPPCHECK "Enable cpp-check analysis" OFF)
-        option(myproject_ENABLE_CACHE "Enable ccache" OFF)
+    if(NOT PROJECT_IS_TOP_LEVEL OR tyvi_PACKAGING_MAINTAINER_MODE)
+        option(tyvi_ENABLE_IPO "Enable IPO/LTO" OFF)
+        option(tyvi_WARNINGS_AS_ERRORS "Treat Warnings As Errors" OFF)
+        option(tyvi_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
+        option(tyvi_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" OFF)
+        option(tyvi_ENABLE_SANITIZER_LEAK "Enable leak sanitizer" OFF)
+        option(tyvi_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" OFF)
+        option(tyvi_ENABLE_SANITIZER_THREAD "Enable thread sanitizer" OFF)
+        option(tyvi_ENABLE_SANITIZER_MEMORY "Enable memory sanitizer" OFF)
+        option(tyvi_ENABLE_UNITY_BUILD "Enable unity builds" OFF)
+        option(tyvi_ENABLE_CLANG_TIDY "Enable clang-tidy" OFF)
+        option(tyvi_ENABLE_CPPCHECK "Enable cpp-check analysis" OFF)
+        option(tyvi_ENABLE_CACHE "Enable ccache" OFF)
     else()
-        option(myproject_ENABLE_IPO "Enable IPO/LTO" ON)
-        option(myproject_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
-        option(myproject_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
-        option(myproject_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" ${SUPPORTS_ASAN})
-        option(myproject_ENABLE_SANITIZER_LEAK "Enable leak sanitizer" OFF)
-        option(myproject_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" ${SUPPORTS_UBSAN})
-        option(myproject_ENABLE_SANITIZER_THREAD "Enable thread sanitizer" OFF)
-        option(myproject_ENABLE_SANITIZER_MEMORY "Enable memory sanitizer" OFF)
-        option(myproject_ENABLE_UNITY_BUILD "Enable unity builds" OFF)
-        option(myproject_ENABLE_CLANG_TIDY "Enable clang-tidy" ON)
-        option(myproject_ENABLE_CPPCHECK "Enable cpp-check analysis" ON)
-        option(myproject_ENABLE_CACHE "Enable ccache" OFF)
+        option(tyvi_ENABLE_IPO "Enable IPO/LTO" ON)
+        option(tyvi_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
+        option(tyvi_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
+        option(tyvi_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" ${SUPPORTS_ASAN})
+        option(tyvi_ENABLE_SANITIZER_LEAK "Enable leak sanitizer" OFF)
+        option(tyvi_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" ${SUPPORTS_UBSAN})
+        option(tyvi_ENABLE_SANITIZER_THREAD "Enable thread sanitizer" OFF)
+        option(tyvi_ENABLE_SANITIZER_MEMORY "Enable memory sanitizer" OFF)
+        option(tyvi_ENABLE_UNITY_BUILD "Enable unity builds" OFF)
+        option(tyvi_ENABLE_CLANG_TIDY "Enable clang-tidy" ON)
+        option(tyvi_ENABLE_CPPCHECK "Enable cpp-check analysis" ON)
+        option(tyvi_ENABLE_CACHE "Enable ccache" OFF)
     endif()
 
     if(NOT PROJECT_IS_TOP_LEVEL)
         mark_as_advanced(
-            myproject_ENABLE_IPO
-            myproject_WARNINGS_AS_ERRORS
-            myproject_ENABLE_USER_LINKER
-            myproject_ENABLE_SANITIZER_ADDRESS
-            myproject_ENABLE_SANITIZER_LEAK
-            myproject_ENABLE_SANITIZER_UNDEFINED
-            myproject_ENABLE_SANITIZER_THREAD
-            myproject_ENABLE_SANITIZER_MEMORY
-            myproject_ENABLE_UNITY_BUILD
-            myproject_ENABLE_CLANG_TIDY
-            myproject_ENABLE_CPPCHECK
-            myproject_ENABLE_COVERAGE
-            myproject_ENABLE_CACHE
+            tyvi_ENABLE_IPO
+            tyvi_WARNINGS_AS_ERRORS
+            tyvi_ENABLE_USER_LINKER
+            tyvi_ENABLE_SANITIZER_ADDRESS
+            tyvi_ENABLE_SANITIZER_LEAK
+            tyvi_ENABLE_SANITIZER_UNDEFINED
+            tyvi_ENABLE_SANITIZER_THREAD
+            tyvi_ENABLE_SANITIZER_MEMORY
+            tyvi_ENABLE_UNITY_BUILD
+            tyvi_ENABLE_CLANG_TIDY
+            tyvi_ENABLE_CPPCHECK
+            tyvi_ENABLE_COVERAGE
+            tyvi_ENABLE_CACHE
         )
     endif()
 endmacro()
 
 # Setup options for the project and all the dependencies.
-macro(MYPROJECT_SETUP_GLOBAL_OPTIONS)
-    if(myproject_ENABLE_IPO)
+macro(TYVI_SETUP_GLOBAL_OPTIONS)
+    if(tyvi_ENABLE_IPO)
         include(cmake/InterproceduralOptimization.cmake)
-        myproject_configure_ipo()
+        tyvi_configure_ipo()
     endif()
 
-    myproject_check_sanitizer_support()
+    tyvi_check_sanitizer_support()
 
-    if(myproject_ENABLE_HARDENING AND myproject_ENABLE_GLOBAL_HARDENING)
+    if(tyvi_ENABLE_HARDENING AND tyvi_ENABLE_GLOBAL_HARDENING)
         include(cmake/Hardening.cmake)
         if(NOT SUPPORTS_UBSAN
-           OR myproject_ENABLE_SANITIZER_UNDEFINED
-           OR myproject_ENABLE_SANITIZER_ADDRESS
-           OR myproject_ENABLE_SANITIZER_THREAD
-           OR myproject_ENABLE_SANITIZER_LEAK
+           OR tyvi_ENABLE_SANITIZER_UNDEFINED
+           OR tyvi_ENABLE_SANITIZER_ADDRESS
+           OR tyvi_ENABLE_SANITIZER_THREAD
+           OR tyvi_ENABLE_SANITIZER_LEAK
         )
             set(ENABLE_UBSAN_MINIMAL_RUNTIME FALSE)
         else()
             set(ENABLE_UBSAN_MINIMAL_RUNTIME TRUE)
         endif()
-        message("enable hardening: ${myproject_ENABLE_HARDENING}")
+        message("enable hardening: ${tyvi_ENABLE_HARDENING}")
         message("enable ubsan minimal runtime: ${ENABLE_UBSAN_MINIMAL_RUNTIME}")
-        message("enable sanitizer undefined: ${myproject_ENABLE_SANITIZER_UNDEFINED}")
-        myproject_setup_hardening(myproject_options ON ${ENABLE_UBSAN_MINIMAL_RUNTIME})
+        message("enable sanitizer undefined: ${tyvi_ENABLE_SANITIZER_UNDEFINED}")
+        tyvi_setup_hardening(tyvi_options ON ${ENABLE_UBSAN_MINIMAL_RUNTIME})
     endif()
 endmacro()
 
 # Setup options for the project.
-macro(MYPROJECT_SETUP_LOCAL_OPTIONS)
+macro(TYVI_SETUP_LOCAL_OPTIONS)
     if(PROJECT_IS_TOP_LEVEL)
         include(cmake/StandardProjectSettings.cmake)
     endif()
 
-    add_library(myproject_warnings INTERFACE)
-    add_library(myproject_options INTERFACE)
+    add_library(tyvi_warnings INTERFACE)
+    add_library(tyvi_options INTERFACE)
 
     include(cmake/CompilerWarnings.cmake)
-    myproject_setup_target_warnings(myproject_warnings ${myproject_WARNINGS_AS_ERRORS})
+    tyvi_setup_target_warnings(tyvi_warnings ${tyvi_WARNINGS_AS_ERRORS})
 
-    if(myproject_ENABLE_USER_LINKER)
+    if(tyvi_ENABLE_USER_LINKER)
         include(cmake/Linker.cmake)
-        myproject_configure_target_linker(myproject_options)
+        tyvi_configure_target_linker(tyvi_options)
     endif()
 
     include(cmake/Sanitizers.cmake)
-    myproject_setup_target_sanitizers(
-        myproject_options
-        ${myproject_ENABLE_SANITIZER_ADDRESS}
-        ${myproject_ENABLE_SANITIZER_LEAK}
-        ${myproject_ENABLE_SANITIZER_UNDEFINED}
-        ${myproject_ENABLE_SANITIZER_THREAD}
-        ${myproject_ENABLE_SANITIZER_MEMORY}
+    tyvi_setup_target_sanitizers(
+        tyvi_options
+        ${tyvi_ENABLE_SANITIZER_ADDRESS}
+        ${tyvi_ENABLE_SANITIZER_LEAK}
+        ${tyvi_ENABLE_SANITIZER_UNDEFINED}
+        ${tyvi_ENABLE_SANITIZER_THREAD}
+        ${tyvi_ENABLE_SANITIZER_MEMORY}
     )
 
-    set_target_properties(myproject_options PROPERTIES UNITY_BUILD ${myproject_ENABLE_UNITY_BUILD})
+    set_target_properties(tyvi_options PROPERTIES UNITY_BUILD ${tyvi_ENABLE_UNITY_BUILD})
 
-    if(myproject_ENABLE_CACHE)
+    if(tyvi_ENABLE_CACHE)
         include(cmake/Cache.cmake)
-        myproject_enable_cache()
+        tyvi_enable_cache()
     endif()
 
     include(cmake/StaticAnalyzers.cmake)
-    if(myproject_ENABLE_CLANG_TIDY)
-        myproject_setup_clang_tidy(${myproject_WARNINGS_AS_ERRORS})
+    if(tyvi_ENABLE_CLANG_TIDY)
+        tyvi_setup_clang_tidy(${tyvi_WARNINGS_AS_ERRORS})
     endif()
 
-    if(myproject_ENABLE_CPPCHECK)
-        myproject_setup_cppcheck(${myproject_WARNINGS_AS_ERRORS} "")
+    if(tyvi_ENABLE_CPPCHECK)
+        tyvi_setup_cppcheck(${tyvi_WARNINGS_AS_ERRORS} "")
     endif()
 
-    if(myproject_ENABLE_COVERAGE)
+    if(tyvi_ENABLE_COVERAGE)
         include(cmake/Tests.cmake)
-        myproject_setup_target_coverage(myproject_options)
+        tyvi_setup_target_coverage(tyvi_options)
     endif()
 
-    if(myproject_WARNINGS_AS_ERRORS)
+    if(tyvi_WARNINGS_AS_ERRORS)
         check_cxx_compiler_flag("-Wl,--fatal-warnings" LINKER_FATAL_WARNINGS)
         if(LINKER_FATAL_WARNINGS)
             # This is not working consistently, so disabling for now
-            # target_link_options(myproject_options INTERFACE -Wl,--fatal-warnings)
+            # target_link_options(tyvi_options INTERFACE -Wl,--fatal-warnings)
         endif()
     endif()
 
-    if(myproject_ENABLE_HARDENING AND NOT myproject_ENABLE_GLOBAL_HARDENING)
+    if(tyvi_ENABLE_HARDENING AND NOT tyvi_ENABLE_GLOBAL_HARDENING)
         include(cmake/Hardening.cmake)
         if(NOT SUPPORTS_UBSAN
-           OR myproject_ENABLE_SANITIZER_UNDEFINED
-           OR myproject_ENABLE_SANITIZER_ADDRESS
-           OR myproject_ENABLE_SANITIZER_THREAD
-           OR myproject_ENABLE_SANITIZER_LEAK
+           OR tyvi_ENABLE_SANITIZER_UNDEFINED
+           OR tyvi_ENABLE_SANITIZER_ADDRESS
+           OR tyvi_ENABLE_SANITIZER_THREAD
+           OR tyvi_ENABLE_SANITIZER_LEAK
         )
             set(ENABLE_UBSAN_MINIMAL_RUNTIME FALSE)
         else()
             set(ENABLE_UBSAN_MINIMAL_RUNTIME TRUE)
         endif()
-        myproject_setup_hardening(myproject_options OFF ${ENABLE_UBSAN_MINIMAL_RUNTIME})
+        tyvi_setup_hardening(tyvi_options OFF ${ENABLE_UBSAN_MINIMAL_RUNTIME})
     endif()
 endmacro()

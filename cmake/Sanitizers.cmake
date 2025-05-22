@@ -1,6 +1,6 @@
 # Setup sanitizers from arguments for target.
 function(
-    myproject_setup_target_sanitizers
+    tyvi_setup_target_sanitizers
     target
     enable_sanitizer_address
     enable_sanitizer_leak

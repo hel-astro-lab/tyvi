@@ -3,7 +3,7 @@ include(CheckCXXCompilerFlag)
 # Setups hardening for target.
 # If global == ON then
 macro(
-    MYPROJECT_SETUP_HARDENING
+    TYVI_SETUP_HARDENING
     target
     global
     ubsan_minimal_runtime

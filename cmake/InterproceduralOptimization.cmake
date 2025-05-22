@@ -1,5 +1,5 @@
 # Configures interprocedural optimizations for the project.
-macro(MYPROJECT_CONFIGURE_IPO)
+macro(TYVI_CONFIGURE_IPO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT result OUTPUT output)
     if(result)

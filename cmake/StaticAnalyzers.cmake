@@ -1,5 +1,5 @@
 # Setups cppcheck for the project.
-macro(MYPROJECT_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
+macro(TYVI_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
     find_program(CPPCHECK cppcheck)
     if(CPPCHECK)
 
@@ -56,7 +56,7 @@ macro(MYPROJECT_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
 endmacro()
 
 # Setups clang-tidy for the project.
-macro(MYPROJECT_SETUP_CLANG_TIDY warnings_as_errors)
+macro(TYVI_SETUP_CLANG_TIDY warnings_as_errors)
 
     find_program(CLANGTIDY clang-tidy)
     if(CLANGTIDY)
@@ -107,7 +107,7 @@ macro(MYPROJECT_SETUP_CLANG_TIDY warnings_as_errors)
 endmacro()
 
 # Setups include-what-you-use for the project.
-macro(MYPROJECT_SETUP_INCLUDE_WHAT_YOU_USE)
+macro(TYVI_SETUP_INCLUDE_WHAT_YOU_USE)
     find_program(INCLUDE_WHAT_YOU_USE include-what-you-use)
     if(INCLUDE_WHAT_YOU_USE)
         set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${INCLUDE_WHAT_YOU_USE})

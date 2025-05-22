@@ -1,5 +1,5 @@
 # Configures user linker for configured_target.
-macro(MYPROJECT_CONFIGURE_TARGET_LINKER configured_target)
+macro(TYVI_CONFIGURE_TARGET_LINKER configured_target)
     include(CheckCXXCompilerFlag)
 
     set(USER_LINKER_OPTION
@@ -30,7 +30,7 @@ Supported linkers: ${USER_LINKER_OPTION_VALUES}
         )
     endif()
 
-    if(NOT myproject_ENABLE_USER_LINKER)
+    if(NOT tyvi_ENABLE_USER_LINKER)
         return()
     endif()
 

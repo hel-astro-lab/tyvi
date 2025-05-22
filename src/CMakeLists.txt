@@ -1,5 +1,5 @@
 add_library(sample_library)
-add_library(myproject::sample_library ALIAS sample_library)
+add_library(tyvi::sample_library ALIAS sample_library)
 
 target_sources(
     sample_library
@@ -12,7 +12,7 @@ target_sources(
            ${PROJECT_SOURCE_DIR}/src/sample_library.h
 )
 
-target_link_libraries(sample_library PRIVATE myproject_options myproject_warnings)
+target_link_libraries(sample_library PRIVATE tyvi_options tyvi_warnings)
 
 target_compile_features(sample_library PUBLIC cxx_std_23)
 

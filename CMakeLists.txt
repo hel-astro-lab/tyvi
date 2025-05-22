@@ -26,13 +26,13 @@ project(
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
-myproject_declare_options()
+tyvi_declare_options()
 
-myproject_setup_global_options()
+tyvi_setup_global_options()
 include(Dependencies.cmake)
-myproject_setup_dependencies()
+tyvi_setup_dependencies()
 
-myproject_setup_local_options()
+tyvi_setup_local_options()
 
 # Potentially useful, see: https://gcc.gnu.org/wiki/Visibility
 # set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -48,10 +48,10 @@ string(
               GIT_SHORT_SHA
 )
 
-target_compile_features(myproject_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+target_compile_features(tyvi_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
-add_library(myproject::myproject_options ALIAS myproject_options)
-add_library(myproject::myproject_warnings ALIAS myproject_warnings)
+add_library(tyvi::tyvi_options ALIAS tyvi_options)
+add_library(tyvi::tyvi_warnings ALIAS tyvi_warnings)
 
 # Adding the src:
 add_subdirectory(src)

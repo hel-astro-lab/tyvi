@@ -8,8 +8,8 @@
 add_executable(test_unit_testing test_unit_testing.c++)
 target_link_libraries(
     test_unit_testing
-    PRIVATE myproject_warnings
-            myproject_options
+    PRIVATE tyvi_warnings
+            tyvi_options
             sample_library
             Boost::ut
 )
