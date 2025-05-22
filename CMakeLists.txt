@@ -11,7 +11,7 @@ endif()
 
 # strongly encouraged to enable this globally to avoid conflicts between
 # -Wpedantic being enabled and -std=c++20 and -std=gnu++20 for example
-# when compiling with PCH enabled
+# when compiling with PCH enabled (note that PCH support is removed).
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set the project name and language
