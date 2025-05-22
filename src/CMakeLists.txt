@@ -3,15 +3,13 @@ add_library(myproject::sample_library ALIAS sample_library)
 
 target_sources(
     sample_library
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/src/sample_library.c++
-    PUBLIC
-    FILE_SET
-    all_headers
-    TYPE
-    HEADERS
-    FILES
-    ${PROJECT_SOURCE_DIR}/src/sample_library.h
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/sample_library.c++
+    PUBLIC FILE_SET
+           all_headers
+           TYPE
+           HEADERS
+           FILES
+           ${PROJECT_SOURCE_DIR}/src/sample_library.h
 )
 
 target_link_libraries(sample_library PRIVATE myproject_options myproject_warnings)

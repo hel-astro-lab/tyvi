@@ -10,3 +10,6 @@ tab_size: 4
 
 markup:
   enable_markup: false
+
+disabled_codes:
+  - 'R0913'

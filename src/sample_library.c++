@@ -8,7 +8,7 @@ test_logging(const int x) {
     spdlog::info("Welcome to spdlog!");
     spdlog::error("Some error message with arg: {}", x);
 
-    const auto magic_int = 43;
+    const auto magic_int   = 43;
     const auto magic_float = 1.23456;
 
     spdlog::warn("Easy padding in numbers like {:08d}", magic_int);
