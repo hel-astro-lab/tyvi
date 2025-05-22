@@ -57,18 +57,8 @@ endmacro()
 
 # Setups clang-tidy for the project.
 macro(TYVI_SETUP_CLANG_TIDY warnings_as_errors)
-
     find_program(CLANGTIDY clang-tidy)
     if(CLANGTIDY)
-        if(NOT
-           CMAKE_CXX_COMPILER_ID
-           MATCHES
-           ".*Clang"
-        )
-            message(SEND_ERROR "clang-tidy cannot be enabled with non-clang compiler.")
-            return()
-        endif()
-
         # construct the clang-tidy command line
         set(CLANG_TIDY_OPTIONS
             ${CLANGTIDY}
@@ -99,7 +89,7 @@ macro(TYVI_SETUP_CLANG_TIDY warnings_as_errors)
             list(APPEND CLANG_TIDY_OPTIONS -warnings-as-errors=*)
         endif()
 
-        message("Also setting clang-tidy globally")
+        message(STATUS "clang-tidy enabled")
         set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_OPTIONS})
     else()
         message(${WARNING_MESSAGE} "clang-tidy requested but executable not found")
