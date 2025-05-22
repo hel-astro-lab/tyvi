@@ -1,10 +1,9 @@
-# Untested, don't use.
-# Enables coverage reporting for the project.
-# function(myproject_enable_coverage project_name)
-#     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-#         target_compile_options(${project_name} INTERFACE --coverage -O0 -g)
-#         target_link_libraries(${project_name} INTERFACE --coverage)
-#     else()
-#         message(WARNING "coverage wanted but it's not supported by ${CMAKE_CXX_COMPILER_ID}")
-#     endif()
-# endfunction()
+# Setups coverage reporting for target.
+function(myproject_setup_target_coverage target)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+        target_compile_options(${target} INTERFACE --coverage -O0 -g)
+        target_link_libraries(${target} INTERFACE --coverage)
+    else()
+        message(WARNING "coverage wanted but it's not supported by: ${CMAKE_CXX_COMPILER_ID}")
+    endif()
+endfunction()

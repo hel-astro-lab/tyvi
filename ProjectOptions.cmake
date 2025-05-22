@@ -192,9 +192,8 @@ macro(MYPROJECT_SETUP_LOCAL_OPTIONS)
     endif()
 
     if(myproject_ENABLE_COVERAGE)
-        # include(cmake/Tests.cmake)
-        # myproject_enable_coverage(myproject_options)
-        message(WARNING "coverage is unsupported, see: cmake/Tests.cmake")
+        include(cmake/Tests.cmake)
+        myproject_setup_target_coverage(myproject_options)
     endif()
 
     if(myproject_WARNINGS_AS_ERRORS)
