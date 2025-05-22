@@ -1,5 +1,5 @@
 # Setups cppcheck for the project.
-macro(SETUP_CPPCHECK warnings_as_errors cppcheck_options)
+macro(MYPROJECT_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
     find_program(CPPCHECK cppcheck)
     if(CPPCHECK)
 
@@ -56,7 +56,7 @@ macro(SETUP_CPPCHECK warnings_as_errors cppcheck_options)
 endmacro()
 
 # Setups clang-tidy for the project.
-macro(SETUP_CLANG_TIDY target warnings_as_errors)
+macro(MYPROJECT_SETUP_CLANG_TIDY warnings_as_errors)
 
     find_program(CLANGTIDY clang-tidy)
     if(CLANGTIDY)
@@ -65,19 +65,8 @@ macro(SETUP_CLANG_TIDY target warnings_as_errors)
            MATCHES
            ".*Clang"
         )
-
-            get_target_property(TARGET_PCH ${target} INTERFACE_PRECOMPILE_HEADERS)
-
-            if("${TARGET_PCH}" STREQUAL "TARGET_PCH-NOTFOUND")
-                get_target_property(TARGET_PCH ${target} PRECOMPILE_HEADERS)
-            endif()
-
-            if(NOT ("${TARGET_PCH}" STREQUAL "TARGET_PCH-NOTFOUND"))
-                message(
-                    SEND_ERROR
-                        "clang-tidy cannot be enabled with non-clang compiler or when using PCHs."
-                )
-            endif()
+            message(SEND_ERROR "clang-tidy cannot be enabled with non-clang compiler.")
+            return()
         endif()
 
         # construct the clang-tidy command line
@@ -118,7 +107,7 @@ macro(SETUP_CLANG_TIDY target warnings_as_errors)
 endmacro()
 
 # Setups include-what-you-use for the project.
-macro(SETUP_INCLUDE_WHAT_YOU_USE)
+macro(MYPROJECT_SETUP_INCLUDE_WHAT_YOU_USE)
     find_program(INCLUDE_WHAT_YOU_USE include-what-you-use)
     if(INCLUDE_WHAT_YOU_USE)
         set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${INCLUDE_WHAT_YOU_USE})

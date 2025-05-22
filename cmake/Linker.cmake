@@ -1,5 +1,5 @@
 # Configures user linker for configured_target.
-macro(MYPROJECT_CONFIGURE_LINKER configured_target)
+macro(MYPROJECT_CONFIGURE_TARGET_LINKER configured_target)
     include(CheckCXXCompilerFlag)
 
     set(USER_LINKER_OPTION

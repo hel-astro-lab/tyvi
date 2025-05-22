@@ -6,7 +6,7 @@
 # Supports GCC and Clang based compilers.
 #
 # warnings_as_errors = <ON|OFF>
-function(myproject_setup_project_warnings target warnings_as_errors)
+function(myproject_setup_target_warnings target warnings_as_errors)
 
     set(clang_warnings
         -Wall

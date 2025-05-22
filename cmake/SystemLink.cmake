@@ -1,5 +1,7 @@
+# These are currently unused, but they are potentially useful later.
+
 # Include a system directory (which suppresses its warnings).
-function(target_include_system_directories target)
+function(myproject_target_include_system_directories target)
     set(multiValueArgs INTERFACE PUBLIC PRIVATE)
     cmake_parse_arguments(
         ARG
@@ -41,7 +43,7 @@ endfunction()
 # Include the directories of a library target as
 # system directories (which suppresses their warnings).
 function(
-    target_include_system_library
+    myproject_target_include_system_library
     target
     scope
     lib
@@ -61,7 +63,7 @@ endfunction()
 
 # Link a library target as a system library (which suppresses its warnings).
 function(
-    target_link_system_library
+    myproject_target_link_system_library
     target
     scope
     lib
@@ -74,7 +76,7 @@ function(
 endfunction()
 
 # Link multiple library targets as system libraries (which suppresses their warnings).
-function(target_link_system_libraries target)
+function(myproject_target_link_system_libraries target)
     set(multiValueArgs INTERFACE PUBLIC PRIVATE)
     cmake_parse_arguments(
         ARG

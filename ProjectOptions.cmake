@@ -1,4 +1,3 @@
-include(cmake/SystemLink.cmake)
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
 
@@ -159,15 +158,15 @@ macro(MYPROJECT_SETUP_LOCAL_OPTIONS)
     add_library(myproject_options INTERFACE)
 
     include(cmake/CompilerWarnings.cmake)
-    myproject_setup_project_warnings(myproject_warnings ${myproject_WARNINGS_AS_ERRORS})
+    myproject_setup_target_warnings(myproject_warnings ${myproject_WARNINGS_AS_ERRORS})
 
     if(myproject_ENABLE_USER_LINKER)
         include(cmake/Linker.cmake)
-        myproject_configure_linker(myproject_options)
+        myproject_configure_target_linker(myproject_options)
     endif()
 
     include(cmake/Sanitizers.cmake)
-    myproject_setup_project_sanitizers(
+    myproject_setup_target_sanitizers(
         myproject_options
         ${myproject_ENABLE_SANITIZER_ADDRESS}
         ${myproject_ENABLE_SANITIZER_LEAK}
@@ -185,12 +184,11 @@ macro(MYPROJECT_SETUP_LOCAL_OPTIONS)
 
     include(cmake/StaticAnalyzers.cmake)
     if(myproject_ENABLE_CLANG_TIDY)
-        setup_clang_tidy(myproject_options ${myproject_WARNINGS_AS_ERRORS})
+        myproject_setup_clang_tidy(${myproject_WARNINGS_AS_ERRORS})
     endif()
 
     if(myproject_ENABLE_CPPCHECK)
-        setup_cppcheck(${myproject_WARNINGS_AS_ERRORS} "" # override cppcheck options
-        )
+        myproject_setup_cppcheck(${myproject_WARNINGS_AS_ERRORS} "")
     endif()
 
     if(myproject_ENABLE_COVERAGE)
