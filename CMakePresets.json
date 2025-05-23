@@ -40,6 +40,19 @@
             }
         },
         {
+            "name": "unixlike-gcc-debug-wout-static-analysis",
+            "displayName": "gcc Debug",
+            "description": "Target Unix-like OS with the gcc compiler, debug build type without static analyis",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF"
+            }
+        },
+        {
             "name": "unixlike-gcc-release",
             "displayName": "gcc Release",
             "description": "Target Unix-like OS with the gcc compiler, release build type",
@@ -59,6 +72,19 @@
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
                 "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "unixlike-clang-debug-wout-static-analysis",
+            "displayName": "clang Debug",
+            "description": "Target Unix-like OS with the clang compiler, debug build type without static analyis",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF"
             }
         },
         {
