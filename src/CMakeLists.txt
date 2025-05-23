@@ -21,3 +21,7 @@ set_target_properties(sample_library PROPERTIES VERSION ${PROJECT_VERSION})
 if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(sample_library PUBLIC SAMPLE_LIBRARY_STATIC_DEFINE)
 endif()
+
+# Use spdlog as system library to suppress warnings from it's header.
+include(../cmake/SystemLink.cmake)
+tyvi_target_link_system_libraries(sample_library PRIVATE spdlog::spdlog)
