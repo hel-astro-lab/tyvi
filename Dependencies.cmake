@@ -16,8 +16,6 @@ function(tyvi_setup_dependencies)
             1.15.2
             GITHUB_REPOSITORY
             "gabime/spdlog"
-            OPTIONS
-            "SPDLOG_USE_STD_FORMAT ON"
         )
     endif()
 
