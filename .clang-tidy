@@ -16,8 +16,10 @@ Checks: "*,
         -readability-identifier-length,
         -readability-identifier-naming,
         -readability-function-cognitive-complexity,
+        -readability-named-parameter,
         -modernize-use-trailing-return-type,
         -misc-no-recursion,
+        -hicpp-named-parameter
 "
 HeaderFilterRegex: '.*'
 FormatStyle:     file
