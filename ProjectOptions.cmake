@@ -58,15 +58,7 @@ endmacro()
 
 # Declares options for the project.
 macro(TYVI_DECLARE_OPTIONS)
-    option(tyvi_ENABLE_HARDENING "Enable hardening" ON)
     option(tyvi_ENABLE_COVERAGE "Enable coverage reporting" OFF)
-    cmake_dependent_option(
-        tyvi_ENABLE_GLOBAL_HARDENING
-        "Attempt to push hardening options to built dependencies"
-        ON
-        tyvi_ENABLE_HARDENING
-        OFF
-    )
 
     tyvi_check_sanitizer_support()
 
@@ -83,6 +75,7 @@ macro(TYVI_DECLARE_OPTIONS)
         option(tyvi_ENABLE_CLANG_TIDY "Enable clang-tidy" OFF)
         option(tyvi_ENABLE_CPPCHECK "Enable cpp-check analysis" OFF)
         option(tyvi_ENABLE_CACHE "Enable ccache" OFF)
+        option(tyvi_ENABLE_HARDENING "Enable hardening" OFF)
     else()
         option(tyvi_ENABLE_IPO "Enable IPO/LTO" ON)
         option(tyvi_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
@@ -96,7 +89,16 @@ macro(TYVI_DECLARE_OPTIONS)
         option(tyvi_ENABLE_CLANG_TIDY "Enable clang-tidy" ON)
         option(tyvi_ENABLE_CPPCHECK "Enable cpp-check analysis" ON)
         option(tyvi_ENABLE_CACHE "Enable ccache" OFF)
+        option(tyvi_ENABLE_HARDENING "Enable hardening" ON)
     endif()
+
+    cmake_dependent_option(
+        tyvi_ENABLE_GLOBAL_HARDENING
+        "Attempt to push hardening options to built dependencies"
+        ON
+        tyvi_ENABLE_HARDENING
+        OFF
+    )
 
     if(NOT PROJECT_IS_TOP_LEVEL)
         mark_as_advanced(
