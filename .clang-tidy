@@ -19,5 +19,5 @@ Checks: "*,
         -modernize-use-trailing-return-type,
         -misc-no-recursion,
 "
-HeaderFilterRegex: ''
+HeaderFilterRegex: '.*'
 FormatStyle:     file
