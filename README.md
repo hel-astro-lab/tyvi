@@ -1,33 +1,23 @@
 Under construction...
 
-## Build system features
+## Quick start
 
-By default (collectively known as `ENABLE_DEVELOPER_MODE`):
-
- * Address Sanitizer and Undefined Behavior Sanitizer
- * Warnings as errors
- * clang-tidy and cppcheck static analysis
- * CPM for dependencies
-
-## Building
+To build and run tests with gcc in debug build:
 
 ```shell
-> cmake -Bbuild .
-> ninja -C build
+> cmake --preset unixlike-gcc-debug
+> cd out/build/unixlike-gcc-debug/
+> make -j
+> ctest
 ```
 
-### CMake presets
+See `docs/build-system.md` and `docs/build-system-options.md` for more details.
 
-CMake presets require CMake >= v21.0.0 (see commit `2fd7364`).
-
-CMake presets are set of common build options for different usecases.
-They can be specified during build directory configuratio with `--preset <configure-preset>`.
-Global presets are defined in `CMakePresets.json`.
-Users can define their own presets in `CMakeUserPresets.json`.
-
-Example:
+Before commiting, please install `pre-commit` hooks with:
 
 ```shell
-> cmake --preset test-unixlike-gcc-debug -Bbuild .
-> ninja -C build
+> pip install pre-commit
+> pre-commit install
 ```
+
+See `docs/pre-commit-hooks.md` for more details.
