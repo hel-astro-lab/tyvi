@@ -9,7 +9,7 @@ set(TESTS_TO_RUN unit_testing)
 
 foreach(test ${TESTS_TO_RUN})
 
-    add_executable("${test}.test" "${test}.c++")
+    add_executable("${test}.test" "test_${test}.c++")
 
     target_link_libraries(
         "${test}.test"
