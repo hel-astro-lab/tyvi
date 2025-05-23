@@ -52,7 +52,7 @@ function(
     if(TARGET ${lib})
         get_target_property(lib_include_dirs ${lib} INTERFACE_INCLUDE_DIRECTORIES)
         if(lib_include_dirs)
-            target_include_system_directories(${target} ${scope} ${lib_include_dirs})
+            tyvi_target_include_system_directories(${target} ${scope} ${lib_include_dirs})
         else()
             message(TRACE
                     "${lib} library does not have the INTERFACE_INCLUDE_DIRECTORIES property."
@@ -69,7 +69,7 @@ function(
     lib
 )
     # Include the directories in the library
-    target_include_system_library(${target} ${scope} ${lib})
+    tyvi_target_include_system_library(${target} ${scope} ${lib})
 
     # Link the library
     target_link_libraries(${target} ${scope} ${lib})
@@ -88,7 +88,7 @@ function(tyvi_target_link_system_libraries target)
 
     foreach(scope IN ITEMS INTERFACE PUBLIC PRIVATE)
         foreach(lib IN LISTS ARG_${scope})
-            target_link_system_library(${target} ${scope} ${lib})
+            tyvi_target_link_system_library(${target} ${scope} ${lib})
         endforeach()
     endforeach()
 endfunction()
