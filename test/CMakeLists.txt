@@ -5,15 +5,23 @@
 # add_test(NAME cli.version_matches COMMAND intro --version)
 # set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
 
-add_executable(test_unit_testing test_unit_testing.c++)
-target_link_libraries(
-    test_unit_testing
-    PRIVATE tyvi_warnings
-            tyvi_options
-            sample_library
-            Boost::ut
-)
+set(TESTS_TO_RUN unit_testing)
 
-# Provide a simple smoke test to make sure that the CLI works and can display a --help message
-add_test(NAME unit_test_cli COMMAND test_unit_testing --help)
-add_test(NAME unit_testing COMMAND test_unit_testing)
+foreach(test ${TESTS_TO_RUN})
+
+    add_executable("${test}.test" "${test}.c++")
+
+    target_link_libraries(
+        "${test}.test"
+        PRIVATE tyvi_warnings
+                tyvi_options
+                sample_library
+                Boost::ut
+    )
+
+    add_test(NAME ${test} COMMAND "${test}.test")
+endforeach()
+
+# Provide a simple smoke test to make sure that the CLI works and can display a --help message.
+add_test(NAME unit_test_cli COMMAND unit_testing.test --help)
+set_property(TEST unit_test_cli PROPERTY PASS_REGULAR_EXPRESSION "help")
