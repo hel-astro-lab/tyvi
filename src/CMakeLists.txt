@@ -1,15 +1,17 @@
 add_library(sample_library)
 add_library(tyvi::sample_library ALIAS sample_library)
 
+target_include_directories(sample_library PUBLIC ".")
+
 target_sources(
     sample_library
-    PRIVATE ${PROJECT_SOURCE_DIR}/src/sample_library.c++
+    PRIVATE tyvi/sample_library.c++
     PUBLIC FILE_SET
            all_headers
            TYPE
            HEADERS
            FILES
-           ${PROJECT_SOURCE_DIR}/src/sample_library.h
+           tyvi/sample_library.h
 )
 
 target_link_libraries(sample_library PRIVATE tyvi_options tyvi_warnings)
