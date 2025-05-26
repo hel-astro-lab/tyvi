@@ -5,7 +5,7 @@
 # add_test(NAME cli.version_matches COMMAND intro --version)
 # set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
 
-set(TESTS_TO_RUN unit_testing)
+set(TESTS_TO_RUN unit_testing tyvi_compilation)
 
 foreach(test ${TESTS_TO_RUN})
 
@@ -15,7 +15,7 @@ foreach(test ${TESTS_TO_RUN})
         "${test}.test"
         PRIVATE tyvi_warnings
                 tyvi_options
-                sample_library
+                tyvi
                 Boost::ut
     )
 
