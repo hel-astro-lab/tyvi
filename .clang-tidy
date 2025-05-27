@@ -27,3 +27,7 @@ Checks: "*,
 "
 HeaderFilterRegex: '.*'
 FormatStyle:     file
+
+CheckOptions:
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: "thrust/.*;"
