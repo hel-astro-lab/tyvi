@@ -17,9 +17,13 @@ Checks: "*,
         -readability-identifier-naming,
         -readability-function-cognitive-complexity,
         -readability-named-parameter,
+        -readability-uppercase-literal-suffix,
+        -readability-magic-numbers,
         -modernize-use-trailing-return-type,
         -misc-no-recursion,
-        -hicpp-named-parameter
+        -hicpp-named-parameter,
+        -hicpp-uppercase-literal-suffix,
+        -cppcoreguidelines-avoid-magic-numbers
 "
 HeaderFilterRegex: '.*'
 FormatStyle:     file
