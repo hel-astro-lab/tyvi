@@ -11,6 +11,8 @@ const suite<"unit testing"> _ = [] {
         // Expects hello world to print true.
         expect(tyvi::hello_world());
     };
+
+    "rocthrust is usable"_test = [] { expect(tyvi::hello_thrust()); };
 };
 
 } // namespace
