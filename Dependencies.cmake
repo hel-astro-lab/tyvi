@@ -16,6 +16,10 @@ function(tyvi_setup_dependencies)
             1.15.2
             GITHUB_REPOSITORY
             "gabime/spdlog"
+            # bundeled fmt does not compile on hip
+            # due to: https://github.com/llvm/llvm-project/issues/141592#issue-3093810283
+            OPTIONS
+            "SPDLOG_USE_STD_FORMAT ON"
         )
     endif()
 
