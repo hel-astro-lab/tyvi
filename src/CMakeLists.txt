@@ -13,6 +13,7 @@ target_sources(
            FILES
            tyvi/tyvi_hello_world.h
            tyvi/mdspan.h
+           tyvi/sstd.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
