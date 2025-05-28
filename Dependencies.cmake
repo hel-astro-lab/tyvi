@@ -49,4 +49,16 @@ function(tyvi_setup_dependencies)
         )
     endif()
 
+    if(NOT TARGET std::mdspan)
+        # "/opt/rocm" - default install prefix
+        cpmaddpackage(
+            NAME
+            mdspan
+            GIT_TAG
+            stable
+            GITHUB_REPOSITORY
+            "kokkos/mdspan"
+        )
+    endif()
+
 endfunction()

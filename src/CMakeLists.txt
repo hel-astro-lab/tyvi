@@ -12,6 +12,7 @@ target_sources(
            HEADERS
            FILES
            tyvi/tyvi_hello_world.h
+           tyvi/mdspan.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
@@ -24,6 +25,8 @@ set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 include(../cmake/SystemLink.cmake)
 tyvi_target_link_system_libraries(
     tyvi
+    PUBLIC
+    std::mdspan
     PRIVATE
     spdlog::spdlog
     roc::rocthrust
