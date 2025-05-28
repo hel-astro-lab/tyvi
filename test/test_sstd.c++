@@ -1,8 +1,10 @@
 #include <boost/ut.hpp> // import boost.ut;
 
 #include <array>
+#include <concepts>
 #include <ranges>
 
+#include "tyvi/mdspan.h"
 #include "tyvi/sstd.h"
 
 namespace {
@@ -47,6 +49,28 @@ const suite<"sstd"> _ = [] {
         expect(buff2[3] == 8);
 
         expect(tyvi::sstd::ipow(3uz, 3uz) == 27uz);
+    };
+
+    "geometric extents"_test = [] {
+        using ge0 = tyvi::sstd::geometric_extents<0, 0>;
+        using ge1 = tyvi::sstd::geometric_extents<1, 1>;
+        using ge2 = tyvi::sstd::geometric_extents<2, 2>;
+        using ge3 = tyvi::sstd::geometric_extents<3, 3>;
+
+        expect(std::same_as<ge0, std::extents<std::size_t>>);
+        expect(std::same_as<ge1, std::extents<std::size_t, 1>>);
+        expect(std::same_as<ge2, std::extents<std::size_t, 2, 2>>);
+        expect(std::same_as<ge3, std::extents<std::size_t, 3, 3, 3>>);
+    };
+
+    "geometric mdspan"_test = [] {
+        const auto buff = std::array{ 1, 2, 3, 4 };
+        const auto mds  = tyvi::sstd::geometric_mdspan<const int, 2, 2>(buff.data());
+
+        expect(mds[0, 0] == 1);
+        expect(mds[0, 1] == 2);
+        expect(mds[1, 0] == 3);
+        expect(mds[1, 1] == 4);
     };
 };
 
