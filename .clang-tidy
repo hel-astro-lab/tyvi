@@ -31,4 +31,4 @@ FormatStyle:     file
 
 CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
-    value: "thrust/.*;"
+    value: "thrust/.*;experimental/.*"
