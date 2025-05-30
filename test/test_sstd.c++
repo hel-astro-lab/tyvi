@@ -2,6 +2,7 @@
 
 #include <array>
 #include <concepts>
+#include <iterator>
 #include <ranges>
 
 #include "tyvi/mdspan.h"
@@ -71,6 +72,35 @@ const suite<"sstd"> _ = [] {
         expect(mds[0, 1] == 2);
         expect(mds[1, 0] == 3);
         expect(mds[1, 1] == 4);
+    };
+
+    "geometric index space"_test = [] {
+        auto buff      = std::array{ 1uz, 2uz, 3uz, 4uz };
+        const auto mds = tyvi::sstd::geometric_mdspan<std::size_t, 2, 2>(buff.data());
+
+        expect(mds[0, 0] == 1);
+        expect(mds[0, 1] == 2);
+        expect(mds[1, 0] == 3);
+        expect(mds[1, 1] == 4);
+
+        for (const auto idx : tyvi::sstd::geometric_index_space<2, 2>()) { mds[idx] = idx[0]; }
+
+        expect(mds[0, 0] == 0);
+        expect(mds[0, 1] == 0);
+        expect(mds[1, 0] == 1);
+        expect(mds[1, 1] == 1);
+
+        for (const auto idx : tyvi::sstd::geometric_index_space<2, 2>()) { mds[idx] = idx[1]; }
+
+        expect(mds[0, 0] == 0);
+        expect(mds[0, 1] == 1);
+        expect(mds[1, 0] == 0);
+        expect(mds[1, 1] == 1);
+
+        "rank 0 geometric index space"_test = [] {
+            expect(1 == std::ranges::distance(tyvi::sstd::geometric_index_space<0, 42>()));
+            expect(0 == std::ranges::size(tyvi::sstd::geometric_index_space<0, 42>()[0]));
+        };
     };
 };
 
