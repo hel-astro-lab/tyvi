@@ -2,7 +2,8 @@
 
 #include <array>
 
-#include "tyvi/mdspan.h"
+#include <experimental/mdspan>
+
 #include "tyvi/tyvi_hello_world.h"
 
 namespace {
