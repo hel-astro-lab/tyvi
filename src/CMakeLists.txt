@@ -15,6 +15,7 @@ target_sources(
            tyvi/mdspan.h
            tyvi/sstd.h
            tyvi/mdgrid.h
+           tyvi/mdgrid_buffer.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
