@@ -69,7 +69,7 @@ class [[nodiscard]] mdgrid_buffer {
             using buff_ptr_type =
                 std::conditional_t<has_const, typename V::const_pointer, typename V::pointer>;
 
-            buff_ptr_type buff_ptr;
+            buff_ptr_type buff_ptr{ nullptr };
             std::size_t grid_offset{ 0uz };
         };
         using reference     = element_type;
