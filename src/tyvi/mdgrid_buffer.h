@@ -99,6 +99,11 @@ class [[nodiscard]] mdgrid_buffer {
         : grid_mapping_(m),
           buff_(element_mapping_.required_span_size() * grid_mapping_.required_span_size()) {}
 
+    template<typename... Indices>
+        requires std::constructible_from<GridExtents, Indices...>
+    explicit constexpr mdgrid_buffer(Indices... indices)
+        : mdgrid_buffer(grid_mapping_type(GridExtents{ std::forward<Indices>(indices)... })) {}
+
     template<typename Self>
     [[nodiscard]]
     constexpr auto mds(this Self& self) {
@@ -128,6 +133,11 @@ class [[nodiscard]] mdgrid_buffer {
     [[nodiscard]]
     constexpr auto end(this Self&& self) {
         return std::ranges::end(std::forward<Self>(self).buff_);
+    }
+
+    [[nodiscard]]
+    constexpr auto grid_extents(this const auto& self) {
+        return self.grid_mapping_.extents();
     }
 };
 

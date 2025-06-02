@@ -151,6 +151,20 @@ const suite<"mdgrid_buffer"> _ = [] {
         // Note that this is true because the layout policies are the same.
         expect(thrust::equal(host_A.begin(), host_A.end(), host_B.begin()));
     };
+
+    "mdgrid_buffer syntax sugar ctor"_test = [] {
+        const auto grid_mapping =
+            grid_layout_policy::template mapping<grid_extents>(grid_extents{ 2, 3, 4 });
+
+        auto buffA = testing_mdgrid_buffer(grid_mapping);
+        auto buffB = testing_mdgrid_buffer(2, 3, 4);
+
+        const auto eA = buffA.grid_extents();
+        const auto eB = buffB.grid_extents();
+
+        expect(eA == eB);
+        expect(eA == grid_extents{ 2, 3, 4 });
+    };
 };
 
 } // namespace
