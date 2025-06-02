@@ -103,6 +103,72 @@ const suite<"sstd"> _ = [] {
             expect(0 == std::ranges::size(tyvi::sstd::geometric_index_space<0, 42>()[0]));
         };
     };
+
+    "index_space(strided_mds)"_test = [] {
+        const auto buff    = std::array{ 1uz, 2uz, 3uz, 4uz, 5uz, 6uz };
+        const auto mds     = std::mdspan(buff.data(), 3, 1, 2);
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        auto i  = std::ranges::begin(indices);
+        using A = std::array<std::size_t, 3>;
+        expect(*i++ == A{ 0, 0, 0 });
+        expect(*i++ == A{ 0, 0, 1 });
+        expect(*i++ == A{ 1, 0, 0 });
+        expect(*i++ == A{ 1, 0, 1 });
+        expect(*i++ == A{ 2, 0, 0 });
+        expect(*i++ == A{ 2, 0, 1 });
+
+        expect(i == std::ranges::end(indices));
+    };
+
+    "index_space(strided_mds) is range based for loopable"_test = [] {
+        const auto buff    = std::array{ 0uz, 0uz, 1uz, 1uz, 2uz, 2uz };
+        const auto mds     = std::mdspan(buff.data(), 3, 1, 2);
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        for (const auto idx : indices) { expect(mds[idx] == idx[0]); }
+    };
+
+    "index_space(strided_mds) goes throught all the indices once"_test = [] {
+        auto buff          = std::array{ 0uz, 0uz, 0uz, 0uz, 0uz, 0uz };
+        const auto mds     = std::mdspan(buff.data(), 3, 1, 2);
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        for (const auto idx : indices) {
+            expect(mds[idx] == 0uz);
+            mds[idx] = 42;
+        }
+
+        for (const auto idx : indices) { expect(mds[idx] == 42); }
+    };
+
+    "index_space(rank0_mds) is correct"_test = [] {
+        auto buff          = 42;
+        const auto mds     = std::mdspan(&buff);
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        expect(1 == std::ranges::distance(indices));
+        const auto idx = *indices.begin();
+        expect(std::ranges::empty(idx));
+    };
+
+    "index_space for matrix layout_right is transpose of layout_left"_test = [] {
+        const auto buff = std::array{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+        const auto mds_left =
+            tyvi::sstd::geometric_mdspan<const int, 2, 3, std::layout_left>(buff.data());
+
+        const auto mds_right =
+            tyvi::sstd::geometric_mdspan<const int, 2, 3, std::layout_right>(buff.data());
+
+        const auto indices_left  = tyvi::sstd::index_space(mds_left);
+        const auto indices_right = tyvi::sstd::index_space(mds_right);
+
+        for (const auto [l, r] : std::views::zip(indices_left, indices_right)) {
+            expect(l[0] == r[1]);
+            expect(l[1] == r[0]);
+        }
+    };
 };
 
 } // namespace
