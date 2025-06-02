@@ -23,6 +23,7 @@ foreach(test ${TESTS_TO_RUN})
                 tyvi_options
                 tyvi
                 Boost::ut
+                roc::rocthrust
     )
 
     add_test(NAME ${test} COMMAND "${test}.test")
