@@ -113,6 +113,22 @@ class [[nodiscard]] mdgrid_buffer {
             self.grid_mapping_,
             grid_acc{ .grid_required_span_size = self.grid_mapping_.required_span_size() });
     }
+
+    /// Iterate over all grid points and components at each grid point.
+    ///
+    /// Iteration order is not specified but such that sequential values are
+    /// stored contiquously in memory.
+    template<typename Self>
+    [[nodiscard]]
+    constexpr auto begin(this Self&& self) {
+        return std::ranges::begin(std::forward<Self>(self).buff_);
+    }
+
+    template<typename Self>
+    [[nodiscard]]
+    constexpr auto end(this Self&& self) {
+        return std::ranges::end(std::forward<Self>(self).buff_);
+    }
 };
 
 } // namespace tyvi
