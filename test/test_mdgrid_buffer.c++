@@ -10,7 +10,10 @@
 
 #include "thrust/copy.h"
 #include "thrust/device_vector.h"
+#include "thrust/execution_policy.h"
+#include "thrust/for_each.h"
 #include "thrust/host_vector.h"
+#include "thrust/logical.h"
 #include "thrust/sequence.h"
 
 #include "tyvi/mdgrid_buffer.h"
@@ -164,6 +167,33 @@ const suite<"mdgrid_buffer"> _ = [] {
 
         expect(eA == eB);
         expect(eA == grid_extents{ 2, 3, 4 });
+    };
+
+    "index_buffer is modifieable from thrust kernel"_test = [] {
+        using device_mdg_buff = tyvi::mdgrid_buffer<thrust::device_vector<int>,
+                                                    element_extents,
+                                                    element_layout_policy,
+                                                    grid_extents,
+                                                    grid_layout_policy>;
+
+        auto device_vec        = device_mdg_buff(3, 4, 2);
+        const auto mds         = device_vec.mds();
+        const auto index_space = tyvi::sstd::index_space(mds);
+
+        // Note that element is 2x2 matrix.
+        thrust::for_each(thrust::device,
+                         index_space.begin(),
+                         index_space.end(),
+                         [=](const auto idx) {
+                             mds[idx][0, 0] = static_cast<int>(idx[2]);
+                             mds[idx][0, 1] = static_cast<int>(idx[2]);
+                             mds[idx][1, 0] = static_cast<int>(idx[2]);
+                             mds[idx][1, 1] = static_cast<int>(idx[2]);
+                         });
+
+        thrust::all_of(thrust::device, device_vec.begin(), device_vec.end(), [=](const auto x) {
+            return x == 0 or x == 1;
+        });
     };
 };
 
