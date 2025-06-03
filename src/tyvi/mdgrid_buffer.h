@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <iterator>
 #include <utility>
 
 #include "tyvi/mdspan.h"
@@ -43,13 +44,14 @@ class [[nodiscard]] mdgrid_buffer {
         constexpr reference access(this const auto& self,
                                    data_handle_type const buff_ptr,
                                    const std::size_t element_offset) {
-            return buff_ptr[(element_offset * self.grid_required_span_size) + self.grid_offset];
+            return buff_ptr[static_cast<std::ptrdiff_t>(
+                (element_offset * self.grid_required_span_size) + self.grid_offset)];
         }
 
         constexpr offset_policy::data_handle_type offset(this const auto& self,
                                                          data_handle_type const buff_ptr,
                                                          const std::size_t element_offset) {
-            return buff_ptr[element_offset * self.grid_required_span_size];
+            return std::ranges::next(buff_ptr, element_offset * self.grid_required_span_size);
         }
     };
 
