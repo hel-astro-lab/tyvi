@@ -44,12 +44,6 @@ geometric_index_space() {
         std::make_index_sequence<rank>());
 };
 
-template<typename M>
-concept iterable_strided_mapping = (M::is_always_exhaustive()) and requires(M m, std::size_t i) {
-    typename M::index_type;
-    { m.stride(i) } -> std::same_as<typename M::index_type>;
-};
-
 template<typename T>
 concept random_access_view = std::ranges::view<T> and std::ranges::random_access_range<T>;
 
@@ -108,11 +102,11 @@ class index_space_iterator {
 
     [[nodiscard]]
     constexpr reference operator*() const {
-        static_assert(rank == 0 or iterable_strided_mapping<M>,
+        static_assert(rank == 0 or M::is_always_strided(),
                       "Index space is currently supported only for strided layout mappings.");
         if constexpr (rank == 0) {
             return value_type{};
-        } else /* if constexpr (iterable_strided_mapping<M>) */ {
+        } else /* if constexpr (M::is_always_strided()) */ {
             return [&]<std::size_t... I>(std::index_sequence<I...>) {
                 return reference{ (offset_ / mapping_.stride(I))
                                   % mapping_.extents().extent(I)... };
