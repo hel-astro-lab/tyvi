@@ -159,12 +159,10 @@ class index_space_iterator {
         return lhs + (-rhs);
     }
 
-    [[nodiscard]]
     constexpr index_space_iterator& operator+=(const difference_type rhs) {
         return *this = *this + rhs;
     }
 
-    [[nodiscard]]
     constexpr index_space_iterator& operator-=(const difference_type rhs) {
         return *this = *this - rhs;
     }
