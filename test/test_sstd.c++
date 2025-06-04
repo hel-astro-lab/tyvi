@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <iterator>
 #include <ranges>
+#include <type_traits>
+#include <vector>
 
 #include "tyvi/mdspan.h"
 #include "tyvi/sstd.h"
@@ -168,6 +170,245 @@ const suite<"sstd"> _ = [] {
             expect(l[0] == r[1]);
             expect(l[1] == r[0]);
         }
+    };
+
+    "layout_right index_space random access interator semantics"_test = [] {
+        using MDS = std::mdspan<const int, std::dextents<std::size_t, 3>, std::layout_right>;
+
+        constexpr const auto Nx{ 3uz }, Ny{ 4uz }, Nz{ 2uz };
+        const auto buff = std::array<int, Nx * Ny * Nz>{};
+        const auto mds  = MDS(buff.data(), Nx, Ny, Nz);
+
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        auto b = indices.begin();
+        auto e = indices.end();
+
+        using iterator_type = std::remove_cvref_t<decltype(b)>;
+        using sentinel_type = std::remove_cvref_t<decltype(e)>;
+        using range_type    = std::remove_cvref_t<decltype(indices)>;
+
+        expect(std::random_access_iterator<iterator_type>);
+        expect(std::sentinel_for<sentinel_type, iterator_type>);
+        expect(std::ranges::random_access_range<range_type>);
+
+        using value_type = std::iter_value_t<iterator_type>;
+
+        const auto correct_indices = std::vector<value_type>{
+            { 0, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 }, { 0, 1, 1 }, { 0, 2, 0 }, { 0, 2, 1 },
+            { 0, 3, 0 }, { 0, 3, 1 }, { 1, 0, 0 }, { 1, 0, 1 }, { 1, 1, 0 }, { 1, 1, 1 },
+            { 1, 2, 0 }, { 1, 2, 1 }, { 1, 3, 0 }, { 1, 3, 1 }, { 2, 0, 0 }, { 2, 0, 1 },
+            { 2, 1, 0 }, { 2, 1, 1 }, { 2, 2, 0 }, { 2, 2, 1 }, { 2, 3, 0 }, { 2, 3, 1 }
+        };
+
+        expect(*b++ == correct_indices[0]);
+
+        --b;
+
+        expect(*++b == correct_indices[1]);
+
+        using difference_type = std::iter_difference_t<iterator_type>;
+
+        const auto n10 = difference_type{ 10 };
+        const auto n4  = difference_type{ 4 };
+
+        b = b + n10;
+
+        expect(*b == correct_indices[11]);
+
+        b += n4;
+
+        expect(*b == correct_indices[15]);
+
+        b = n4 + b;
+
+        expect(*b == correct_indices[19]);
+
+        const auto m = e - b;
+
+        expect(m == difference_type{ 5 });
+
+        b -= m;
+
+        expect(*b-- == correct_indices[14]);
+        expect(*--b == correct_indices[12]);
+
+        b = b - m;
+
+        expect(*b == correct_indices[7]);
+
+        expect(b[n10] == correct_indices[17]);
+
+        expect(b < e);
+        expect(b <= e);
+        expect(not(b > e));
+        expect(not(b >= e));
+        expect(b == b); // NOLINT
+        expect(e == e); // NOLINT
+        expect(b != e);
+
+        expect(b + difference_type{ 17 } == e);
+    };
+
+    "layout_left index_space random access interator semantics"_test = [] {
+        using MDS = std::mdspan<const int, std::dextents<std::size_t, 3>, std::layout_left>;
+
+        constexpr const auto Nx{ 3uz }, Ny{ 4uz }, Nz{ 2uz };
+        const auto buff = std::array<int, Nx * Ny * Nz>{};
+        const auto mds  = MDS(buff.data(), Nx, Ny, Nz);
+
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        auto b = indices.begin();
+        auto e = indices.end();
+
+        using iterator_type = std::remove_cvref_t<decltype(b)>;
+        using sentinel_type = std::remove_cvref_t<decltype(e)>;
+        using range_type    = std::remove_cvref_t<decltype(indices)>;
+
+        expect(std::random_access_iterator<iterator_type>);
+        expect(std::sentinel_for<sentinel_type, iterator_type>);
+        expect(std::ranges::random_access_range<range_type>);
+
+        using value_type = std::iter_value_t<iterator_type>;
+
+        const auto correct_indices = std::vector<value_type>{
+            { 0, 0, 0 }, { 1, 0, 0 }, { 2, 0, 0 }, { 0, 1, 0 }, { 1, 1, 0 }, { 2, 1, 0 },
+            { 0, 2, 0 }, { 1, 2, 0 }, { 2, 2, 0 }, { 0, 3, 0 }, { 1, 3, 0 }, { 2, 3, 0 },
+            { 0, 0, 1 }, { 1, 0, 1 }, { 2, 0, 1 }, { 0, 1, 1 }, { 1, 1, 1 }, { 2, 1, 1 },
+            { 0, 2, 1 }, { 1, 2, 1 }, { 2, 2, 1 }, { 0, 3, 1 }, { 1, 3, 1 }, { 2, 3, 1 }
+        };
+
+        expect(*b++ == correct_indices[0]);
+
+        --b;
+
+        expect(*++b == correct_indices[1]);
+
+        using difference_type = std::iter_difference_t<iterator_type>;
+
+        const auto n10 = difference_type{ 10 };
+        const auto n4  = difference_type{ 4 };
+
+        b = b + n10;
+
+        expect(*b == correct_indices[11]);
+
+        b += n4;
+
+        expect(*b == correct_indices[15]);
+
+        b = n4 + b;
+
+        expect(*b == correct_indices[19]);
+
+        const auto m = e - b;
+
+        expect(m == difference_type{ 5 });
+
+        b -= m;
+
+        expect(*b-- == correct_indices[14]);
+        expect(*--b == correct_indices[12]);
+
+        b = b - m;
+
+        expect(*b == correct_indices[7]);
+
+        expect(b[n10] == correct_indices[17]);
+
+        expect(b < e);
+        expect(b <= e);
+        expect(not(b > e));
+        expect(not(b >= e));
+        expect(b == b); // NOLINT
+        expect(e == e); // NOLINT
+        expect(b != e);
+
+        expect(b + difference_type{ 17 } == e);
+    };
+
+    "custom layout_strided index_space random access interator semantics"_test = [] {
+        using E   = std::dextents<std::size_t, 3>;
+        using MDS = std::mdspan<const int, E, std::layout_stride>;
+
+        constexpr const auto Nx{ 3uz }, Ny{ 4uz }, Nz{ 2uz };
+        const auto extents = E{ Nx, Ny, Nz };
+        const auto mapping =
+            std::layout_stride::template mapping<E>(extents, std::array{ 8uz, 1uz, 4uz });
+
+        const auto buff = std::array<int, Nx * Ny * Nz>{};
+        const auto mds  = MDS(buff.data(), mapping, {});
+
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        auto b = indices.begin();
+        auto e = indices.end();
+
+        using iterator_type = std::remove_cvref_t<decltype(b)>;
+        using sentinel_type = std::remove_cvref_t<decltype(e)>;
+        using range_type    = std::remove_cvref_t<decltype(indices)>;
+
+        expect(std::random_access_iterator<iterator_type>);
+        expect(std::sentinel_for<sentinel_type, iterator_type>);
+        expect(std::ranges::random_access_range<range_type>);
+
+        using value_type = std::iter_value_t<iterator_type>;
+
+        const auto correct_indices = std::vector<value_type>{
+            { 0, 0, 0 }, { 0, 1, 0 }, { 0, 2, 0 }, { 0, 3, 0 }, { 0, 0, 1 }, { 0, 1, 1 },
+            { 0, 2, 1 }, { 0, 3, 1 }, { 1, 0, 0 }, { 1, 1, 0 }, { 1, 2, 0 }, { 1, 3, 0 },
+            { 1, 0, 1 }, { 1, 1, 1 }, { 1, 2, 1 }, { 1, 3, 1 }, { 2, 0, 0 }, { 2, 1, 0 },
+            { 2, 2, 0 }, { 2, 3, 0 }, { 2, 0, 1 }, { 2, 1, 1 }, { 2, 2, 1 }, { 2, 3, 1 }
+        };
+
+        expect(*b++ == correct_indices[0]);
+
+        --b;
+
+        expect(*++b == correct_indices[1]);
+
+        using difference_type = std::iter_difference_t<iterator_type>;
+
+        const auto n10 = difference_type{ 10 };
+        const auto n4  = difference_type{ 4 };
+
+        b = b + n10;
+
+        expect(*b == correct_indices[11]);
+
+        b += n4;
+
+        expect(*b == correct_indices[15]);
+
+        b = n4 + b;
+
+        expect(*b == correct_indices[19]);
+
+        const auto m = e - b;
+
+        expect(m == difference_type{ 5 });
+
+        b -= m;
+
+        expect(*b-- == correct_indices[14]);
+        expect(*--b == correct_indices[12]);
+
+        b = b - m;
+
+        expect(*b == correct_indices[7]);
+
+        expect(b[n10] == correct_indices[17]);
+
+        expect(b < e);
+        expect(b <= e);
+        expect(not(b > e));
+        expect(not(b >= e));
+        expect(b == b); // NOLINT
+        expect(e == e); // NOLINT
+        expect(b != e);
+
+        expect(b + difference_type{ 17 } == e);
     };
 };
 
