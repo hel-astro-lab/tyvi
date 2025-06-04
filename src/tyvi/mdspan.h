@@ -55,7 +55,7 @@ concept random_access_view = std::ranges::view<T> and std::ranges::random_access
 
    This workaround to prevents ADL for type template parameters and was found here:
    https://www.reddit.com/r/cpp/comments/rsslxq/how_does_this_for_hiding_a_template_type/ */
-namespace {
+namespace detail {
 template<typename ADLMapping>
 struct index_space_iterator_impl {
     class index_space_iterator;
@@ -182,10 +182,11 @@ class index_space_iterator_impl<ADLMapping>::index_space_iterator {
         return *(*this + rhs);
     }
 };
-} // namespace
+} // namespace detail
 
 template<typename Mapping>
-using index_space_iterator = typename index_space_iterator_impl<Mapping>::index_space_iterator;
+using index_space_iterator =
+    typename detail::index_space_iterator_impl<Mapping>::index_space_iterator;
 
 template<typename M>
 class [[nodiscard]] index_space_view : public std::ranges::view_interface<index_space_view<M>> {

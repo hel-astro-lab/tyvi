@@ -2,7 +2,10 @@
 
 #include <cstddef>
 
+#include <experimental/mdspan>
+
 #include "tyvi/mdgrid.h"
+#include "tyvi/mdspan.h"
 
 namespace {
 using namespace boost::ut;
@@ -17,6 +20,49 @@ const suite<"mdgrid"> _ = [] {
         [[maybe_unused]]
         auto _ = mdg(3, 4, 5);
         expect(true);
+    };
+
+    "mdgrid can init work"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 2 };
+        using mdg                = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto grid = mdg(3, 4, 5);
+
+        auto w1 = grid.init_work();
+        w1.wait();
+
+        expect(true);
+    };
+
+    "mdgrid staging buffer round trip"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
+
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto grid = mdg(3, 4, 5);
+
+        auto staging_mds_A = grid.view_staging_buff();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_A)) {
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_A[idx])) {
+                staging_mds_A[idx][Midx] = 7;
+            }
+        }
+
+        auto w1 = grid.init_work();
+        auto w2 = w1.sync_from_staging(grid);
+        auto w3 = w2.for_each(grid, [](const auto& M) {
+            for (const auto Midx : tyvi::sstd::index_space(M)) { M[Midx] = M[Midx] * 3 * 2; }
+        });
+        auto w4 = w3.sync_to_staging(grid);
+
+        w4.wait();
+
+        auto staging_mds_B = grid.view_staging_buff();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_B[idx])) {
+                expect(staging_mds_B[idx][Midx] == 42);
+            }
+        }
     };
 };
 
