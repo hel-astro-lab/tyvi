@@ -106,6 +106,9 @@ class [[nodiscard]] mdgrid_buffer {
     explicit constexpr mdgrid_buffer(Indices... indices)
         : mdgrid_buffer(grid_mapping_type(GridExtents{ std::forward<Indices>(indices)... })) {}
 
+    explicit constexpr mdgrid_buffer(const GridExtents& extents)
+        : mdgrid_buffer(grid_mapping_type(extents)) {}
+
     template<typename Self>
     [[nodiscard]]
     constexpr auto mds(this Self& self) {
@@ -138,8 +141,13 @@ class [[nodiscard]] mdgrid_buffer {
     }
 
     [[nodiscard]]
-    constexpr auto grid_extents(this const auto& self) {
-        return self.grid_mapping_.extents();
+    constexpr auto grid_extents() const {
+        return grid_mapping_.extents();
+    }
+
+    [[nodiscard]]
+    constexpr auto element_extents() const {
+        return element_mapping_.extents();
     }
 };
 

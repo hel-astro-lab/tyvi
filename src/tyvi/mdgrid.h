@@ -52,6 +52,10 @@ mdgrid {
         : device_buff_(grid_extents...),
           staging_buff_(grid_extents...) {}
 
+    explicit constexpr mdgrid(const Extents& grid_extents)
+        : device_buff_(grid_extents),
+          staging_buff_(grid_extents) {}
+
     [[nodiscard]]
     constexpr auto staging_mds(this auto& self) {
         return self.staging_buff_.mds();
@@ -65,6 +69,11 @@ mdgrid {
     };
 
     auto init_work() && = delete;
+
+    [[nodiscard]]
+    constexpr Extents extents() const {
+        return device_buff_.grid_extents();
+    }
 };
 
 /// Move only DAG representing dependencies between async work.

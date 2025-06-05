@@ -46,6 +46,17 @@ const suite<"mdgrid_buffer"> _ = [] {
         expect(true);
     };
 
+    "mdgrid_buffer is constructible from grid extents"_test = [] {
+        auto mdgbA = testing_mdgrid_buffer(4, 2, 1);
+        auto mdgbB = testing_mdgrid_buffer(mdgbA.grid_extents());
+        expect(mdgbA.grid_extents() == mdgbB.grid_extents());
+    };
+
+    "mdgrid_buffer gives correct element extents"_test = [] {
+        auto mdgb = testing_mdgrid_buffer(4, 2, 1);
+        expect(mdgb.element_extents() == element_extents{});
+    };
+
     "mdgrid_buffer is copyable and const correct viewable through mdspan"_test = [] {
         const auto grid_mapping =
             grid_layout_policy::template mapping<grid_extents>(grid_extents{ 2, 3, 4 });

@@ -64,6 +64,25 @@ const suite<"mdgrid"> _ = [] {
             }
         }
     };
+
+    "mdgrid is constructible from other mdgrid's extents"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
+        using mdg                = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto gridA = mdg(3, 4, 5);
+
+        const auto EA = gridA.extents();
+
+        auto gridB = mdg(EA);
+        auto gridC = mdg(gridB.extents());
+
+        const auto EB = gridB.extents();
+        const auto EC = gridC.extents();
+
+        expect(EA == decltype(EA){ 3, 4, 5 });
+        expect(EA == EB);
+        expect(EB == EC);
+    };
 };
 
 } // namespace
