@@ -53,7 +53,7 @@ mdgrid {
           staging_buff_(grid_extents...) {}
 
     [[nodiscard]]
-    auto view_staging_buff(this auto& self) {
+    constexpr auto staging_mds(this auto& self) {
         return self.staging_buff_.mds();
     }
 

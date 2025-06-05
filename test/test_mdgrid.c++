@@ -41,7 +41,7 @@ const suite<"mdgrid"> _ = [] {
 
         auto grid = mdg(3, 4, 5);
 
-        auto staging_mds_A = grid.view_staging_buff();
+        auto staging_mds_A = grid.staging_mds();
         for (const auto idx : tyvi::sstd::index_space(staging_mds_A)) {
             for (const auto Midx : tyvi::sstd::index_space(staging_mds_A[idx])) {
                 staging_mds_A[idx][Midx] = 7;
@@ -57,7 +57,7 @@ const suite<"mdgrid"> _ = [] {
 
         w4.wait();
 
-        auto staging_mds_B = grid.view_staging_buff();
+        auto staging_mds_B = grid.staging_mds();
         for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
             for (const auto Midx : tyvi::sstd::index_space(staging_mds_B[idx])) {
                 expect(staging_mds_B[idx][Midx] == 42);
