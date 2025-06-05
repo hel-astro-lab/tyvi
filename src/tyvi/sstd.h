@@ -14,7 +14,9 @@ ipow(const T base, const T exponent) {
         throw std::logic_error{ "Integers can not be raised to negative power." };
     }
     auto result = T{ 1 };
-    for (auto _ : std::views::iota(T{ 0 }, exponent)) { result *= base; }
+    for (auto _ : std::views::iota(T{ 0 }, exponent)) {
+        result *= base; // cppcheck-suppress useStlAlgorithm
+    }
     return result;
 }
 

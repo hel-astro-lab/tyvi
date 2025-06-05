@@ -31,6 +31,8 @@ macro(TYVI_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
                 --suppress=preprocessorErrorDirective
                 # ignores static_assert type failures
                 --suppress=knownConditionTrueFalse
+                # explicit/deducing this parameter breaks this
+                --suppress=functionStatic
                 --inconclusive
                 --suppress=${SUPPRESS_DIR}
             )
