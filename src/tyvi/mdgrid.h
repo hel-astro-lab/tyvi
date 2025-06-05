@@ -58,11 +58,13 @@ mdgrid {
     }
 
     [[nodiscard]]
-    auto init_work() const {
+    auto init_work() const& {
         // Crate empty future which is ready but empty.
-        // We don't care about the value so use just some type.
+        // We don't care about the value so use just some type (i.e. int).
         return work_chain(thrust::device_future<int>(thrust::new_stream));
     };
+
+    auto init_work() && = delete;
 };
 
 /// Move only DAG representing dependencies between async work.
