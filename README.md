@@ -9,16 +9,19 @@ It is build on top of HIP and rocThrust library with `std::mdspan` playing a cen
 
 ## Quick start
 
-To build and run tests with gcc in debug build:
+Build in debug mode with hipcc and run tests:
 
 ```shell
-> cmake --preset unixlike-gcc-debug
-> cd out/build/unixlike-gcc-debug/
-> make -j
-> ctest
+> cmake --preset cmake --preset unixlike-hipcc-debug
+> cd out/build/unixlike-hipcc-debug
+> make -j && ctest
 ```
 
+Use `cmake --preset list` to see all available configuration presets.
+
 See `docs/build-system.md` and `docs/build-system-options.md` for more details.
+
+## Contributing
 
 Before commiting, please install `pre-commit` hooks with:
 
