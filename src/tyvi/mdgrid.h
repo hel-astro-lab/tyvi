@@ -3,6 +3,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <tuple>
 #include <utility>
 
 #include "thrust/async/copy.h"
@@ -25,6 +26,9 @@ struct mdgrid_element_descriptor {
     std::size_t rank, dim;
 };
 
+template<typename Future>
+class mdgrid_work;
+
 template<auto ElemDesc, typename Extents, typename GridLayoutPolicy = std::layout_right>
 class [[nodiscard]]
 mdgrid {
@@ -45,7 +49,7 @@ mdgrid {
     staging_buffer staging_buff_;
 
     template<typename Future>
-    class work_chain;
+    friend class mdgrid_work;
 
   public:
     explicit constexpr mdgrid(const auto... grid_extents)
@@ -57,18 +61,14 @@ mdgrid {
           staging_buff_(grid_extents) {}
 
     [[nodiscard]]
-    constexpr auto staging_mds(this auto& self) {
-        return self.staging_buff_.mds();
+    constexpr auto mds(this auto& self) {
+        return self.device_buff_.mds();
     }
 
     [[nodiscard]]
-    auto init_work() const& {
-        // Crate empty future which is ready but empty.
-        // We don't care about the value so use just some type (i.e. int).
-        return work_chain(thrust::device_future<int>(thrust::new_stream));
-    };
-
-    auto init_work() && = delete;
+    constexpr auto staging_mds(this auto& self) {
+        return self.staging_buff_.mds();
+    }
 
     [[nodiscard]]
     constexpr Extents extents() const {
@@ -77,24 +77,33 @@ mdgrid {
 };
 
 /// Move only DAG representing dependencies between async work.
-template<auto ElemDesc, typename Extents, typename GridLayoutPolicy>
-template<typename Future>
-class [[nodiscard]]
-mdgrid<ElemDesc, Extents, GridLayoutPolicy>::work_chain {
-    friend class mdgrid<ElemDesc, Extents, GridLayoutPolicy>;
-
+///
+/// Known limitation is that this can not represent one to many dependency.
+template<typename Future = decltype(thrust::when_all())>
+class [[nodiscard]] mdgrid_work {
     std::remove_cvref_t<Future> future_;
 
-    explicit work_chain(Future&& future) : future_(std::move(future)) {}
+    explicit mdgrid_work(Future&& future) : future_(std::move(future)) {}
+
+    template<auto, typename, typename>
+    friend class mdgrid;
+
+    template<typename>
+    friend class mdgrid_work;
+
+    template<typename... T>
+    friend auto when_all(mdgrid_work<T>&...);
 
   public:
-    ~work_chain() noexcept = default;
+    explicit mdgrid_work() : future_(thrust::when_all()) {}
 
-    work_chain(work_chain&&) noexcept                  = default; // move constructor
-    work_chain& operator=(work_chain&& other) noexcept = default; // move assignment
+    ~mdgrid_work() noexcept = default;
 
-    work_chain(const work_chain&)            = delete; // copy constructor
-    work_chain& operator=(const work_chain&) = delete; // copy assignment
+    mdgrid_work(mdgrid_work&&) noexcept                  = default; // move constructor
+    mdgrid_work& operator=(mdgrid_work&& other) noexcept = default; // move assignment
+
+    mdgrid_work(const mdgrid_work&)            = delete; // copy constructor
+    mdgrid_work& operator=(const mdgrid_work&) = delete; // copy assignment
 
     template<typename MDG, typename F>
     auto for_each(MDG& mdg, F&& f) {
@@ -102,29 +111,79 @@ mdgrid<ElemDesc, Extents, GridLayoutPolicy>::work_chain {
         auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
         const auto indices = sstd::index_space(grid_mds);
 
-        return typename MDG::work_chain(thrust::async::for_each(thrust::device.after(future_),
-                                                                indices.begin(),
-                                                                indices.end(),
-                                                                std::move(wrapped_f)));
+        auto new_future = thrust::async::for_each(thrust::device.after(future_),
+                                                  indices.begin(),
+                                                  indices.end(),
+                                                  std::move(wrapped_f));
+
+        return mdgrid_work<decltype(new_future)>(std::move(new_future));
+    }
+
+    template<typename MDG, typename F>
+    auto for_each_index(MDG& mdg, F&& f) {
+        auto grid_mds      = mdg.device_buff_.mds();
+        const auto indices = sstd::index_space(grid_mds);
+
+        using grid_indices_range = decltype(indices);
+        using element_indices_range =
+            decltype(sstd::index_space(std::declval<typename decltype(grid_mds)::value_type>()));
+
+        using grid_indices_range_reference = std::ranges::range_reference_t<grid_indices_range>;
+        using element_indices_range_reference =
+            std::ranges::range_reference_t<element_indices_range>;
+
+        if constexpr (std::invocable<F, grid_indices_range_reference>) {
+            auto new_future = thrust::async::for_each(thrust::device.after(future_),
+                                                      indices.begin(),
+                                                      indices.end(),
+                                                      std::forward<F>(f));
+
+            return mdgrid_work<decltype(new_future)>(std::move(new_future));
+        } else if constexpr (std::invocable<F,
+                                            grid_indices_range_reference,
+                                            element_indices_range_reference>) {
+            auto wrapped_f = [gmds = std::move(grid_mds), f = std::forward<F>(f)](const auto& idx) {
+                const auto elem_indices = sstd::index_space(gmds[idx]);
+                for (const auto jdx : elem_indices) { f(idx, jdx); }
+            };
+
+            auto new_future = thrust::async::for_each(thrust::device.after(future_),
+                                                      indices.begin(),
+                                                      indices.end(),
+                                                      std::move(wrapped_f));
+
+            return mdgrid_work<decltype(new_future)>(std::move(new_future));
+        }
     }
 
     template<typename MDG>
     auto sync_to_staging(MDG& mdg) {
-        return typename MDG::work_chain(thrust::async::copy(thrust::device.after(future_),
-                                                            mdg.device_buff_.begin(),
-                                                            mdg.device_buff_.end(),
-                                                            mdg.staging_buff_.begin()));
+        auto new_future = thrust::async::copy(thrust::device.after(future_),
+                                              mdg.device_buff_.begin(),
+                                              mdg.device_buff_.end(),
+                                              mdg.staging_buff_.begin());
+
+        return mdgrid_work<decltype(new_future)>(std::move(new_future));
     }
 
     template<typename MDG>
     auto sync_from_staging(MDG& mdg) {
-        return typename MDG::work_chain(thrust::async::copy(thrust::device.after(future_),
-                                                            mdg.staging_buff_.begin(),
-                                                            mdg.staging_buff_.end(),
-                                                            mdg.device_buff_.begin()));
+        auto new_future = thrust::async::copy(thrust::device.after(future_),
+                                              mdg.staging_buff_.begin(),
+                                              mdg.staging_buff_.end(),
+                                              mdg.device_buff_.begin());
+        return mdgrid_work<decltype(new_future)>(std::move(new_future));
     }
 
     void wait() { future_.wait(); }
 };
+
+/// Returns a work_chain that completes when all given work_chains complete.
+template<typename... T>
+auto
+when_all(mdgrid_work<T>&... links) {
+    auto new_future = thrust::when_all(links.future_...);
+    return mdgrid_work<decltype(new_future)>(std::move(new_future));
+}
 
 } // namespace tyvi
