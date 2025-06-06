@@ -9,20 +9,6 @@ To see available presets (from `CMakePresets.json`):
 
 ```shell
 > cmake --list-presets
-Available configure presets:
-
-  "unixlike-gcc-debug"                        - gcc Debug
-  "unixlike-gcc-debug-wout-static-analysis"   - gcc Debug
-  "unixlike-gcc-release"                      - gcc Release
-  "unixlike-clang-debug"                      - clang Debug
-  "unixlike-clang-debug-wout-static-analysis" - clang Debug
-  "unixlike-clang-release"                    - clang Release
-```
-
-For example gcc debug build directory can be configured with:
-
-```shell
-> cmake --preset unixlike-gcc-debug
 ```
 
 Presets are configured to create build directories to `out/build/`.
