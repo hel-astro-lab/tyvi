@@ -1,4 +1,11 @@
-Under construction...
+Tyvi is C++23 GPU parallelization library which focuses on physics simulation applications.
+It is build on top of HIP and rocThrust library with `std::mdspan` playing a central role.
+
+## Requirements
+
+- CMake (>= v3.21)
+- C++23 hip compiler (tested with llvm 18)
+- rocThrust (tested with rocThrust v3.1.0 from rocm v6.2.0)
 
 ## Quick start
 
