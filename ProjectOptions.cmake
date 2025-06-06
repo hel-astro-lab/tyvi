@@ -126,8 +126,6 @@ macro(TYVI_SETUP_GLOBAL_OPTIONS)
         tyvi_configure_ipo()
     endif()
 
-    tyvi_check_sanitizer_support()
-
     if(tyvi_ENABLE_HARDENING AND tyvi_ENABLE_GLOBAL_HARDENING)
         include(cmake/Hardening.cmake)
         if(NOT SUPPORTS_UBSAN
