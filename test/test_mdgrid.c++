@@ -113,17 +113,16 @@ const suite<"mdgrid"> _ = [] {
 
         auto w3 = tyvi::when_all(w2a, w2b);
 
-        auto kernelA = [scalar_mds = scalar_grid.mds(), vec_mds = vec_grid.mds()](const auto& idx) {
-            for (const auto jdx : tyvi::sstd::index_space(vec_mds[idx])) {
-                vec_mds[idx][jdx] = vec_mds[idx][jdx] * scalar_mds[idx][];
+        auto kernelA = [TYVI_CMDS(vec_grid, scalar_grid)](const auto& idx) {
+            for (const auto jdx : tyvi::sstd::index_space(vec_grid_mds[idx])) {
+                vec_grid_mds[idx][jdx] = vec_grid_mds[idx][jdx] * scalar_grid_mds[idx][];
             }
         };
 
         auto w4 = w3.for_each_index(vec_grid, std::move(kernelA));
 
-        auto kernelB = [scalar_mds = scalar_grid.mds(), vec_mds = vec_grid.mds()](const auto& idx,
-                                                                                  const auto& jdx) {
-            vec_mds[idx][jdx] = vec_mds[idx][jdx] * scalar_mds[idx][];
+        auto kernelB = [TYVI_CMDS(vec_grid, scalar_grid)](const auto& idx, const auto& jdx) {
+            vec_grid_mds[idx][jdx] = vec_grid_mds[idx][jdx] * scalar_grid_mds[idx][];
         };
 
         auto w5 = w4.for_each_index(vec_grid, std::move(kernelB));

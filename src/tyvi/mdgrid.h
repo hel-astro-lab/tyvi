@@ -187,3 +187,42 @@ when_all(mdgrid_work<T>&... links) {
 }
 
 } // namespace tyvi
+
+// NOLINTBEGIN
+#define TYVI_CAPTURE_SINGLE_MDS(arg) arg##_mds = arg.mds()
+
+#define TYVI_FOR_EACH_1(action, x)       action(x)
+#define TYVI_FOR_EACH_2(action, x, ...)  action(x), TYVI_FOR_EACH_1(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_3(action, x, ...)  action(x), TYVI_FOR_EACH_2(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_4(action, x, ...)  action(x), TYVI_FOR_EACH_3(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_5(action, x, ...)  action(x), TYVI_FOR_EACH_4(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_6(action, x, ...)  action(x), TYVI_FOR_EACH_5(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_7(action, x, ...)  action(x), TYVI_FOR_EACH_6(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_8(action, x, ...)  action(x), TYVI_FOR_EACH_7(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_9(action, x, ...)  action(x), TYVI_FOR_EACH_8(action, __VA_ARGS__)
+#define TYVI_FOR_EACH_10(action, x, ...) action(x), TYVI_FOR_EACH_9(action, __VA_ARGS__)
+
+// Macro to count number of args (up to 10)
+#define TYVI_GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, NAME, ...) NAME
+#define FOR_EACH(action, ...)        \
+    TYVI_GET_MACRO(__VA_ARGS__,      \
+                   TYVI_FOR_EACH_10, \
+                   TYVI_FOR_EACH_9,  \
+                   TYVI_FOR_EACH_8,  \
+                   TYVI_FOR_EACH_7,  \
+                   TYVI_FOR_EACH_6,  \
+                   TYVI_FOR_EACH_5,  \
+                   TYVI_FOR_EACH_4,  \
+                   TYVI_FOR_EACH_3,  \
+                   TYVI_FOR_EACH_2,  \
+                   TYVI_FOR_EACH_1)(action, __VA_ARGS__)
+
+/// Syntax sugar for capturing mdspans.
+///
+/// [foo_mds = foo.mds(), bar_mds = bar.mds()]
+///
+/// to
+///
+/// [TYVI_CMDS(foo, bar)] // CMDS = Capture MDSpan
+#define TYVI_CMDS(...) FOR_EACH(TYVI_CAPTURE_SINGLE_MDS, __VA_ARGS__)
+// NOLINTEND
