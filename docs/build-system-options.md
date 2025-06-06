@@ -11,7 +11,7 @@ Subproject defaults can be forced with CMake option: `-Dtyvi_PACKAGING_MAINTAINE
 
 ### Option defaults
 
-In the options the values denote the default values in toplevel mode.
+In the options values denote the default values in toplevel mode.
 If the default differs in subproject (or packaging maintainer) mode,
 then default contains two values seperated with slash (`/`).
 The first is toplevel build default and the second is subproject default.
@@ -32,8 +32,8 @@ if the option is supported by the used tooling and all required tools are found.
 ## Sanitizers
 
 ```
-tyvi_ENABLE_SANITIZER_ADDRESS:BOOL=ON*/OFF
-tyvi_ENABLE_SANITIZER_UNDEFINED:BOOL=ON*/OFF
+tyvi_ENABLE_SANITIZER_ADDRESS:BOOL=OFF
+tyvi_ENABLE_SANITIZER_UNDEFINED:BOOL=OFF
 tyvi_ENABLE_SANITIZER_LEAK:BOOL=OFF
 tyvi_ENABLE_SANITIZER_THREAD:BOOL=OFF
 tyvi_ENABLE_SANITIZER_MEMORY:BOOL=OFF
@@ -45,8 +45,8 @@ Some sanitizers are incompatible with each other.
 ## Static analysis
 
 ```
-tyvi_ENABLE_CLANG_TIDY:BOOL=ON*/OFF
-tyvi_ENABLE_CPPCHECK:BOOL=ON*/OFF
+tyvi_ENABLE_CLANG_TIDY:BOOL=OFF
+tyvi_ENABLE_CPPCHECK:BOOL=OFF
 tyvi_WARNINGS_AS_ERRORS:BOOL=ON/OFF
 ```
 
@@ -65,8 +65,8 @@ Hardening can help catch bugs during testing.
 For example hardened `std::vector::operator[]` detects out of bound accesses during runtime.
 
 ```
-tyvi_ENABLE_HARDENING:BOOL=ON*/OFF
-tyvi_ENABLE_GLOBAL_HARDENING:BOOL=ON*/OFF
+tyvi_ENABLE_HARDENING:BOOL=OFF
+tyvi_ENABLE_GLOBAL_HARDENING:BOOL=OFF
 ```
 
 Global hardening enables hardening for all the dependencies as well.
@@ -88,7 +88,7 @@ These options are less used but might come handly at some point.
 ### Cache
 
 ```
-tyvi_ENABLE_CACHE:BOOL=OFF
+tyvi_ENABLE_CACHE:BOOL=*ON/OFF
 ```
 
 Enables Ccache (compiler cache) [^ccache].
