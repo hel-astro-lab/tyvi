@@ -15,7 +15,7 @@
         },
         {
             "name": "conf-unixlike-common",
-            "description": "Unix-like OS settings for gcc and clang toolchains",
+            "description": "Unix-like OS settings.",
             "hidden": true,
             "inherits": "conf-common",
             "condition": {
@@ -28,72 +28,36 @@
             }
         },
         {
-            "name": "unixlike-gcc-debug",
-            "displayName": "gcc Debug",
-            "description": "Target Unix-like OS with the gcc compiler, debug build type",
+            "name": "unixlike-hipcc-debug",
+            "displayName": "hipcc Debug",
+            "description": "Target Unix-like OS with hipcc, debug build type.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "unixlike-gcc-debug-wout-static-analysis",
-            "displayName": "gcc Debug",
-            "description": "Target Unix-like OS with the gcc compiler, debug build type without static analyis",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF"
             }
         },
         {
-            "name": "unixlike-gcc-release",
-            "displayName": "gcc Release",
-            "description": "Target Unix-like OS with the gcc compiler, release build type",
+            "name": "unixlike-hipcc-debug-static-analysis",
+            "displayName": "hipcc Debug [static-analysis]",
+            "description": "Target Unix-like OS with hipcc, debug build type with static analysis.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "unixlike-clang-debug",
-            "displayName": "clang Debug",
-            "description": "Target Unix-like OS with the clang compiler, debug build type",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "unixlike-clang-debug-wout-static-analysis",
-            "displayName": "clang Debug",
-            "description": "Target Unix-like OS with the clang compiler, debug build type without static analyis",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF"
+                "tyvi_ENABLE_CLANG_TIDY": "ON",
+                "tyvi_ENABLE_CPPCHECK": "ON"
             }
         },
         {
-            "name": "unixlike-clang-release",
-            "displayName": "clang Release",
-            "description": "Target Unix-like OS with the clang compiler, release build type",
+            "name": "unixlike-hipcc-release",
+            "displayName": "hipcc Release",
+            "description": "Target Unix-like OS with hipcc, release build type.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_CXX_COMPILER": "hiphcc",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         }
@@ -112,32 +76,25 @@
             }
         },
         {
-            "name": "test-unixlike-gcc-debug",
-            "displayName": "Strict",
+            "name": "test-unixlike-hipcc-debug",
+            "displayName": "hipcc Debug",
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
-            "configurePreset": "unixlike-gcc-debug"
+            "configurePreset": "unixlike-hipcc-debug"
         },
         {
-            "name": "test-unixlike-gcc-release",
-            "displayName": "Strict",
+            "name": "test-unixlike-hipcc-debug-static-analysis",
+            "displayName": "hipcc Debug [static-analysis]",
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
-            "configurePreset": "unixlike-gcc-release"
+            "configurePreset": "unixlike-hipcc-debug-static-analysis"
         },
         {
-            "name": "test-unixlike-clang-debug",
-            "displayName": "Strict",
+            "name": "test-unixlike-hipcc-release",
+            "displayName": "hiphcc Release",
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
-            "configurePreset": "unixlike-clang-debug"
-        },
-        {
-            "name": "test-unixlike-clang-release",
-            "displayName": "Strict",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "unixlike-clang-release"
+            "configurePreset": "unixlike-hipcc-release"
         }
     ]
 }
