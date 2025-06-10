@@ -24,13 +24,13 @@ target_compile_features(tyvi PUBLIC cxx_std_23)
 
 set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 
-# Use spdlog as system library to suppress warnings from it's header.
+# Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
 tyvi_target_link_system_libraries(
     tyvi
     PUBLIC
     std::mdspan
+    roc::rocthrust
     PRIVATE
     spdlog::spdlog
-    roc::rocthrust
 )
