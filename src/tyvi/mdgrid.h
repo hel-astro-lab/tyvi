@@ -119,6 +119,44 @@ class [[nodiscard]] mdgrid_work {
         return mdgrid_work<decltype(new_future)>(std::move(new_future));
     }
 
+    template<typename T, typename E, typename LP, typename AP, typename F>
+    auto for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) {
+        using MDS = std::mdspan<T, E, LP, AP>;
+
+        const auto indices = sstd::index_space(mds);
+
+        using grid_indices_range = decltype(indices);
+        using element_indices_range =
+            decltype(sstd::index_space(std::declval<typename MDS::value_type>()));
+
+        using grid_indices_range_reference = std::ranges::range_reference_t<grid_indices_range>;
+        using element_indices_range_reference =
+            std::ranges::range_reference_t<element_indices_range>;
+
+        if constexpr (std::invocable<F, grid_indices_range_reference>) {
+            auto new_future = thrust::async::for_each(thrust::device.after(future_),
+                                                      indices.begin(),
+                                                      indices.end(),
+                                                      std::forward<F>(f));
+
+            return mdgrid_work<decltype(new_future)>(std::move(new_future));
+        } else if constexpr (std::invocable<F,
+                                            grid_indices_range_reference,
+                                            element_indices_range_reference>) {
+            auto wrapped_f = [mds, f = std::forward<F>(f)](const auto& idx) {
+                const auto elem_indices = sstd::index_space(mds[idx]);
+                for (const auto jdx : elem_indices) { f(idx, jdx); }
+            };
+
+            auto new_future = thrust::async::for_each(thrust::device.after(future_),
+                                                      indices.begin(),
+                                                      indices.end(),
+                                                      std::move(wrapped_f));
+
+            return mdgrid_work<decltype(new_future)>(std::move(new_future));
+        }
+    }
+
     template<typename MDG, typename F>
     auto for_each_index(MDG& mdg, F&& f) {
         auto grid_mds      = mdg.device_buff_.mds();

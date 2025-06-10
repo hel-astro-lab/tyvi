@@ -144,6 +144,53 @@ const suite<"mdgrid"> _ = [] {
             }
         }
     };
+
+    "mdgrid for each over submdspan"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
+
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto grid = mdg(3, 4, 5);
+
+        auto staging_mds_A = grid.staging_mds();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_A)) {
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_A[idx])) {
+                staging_mds_A[idx][Midx] = 7;
+            }
+        }
+
+        auto w1 = tyvi::mdgrid_work{};
+        auto w2 = w1.sync_from_staging(grid);
+
+        const auto gmds     = grid.mds();
+        const auto sub_gmds = std::submdspan(gmds,
+                                             std::full_extent,
+                                             std::tuple{ 1, 3 },
+                                             std::strided_slice{ 0, 5, 2 });
+
+        auto w3 = w2.for_each_index(sub_gmds, [sub_gmds](const auto& idx, const auto& tidx) {
+            sub_gmds[idx][tidx] = 42;
+        });
+        auto w4 = w3.sync_to_staging(grid);
+
+        w4.wait();
+
+        auto staging_mds_B = grid.staging_mds();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_B[idx])) {
+                const auto ok1 = idx[1] == 1 or idx[1] == 2;
+                const auto ok2 = idx[2] == 0 or idx[2] == 2 or idx[2] == 4;
+
+                if (ok1 and ok2) {
+                    expect(staging_mds_B[idx][Midx] == 42)
+                        << "expected " << 42 << ", got " << staging_mds_B[idx][Midx];
+                } else {
+                    expect(staging_mds_B[idx][Midx] == 7)
+                        << "expected " << 2 << ", got " << staging_mds_B[idx][Midx];
+                }
+            }
+        }
+    };
 };
 
 } // namespace
