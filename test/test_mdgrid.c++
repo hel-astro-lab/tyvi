@@ -1,6 +1,7 @@
 #include <boost/ut.hpp> // import boost.ut;
 
 #include <cstddef>
+#include <tuple>
 #include <utility>
 
 #include <experimental/mdspan>
@@ -162,11 +163,12 @@ const suite<"mdgrid"> _ = [] {
         auto w1 = tyvi::mdgrid_work{};
         auto w2 = w1.sync_from_staging(grid);
 
-        const auto gmds     = grid.mds();
-        const auto sub_gmds = std::submdspan(gmds,
-                                             std::full_extent,
-                                             std::tuple{ 1, 3 },
-                                             std::strided_slice{ 0, 5, 2 });
+        const auto gmds = grid.mds();
+        const auto sub_gmds =
+            std::submdspan(gmds,
+                           std::full_extent,
+                           std::tuple{ 1, 3 },
+                           std::strided_slice{ .offset = 0, .extent = 5, .stride = 2 });
 
         auto w3 = w2.for_each_index(sub_gmds, [sub_gmds](const auto& idx, const auto& tidx) {
             sub_gmds[idx][tidx] = 42;
