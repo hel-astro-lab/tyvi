@@ -41,17 +41,17 @@ class [[nodiscard]] mdgrid_buffer {
             std::conditional_t<has_const, typename V::const_reference, typename V::reference>;
         using offset_policy = element_accessor_policy;
 
-        constexpr reference access(this const auto& self,
-                                   data_handle_type const buff_ptr,
-                                   const std::size_t element_offset) {
-            return buff_ptr[static_cast<std::ptrdiff_t>(
-                (element_offset * self.grid_required_span_size) + self.grid_offset)];
+        [[nodiscard]]
+        constexpr reference access(data_handle_type const buff_ptr,
+                                   const std::size_t element_offset) const {
+            return buff_ptr[static_cast<std::ptrdiff_t>((element_offset * grid_required_span_size)
+                                                        + grid_offset)];
         }
 
-        constexpr offset_policy::data_handle_type offset(this const auto& self,
-                                                         data_handle_type const buff_ptr,
-                                                         const std::size_t element_offset) {
-            return std::ranges::next(buff_ptr, element_offset * self.grid_required_span_size);
+        [[nodiscard]]
+        constexpr offset_policy::data_handle_type offset(data_handle_type const buff_ptr,
+                                                         const std::size_t element_offset) const {
+            return std::ranges::next(buff_ptr, element_offset * grid_required_span_size);
         }
     };
 
@@ -77,19 +77,19 @@ class [[nodiscard]] mdgrid_buffer {
         using reference     = element_type;
         using offset_policy = grid_accessor_policy;
 
-        constexpr reference access(this const auto& self,
-                                   data_handle_type const grid_handle,
-                                   const std::size_t grid_offset) {
+        [[nodiscard]]
+        constexpr reference access(data_handle_type const grid_handle,
+                                   const std::size_t grid_offset) const {
             const auto acc = element_accessor_policy<has_const>{
                 .grid_offset             = grid_offset + grid_handle.grid_offset,
-                .grid_required_span_size = self.grid_required_span_size
+                .grid_required_span_size = grid_required_span_size
             };
             return element_mdspan<has_const>(grid_handle.buff_ptr, element_mapping_, acc);
         }
 
-        constexpr offset_policy::data_handle_type offset(this const auto&,
-                                                         data_handle_type const grid_handle,
-                                                         const std::size_t grid_offset) {
+        [[nodiscard]]
+        constexpr offset_policy::data_handle_type offset(data_handle_type const grid_handle,
+                                                         const std::size_t grid_offset) const {
             auto new_handle = grid_handle;
             new_handle.grid_offset += grid_offset;
             return new_handle;
