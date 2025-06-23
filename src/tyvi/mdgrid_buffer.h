@@ -30,7 +30,9 @@ class [[nodiscard]] mdgrid_buffer {
     template<bool has_const>
     struct [[nodiscard]]
     element_accessor_policy {
+        /// Element accessor has to know about which element element in the grid it accesses.
         std::size_t grid_offset;
+        /// Element accessor has to know how many elements there are in the grid.
         std::size_t grid_required_span_size;
 
         using element_type =
