@@ -27,6 +27,9 @@ class [[nodiscard]] mdgrid_buffer {
     /* Constness of mdgrid_buffer can not be deduced outside of member functions.
        So the accessor policies have to be templated. */
 
+    // Making accessor conform to this complicates them unneccessearly.
+    // NOLINTBEGIN{misc-non-private-member-variables-in-classes}
+
     template<bool has_const>
     struct [[nodiscard]]
     element_accessor_policy {
@@ -97,6 +100,8 @@ class [[nodiscard]] mdgrid_buffer {
             return new_handle;
         }
     };
+
+    // NOLINTEND{misc-non-private-member-variables-in-classes}
 
   public:
     explicit constexpr mdgrid_buffer(const grid_mapping_type& m)
