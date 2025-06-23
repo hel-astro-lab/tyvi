@@ -32,28 +32,30 @@ class mdgrid_work;
 template<auto ElemDesc, typename GridExtents, typename GridLayoutPolicy = std::layout_right>
 class [[nodiscard]]
 mdgrid {
+  public:
     using value_type = decltype(ElemDesc)::value_type;
 
-    using element_extents       = sstd::geometric_extents<ElemDesc.rank, ElemDesc.dim>;
-    using element_layout_policy = std::layout_right;
+    using element_extents_type = sstd::geometric_extents<ElemDesc.rank, ElemDesc.dim>;
+    using element_layout_type  = std::layout_right;
 
-    using grid_extents       = GridExtents;
-    using grid_layout_policy = GridLayoutPolicy;
+    using grid_extents_type = GridExtents;
+    using grid_layout_type  = GridLayoutPolicy;
 
     using device_vec    = thrust::device_vector<value_type>;
     using device_buffer = mdgrid_buffer<device_vec,
-                                        element_extents,
-                                        element_layout_policy,
-                                        grid_extents,
-                                        grid_layout_policy>;
+                                        element_extents_type,
+                                        element_layout_type,
+                                        grid_extents_type,
+                                        grid_layout_type>;
 
     using staging_vec    = thrust::host_vector<value_type>;
     using staging_buffer = mdgrid_buffer<staging_vec,
-                                         element_extents,
-                                         element_layout_policy,
-                                         grid_extents,
-                                         grid_layout_policy>;
+                                         element_extents_type,
+                                         element_layout_type,
+                                         grid_extents_type,
+                                         grid_layout_type>;
 
+  private:
     device_buffer device_buff_;
     staging_buffer staging_buff_;
 
@@ -65,7 +67,7 @@ mdgrid {
         : device_buff_(grid_extents...),
           staging_buff_(grid_extents...) {}
 
-    explicit constexpr mdgrid(const grid_extents& grid_extents)
+    explicit constexpr mdgrid(const grid_extents_type& grid_extents)
         : device_buff_(grid_extents),
           staging_buff_(grid_extents) {}
 
@@ -80,7 +82,7 @@ mdgrid {
     }
 
     [[nodiscard]]
-    constexpr grid_extents extents() const {
+    constexpr grid_extents_type extents() const {
         return device_buff_.grid_extents();
     }
 };
