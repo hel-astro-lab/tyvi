@@ -12,7 +12,7 @@ It is build on top of HIP and rocThrust library with `std::mdspan` playing a cen
 Build in debug mode with hipcc and run tests:
 
 ```shell
-> cmake --preset cmake --preset unixlike-hipcc-debug
+> cmake --preset unixlike-hipcc-debug
 > cd out/build/unixlike-hipcc-debug
 > make -j && ctest
 ```
