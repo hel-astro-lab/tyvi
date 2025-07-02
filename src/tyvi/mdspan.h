@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <concepts>
 #include <cstddef>
+#include <numeric>
 #include <ranges>
 #include <tuple>
 #include <type_traits>
@@ -44,33 +47,100 @@ geometric_index_space() {
         std::make_index_sequence<rank>());
 };
 
+/// Type trait to detect if type is specialization of std::extents.
+template<typename>
+struct is_mds_extents : std::bool_constant<false> {};
+
+template<typename IndexType, std::size_t... Extents>
+struct is_mds_extents<std::extents<IndexType, Extents...>> : std::bool_constant<true> {};
+
+template<typename T>
+constexpr bool is_mds_extents_v = is_mds_extents<T>::value;
+
+/// T is specialization of std::extents.
+template<typename T>
+concept mds_extents = (is_mds_extents_v<T>);
+
+/// mds_extents but every extent is statically known.
+template<typename T>
+concept static_mds_extents = mds_extents<T> and (T::rank_dynamic() == 0);
+
+/// Convert std::extents<I, E...> to std::array<I, rank>.
+template<mds_extents E>
+[[nodiscard]]
+constexpr auto
+as_array(const E& e) -> std::array<typename E::index_type, E::rank()> {
+    return [&]<std::size_t... I>(std::index_sequence<I...>) {
+        return std::array<typename E::index_type, E::rank()>{ e.extent(I)... };
+    }(std::make_index_sequence<E::rank()>());
+}
+
+/*
+/// Convert std::extents<I, E...> to std::array<I, rank> during compile time.
+template<typename IndexType, std::size_t... Extents>
+    requires static_mds_extents<std::extents<IndexType, Extents...>>
+[[nodiscard]]
+consteval auto
+as_array(std::extents<IndexType, Extents...>) -> std::array<IndexType, sizeof...(Extents)> {
+    return std::array{ static_cast<IndexType>(Extents)... };
+}
+    */
+
 template<typename T>
 concept random_access_view = std::ranges::view<T> and std::ranges::random_access_range<T>;
 
-/* Some thrust algorithms use unqualified `distance(b, e)` call which is ambiguous,
-   because it finds thrust::distance in addition of std::distance.
+/// Heuristic fo LayoutMapping named requirement.
+template<typename M>
+concept layout_mapping = requires(M m) {
+    typename M::extents_type;
+    typename M::index_type;
+    typename M::rank_type;
+    typename M::layout_type;
 
-   std::distance is found becuase of ADL which searches namespaces of type template parameters
-   and all standard mapping types are in std namespace with std::distance.
+    m.extents();
+    { m.required_span_size() } -> std::same_as<typename M::index_type>;
+    { m.is_unique() } -> std::same_as<bool>;
+    { m.is_exhaustive() } -> std::same_as<bool>;
+    { m.is_strided() } -> std::same_as<bool>;
 
-   This workaround to prevents ADL for type template parameters and was found here:
-   https://www.reddit.com/r/cpp/comments/rsslxq/how_does_this_for_hiding_a_template_type/ */
-namespace detail {
-template<typename ADLMapping>
-struct index_space_iterator_impl {
-    class index_space_iterator;
+    { M::is_always_strided() } -> std::same_as<bool>;
+    { M::is_always_exhaustive() } -> std::same_as<bool>;
+    { M::is_always_unique() } -> std::same_as<bool>;
+
+    // Make sure these are constant expressions.
+    std::bool_constant<M::is_always_strided()>::value;
+    std::bool_constant<M::is_always_exhaustive()>::value;
+    std::bool_constant<M::is_always_unique()>::value;
 };
 
-template<typename ADLMapping>
-class index_space_iterator_impl<ADLMapping>::index_space_iterator {
-    using M = ADLMapping;
+template<typename M>
+concept strided_mapping = layout_mapping<M> and (M::is_always_strided());
 
+template<typename M>
+concept unique_mapping = layout_mapping<M> and (M::is_always_unique());
+
+template<typename M>
+concept invertable_strided_mapping = strided_mapping<M> and unique_mapping<M>;
+
+template<typename M>
+concept exhaustive_mapping = layout_mapping<M> and (M::is_always_exhaustive());
+
+template<typename M>
+concept exhaustive_invertable_strided_mapping =
+    exhaustive_mapping<M> and invertable_strided_mapping<M>;
+
+template<typename M, std::size_t rank>
+concept mapping_of_rank = layout_mapping<M> and (M::extents_type::rank() == rank);
+
+template<typename M>
+concept mapping_of_nonzero_rank = layout_mapping<M> and (M::extents_type::rank() > 0uz);
+
+template<std::size_t rank, typename IndexType>
+class index_space_iterator {
   public:
-    static constexpr auto rank = M::extents_type::rank();
-
     using iterator_category = std::random_access_iterator_tag;
     using difference_type   = std::ptrdiff_t;
-    using value_type        = std::array<typename M::index_type, rank>;
+    using value_type        = std::array<IndexType, rank>;
     /// This iterator produces values, so our reference is also a value.
     using reference = value_type;
     /// Iterator does not point anything, so pointer doesn't make sense.
@@ -78,13 +148,67 @@ class index_space_iterator_impl<ADLMapping>::index_space_iterator {
 
   private:
     std::size_t offset_{ std::dynamic_extent };
-    /// Mapping has to be stored by value, as it has to be accessible in device code.
-    M mapping_{};
+
+    // Ideally there could just be a pointer to the index_space_view,
+    // but it is possible to have the view live on host and
+    // the pointers on device, which makes the scheme impossible.
+    //
+    // If other than strided mappings are supported this has to be changed.
+    std::array<IndexType, rank> dividers_;
+    std::array<IndexType, rank> extents_;
 
   public:
-    explicit constexpr index_space_iterator(const std::size_t i, const M& m)
-        : offset_{ i },
-          mapping_(m) {}
+    template<mapping_of_rank<rank> M>
+        requires(rank == 0uz)
+    explicit constexpr index_space_iterator(const std::size_t offset,
+                                            [[maybe_unused]]
+                                            const M&)
+        : offset_{ offset },
+          dividers_{},
+          extents_{} {}
+
+    template<mapping_of_rank<rank> M>
+        requires exhaustive_invertable_strided_mapping<M> and mapping_of_nonzero_rank<M>
+    explicit constexpr index_space_iterator(const std::size_t offset, const M& m)
+        : offset_{ offset },
+          dividers_{ [&]<std::size_t... I>(std::index_sequence<I...>) {
+              return std::array{ m.stride(I)... };
+          }(std::make_index_sequence<rank>()) },
+          extents_{ as_array(m.extents()) } {}
+
+    template<mapping_of_rank<rank> M>
+        requires invertable_strided_mapping<M> and mapping_of_nonzero_rank<M>
+    explicit constexpr index_space_iterator(const std::size_t offset, const M& m)
+        : offset_{ offset },
+          extents_{ as_array(m.extents()) } {
+        const auto sorted_rank_ordinals = [&] {
+            auto rank_ordinals = []<std::size_t... I>(std::index_sequence<I...>) {
+                return std::array{ I... };
+            }(std::make_index_sequence<rank>());
+
+            auto as_stride = [&](const std::size_t n) { return m.stride(n); };
+
+            std::ranges::sort(rank_ordinals, {}, as_stride);
+            return rank_ordinals;
+        }();
+
+        const auto sorted_dividers = [&] {
+            auto as_extent = [e = m.extents()](const std::size_t n) { return e.extent(n); };
+
+            auto tmp = std::array<IndexType, rank>{};
+            std::transform_exclusive_scan(sorted_rank_ordinals.begin(),
+                                          sorted_rank_ordinals.end(),
+                                          tmp.begin(),
+                                          IndexType{ 1 },
+                                          std::multiplies<>{},
+                                          as_extent);
+            return tmp;
+        }();
+
+        for (const auto [i, d] : std::views::enumerate(sorted_dividers)) {
+            dividers_.at(sorted_rank_ordinals.at(static_cast<std::size_t>(i))) = d;
+        }
+    }
 
     explicit constexpr index_space_iterator() = default;
 
@@ -118,14 +242,13 @@ class index_space_iterator_impl<ADLMapping>::index_space_iterator {
 
     [[nodiscard]]
     constexpr reference operator*() const {
-        static_assert(rank == 0 or M::is_always_strided(),
-                      "Index space is currently supported only for strided layout mappings.");
         if constexpr (rank == 0) {
             return value_type{};
-        } else /* if constexpr (M::is_always_strided()) */ {
+        } else {
+            // Strided implementation (currently only one supported).
             return [&]<std::size_t... I>(std::index_sequence<I...>) {
-                return reference{ (offset_ / mapping_.stride(I))
-                                  % mapping_.extents().extent(I)... };
+                return reference{ (static_cast<IndexType>(offset_) / dividers_[I])
+                                  % extents_[I]... };
             }(std::make_index_sequence<rank>());
         }
     }
@@ -182,25 +305,42 @@ class index_space_iterator_impl<ADLMapping>::index_space_iterator {
         return *(*this + rhs);
     }
 };
-} // namespace detail
 
-template<typename Mapping>
-using index_space_iterator =
-    typename detail::index_space_iterator_impl<Mapping>::index_space_iterator;
+/*
+User defined deduction guides are broken in hip.
+see: https://github.com/llvm/llvm-project/issues/146646
 
+template<layout_mapping M>
+index_space_iterator(std::size_t, const M&)
+    -> index_space_iterator<M::extents_type::rank(), typename M::index_type>;
+*/
+
+/// Index space of given mapping ordered based on the corresponding offsets.
+///
+/// Currently only supports strided mappings.
 template<typename M>
 class [[nodiscard]] index_space_view : public std::ranges::view_interface<index_space_view<M>> {
     M mapping_;
 
   public:
+    using iterator_type = index_space_iterator<M::extents_type::rank(), typename M::index_type>;
+
     constexpr explicit index_space_view(const M& m) : mapping_(m) {}
+
     [[nodiscard]]
     constexpr auto begin() const {
-        return index_space_iterator<M>(0uz, mapping_);
+        return iterator_type(0uz, mapping_);
     }
     [[nodiscard]]
     constexpr auto end() const {
-        return index_space_iterator<M>(mapping_.required_span_size(), mapping_);
+        const auto extents = as_array(mapping_.extents());
+
+        const auto last = std::reduce(extents.begin(),
+                                      extents.end(),
+                                      typename M::index_type{ 1 },
+                                      std::multiplies<>{});
+
+        return iterator_type(last, mapping_);
     }
 };
 

@@ -146,7 +146,7 @@ const suite<"mdgrid"> _ = [] {
         }
     };
 
-    "mdgrid for each over submdspan"_test = [] {
+    "mdgrid for each over submdspan 1"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
         using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
@@ -238,6 +238,54 @@ const suite<"mdgrid"> _ = [] {
                 expect(staging_mds_B[idx][0] == 42);
                 expect(staging_mds_B[idx][1] == 43);
                 expect(staging_mds_B[idx][2] == 44);
+            }
+        }
+    };
+
+    "mdgrid for each over submdspan 3"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
+
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto grid = mdg(7, 9, 2);
+
+        auto staging_mds_A = grid.staging_mds();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_A)) {
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_A[idx])) {
+                staging_mds_A[idx][Midx] = 7;
+            }
+        }
+
+        auto w1 = tyvi::mdgrid_work{};
+        auto w2 = w1.sync_from_staging(grid);
+
+        const auto gmds = grid.mds();
+        const auto sub_gmds =
+            std::submdspan(gmds,
+                           std::tuple{ 3, 6 },
+                           std::strided_slice{ .offset = 2, .extent = 7, .stride = 2 },
+                           std::full_extent);
+
+        auto w3 = w2.for_each_index(sub_gmds, [sub_gmds](const auto& idx, const auto& tidx) {
+            sub_gmds[idx][tidx] = 42;
+        });
+        auto w4 = w3.sync_to_staging(grid);
+
+        w4.wait();
+
+        auto staging_mds_B = grid.staging_mds();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
+            const auto ok0 = idx[0] == 3 or idx[0] == 4 or idx[0] == 5;
+            const auto ok1 = idx[1] == 2 or idx[1] == 4 or idx[1] == 6 or idx[1] == 8;
+
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_B[idx])) {
+                if (ok0 and ok1) {
+                    expect(staging_mds_B[idx][Midx] == 42)
+                        << "expected " << 42 << ", got " << staging_mds_B[idx][Midx];
+                } else {
+                    expect(staging_mds_B[idx][Midx] == 7)
+                        << "expected " << 2 << ", got " << staging_mds_B[idx][Midx];
+                }
             }
         }
     };

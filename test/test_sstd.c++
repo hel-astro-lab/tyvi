@@ -1,11 +1,16 @@
 #include <boost/ut.hpp> // import boost.ut;
 
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
 #include <iterator>
+#include <print>
 #include <ranges>
+#include <sstream>
+#include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "tyvi/mdspan.h"
@@ -399,6 +404,164 @@ const suite<"sstd"> _ = [] {
         expect(*b == correct_indices[7]);
 
         expect(b[n10] == correct_indices[17]);
+
+        expect(b < e);
+        expect(b <= e);
+        expect(not(b > e));
+        expect(not(b >= e));
+        expect(b == b); // NOLINT
+        expect(e == e); // NOLINT
+        expect(b != e);
+
+        expect(b + difference_type{ 17 } == e);
+    };
+
+    "index_space(submdspan of 2D layout_right) gives correct indices"_test = [] {
+        using MDS = std::mdspan<const int, std::dextents<std::size_t, 2>, std::layout_right>;
+
+        constexpr const auto Nx{ 3uz }, Ny{ 3uz };
+        const auto buff     = std::array<int, Nx * Ny>{};
+        const auto mds_full = MDS(buff.data(), Nx, Ny);
+        const auto mds      = std::submdspan(mds_full, std::tuple{ 0, 2 }, std::tuple{ 0, 2 });
+
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        using value_type = std::ranges::range_value_t<decltype(indices)>;
+        const auto correct_indices =
+            std::vector<value_type>{ { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } };
+
+        const auto ok = std::ranges::equal(indices, correct_indices);
+        if (not ok) {
+            std::println("got ({}) | expected ({})", indices.size(), correct_indices.size());
+            for (const auto [x, c] : std::views::zip(indices, correct_indices)) {
+                std::println("{}, {} | {}, {}", x[0], x[1], c[0], c[1]);
+            }
+        }
+
+        expect(ok);
+    };
+
+    "index_space(submdspan of custom strided layout) gives correct indices"_test = [] {
+        using E   = std::dextents<std::size_t, 3>;
+        using MDS = std::mdspan<const int, E, std::layout_stride>;
+
+        constexpr const auto Nx{ 3uz }, Ny{ 4uz }, Nz{ 2uz };
+        const auto extents = E{ Nx, Ny, Nz };
+        const auto mapping =
+            std::layout_stride::template mapping<E>(extents, std::array{ 8uz, 1uz, 4uz });
+
+        const auto buff = std::array<int, Nx * Ny * Nz>{};
+        const auto mds  = MDS(buff.data(), mapping, {});
+        const auto smds =
+            std::submdspan(mds,
+                           std::tuple{ 0, 2 },
+                           std::strided_slice{ .offset = 1, .extent = 3, .stride = 2 },
+                           0);
+
+        const auto indices = tyvi::sstd::index_space(smds);
+
+        using value_type = std::ranges::range_value_t<decltype(indices)>;
+        const auto correct_indices =
+            std::vector<value_type>{ { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } };
+
+        const auto ok = std::ranges::equal(indices, correct_indices);
+        if (not ok) {
+            std::println("got ({}) | expected ({})", indices.size(), correct_indices.size());
+            for (const auto [x, c] : std::views::zip(indices, correct_indices)) {
+                std::println("{}, {} | {}, {}", x[0], x[1], c[0], c[1]);
+            }
+        }
+
+        expect(ok);
+    };
+
+    "submdspan of layout_right index_space random access interator semantics"_test = [] {
+        using MDS = std::mdspan<const int, std::dextents<std::size_t, 3>, std::layout_right>;
+
+        // constexpr const auto Nx{ 3uz }, Ny{ 4uz }, Nz{ 2uz };
+        constexpr const auto Nx{ 7uz }, Ny{ 9uz }, Nz{ 2uz };
+        const auto buff     = std::array<int, Nx * Ny * Nz>{};
+        const auto mds_full = MDS(buff.data(), Nx, Ny, Nz);
+        const auto mds      = std::submdspan(mds_full,
+                                        std::tuple{ 3, 6 },
+                                        std::strided_slice{ .offset = 2, .extent = 8, .stride = 2 },
+                                        std::full_extent);
+
+        const auto indices = tyvi::sstd::index_space(mds);
+
+        auto b = indices.begin();
+        auto e = indices.end();
+
+        using iterator_type = std::remove_cvref_t<decltype(b)>;
+        using sentinel_type = std::remove_cvref_t<decltype(e)>;
+        using range_type    = std::remove_cvref_t<decltype(indices)>;
+
+        expect(std::random_access_iterator<iterator_type>);
+        expect(std::sentinel_for<sentinel_type, iterator_type>);
+        expect(std::ranges::random_access_range<range_type>);
+
+        using value_type = std::iter_value_t<iterator_type>;
+
+        const auto correct_indices = std::vector<value_type>{
+            { 0, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 }, { 0, 1, 1 }, { 0, 2, 0 }, { 0, 2, 1 },
+            { 0, 3, 0 }, { 0, 3, 1 }, { 1, 0, 0 }, { 1, 0, 1 }, { 1, 1, 0 }, { 1, 1, 1 },
+            { 1, 2, 0 }, { 1, 2, 1 }, { 1, 3, 0 }, { 1, 3, 1 }, { 2, 0, 0 }, { 2, 0, 1 },
+            { 2, 1, 0 }, { 2, 1, 1 }, { 2, 2, 0 }, { 2, 2, 1 }, { 2, 3, 0 }, { 2, 3, 1 }
+        };
+
+        auto expect_correct_indices =
+            [&]<std::size_t D>(const std::array<std::size_t, D> x,
+                               const std::array<std::size_t, D> expected) {
+                auto make_msg = [&] {
+                    auto msg = std::stringstream{};
+                    msg << "expected: ( ";
+                    for (const auto i : expected) { msg << i << " "; }
+                    msg << "), got: (";
+                    for (const auto i : x) { msg << i << " "; }
+                    msg << ")";
+                    return msg.str();
+                };
+
+                expect(x == expected) << make_msg();
+            };
+
+        expect_correct_indices(*b++, correct_indices[0]);
+
+        --b;
+
+        expect_correct_indices(*++b, correct_indices[1]);
+
+        using difference_type = std::iter_difference_t<iterator_type>;
+
+        const auto n10 = difference_type{ 10 };
+        const auto n4  = difference_type{ 4 };
+
+        b = b + n10;
+
+        expect_correct_indices(*b, correct_indices[11]);
+
+        b += n4;
+
+        expect_correct_indices(*b, correct_indices[15]);
+
+        b = n4 + b;
+
+        expect_correct_indices(*b, correct_indices[19]);
+
+        const auto m = e - b;
+
+        expect(m == difference_type{ 5 });
+
+        b -= m;
+
+        expect_correct_indices(*b--, correct_indices[14]);
+        expect_correct_indices(*--b, correct_indices[12]);
+
+        b = b - m;
+
+        expect_correct_indices(*b, correct_indices[7]);
+
+        expect_correct_indices(b[n10], correct_indices[17]);
 
         expect(b < e);
         expect(b <= e);
