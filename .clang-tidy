@@ -24,11 +24,13 @@ Checks: "*,
         -readability-isolate-declaration,
         -modernize-use-trailing-return-type,
         -misc-no-recursion,
-        -misc-include-cleaner, # Too many false positives with Kokkos mdspan.
+        -misc-include-cleaner,
         -hicpp-named-parameter,
         -hicpp-uppercase-literal-suffix,
         -cppcoreguidelines-avoid-magic-numbers
 "
+# misc-include-cleaner had too many false positives with Kokkos mdspan.
+
 HeaderFilterRegex: '.*'
 FormatStyle:     file
 
