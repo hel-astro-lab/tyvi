@@ -58,6 +58,8 @@ function(tyvi_setup_dependencies)
             stable
             GITHUB_REPOSITORY
             "kokkos/mdspan"
+            OPTIONS
+            "MDSPAN_GENERATE_STD_NAMESPACE_TARGETS ON"
         )
     endif()
 
