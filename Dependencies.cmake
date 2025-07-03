@@ -1,12 +1,11 @@
 include(cmake/CPM.cmake)
 
 # Done as a function so that updates to variables like
-# CMAKE_CXX_FLAGS don't propagate out to other
-# targets
+# CMAKE_CXX_FLAGS don't propagate out to other targets.
 function(tyvi_setup_dependencies)
 
     # For each dependency, see if it's
-    # already been provided to us by a parent project
+    # already been provided to us by a parent project.
 
     if(NOT TARGET Boost::ut
        AND PROJECT_IS_TOP_LEVEL
@@ -16,7 +15,8 @@ function(tyvi_setup_dependencies)
     endif()
 
     if(NOT TARGET roc::rocprim)
-        # On ROCm rocThrust requires rocPRIM
+        # rocThrust requires rocPRIM
+        # "/opt/rocm" - default install prefix
         find_package(
             rocprim
             REQUIRED
@@ -38,7 +38,6 @@ function(tyvi_setup_dependencies)
     endif()
 
     if(NOT TARGET std::mdspan)
-        # "/opt/rocm" - default install prefix
         cpmaddpackage(
             NAME
             mdspan
