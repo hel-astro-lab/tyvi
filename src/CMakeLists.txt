@@ -31,6 +31,4 @@ tyvi_target_link_system_libraries(
     PUBLIC
     std::mdspan
     roc::rocthrust
-    PRIVATE
-    spdlog::spdlog
 )

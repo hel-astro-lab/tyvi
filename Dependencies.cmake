@@ -8,21 +8,6 @@ function(tyvi_setup_dependencies)
     # For each dependency, see if it's
     # already been provided to us by a parent project
 
-    if(NOT TARGET spdlog::spdlog)
-        cpmaddpackage(
-            NAME
-            spdlog
-            VERSION
-            1.15.2
-            GITHUB_REPOSITORY
-            "gabime/spdlog"
-            # bundeled fmt does not compile on hip
-            # due to: https://github.com/llvm/llvm-project/issues/141592#issue-3093810283
-            OPTIONS
-            "SPDLOG_USE_STD_FORMAT ON"
-        )
-    endif()
-
     if(NOT TARGET Boost::ut)
         cpmaddpackage("gh:boost-ext/ut#v2.3.1")
     endif()

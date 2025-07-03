@@ -1,7 +1,6 @@
+#include <iostream>
 #include <ranges>
 #include <tuple>
-
-#include "spdlog/spdlog.h"
 
 #include "thrust/equal.h"
 #include "thrust/transform.h"
@@ -17,10 +16,7 @@
 namespace tyvi {
 int
 hello_world() {
-    spdlog::info("Hello World!");
-    spdlog::error("Hello World error!");
-    spdlog::warn("Hello World warn!");
-    spdlog::critical("Hello World critical!");
+    std::cout << "hello world\n";
     return 1;
 }
 
