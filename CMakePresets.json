@@ -57,7 +57,7 @@
             "description": "Target Unix-like OS with hipcc, release build type.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "hiphcc",
+                "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         }
