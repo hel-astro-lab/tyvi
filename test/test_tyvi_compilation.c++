@@ -4,19 +4,14 @@
 
 #include <experimental/mdspan>
 
-#include "tyvi/tyvi_hello_world.h"
+#include "tyvi/thrust_test.h"
 
 namespace {
 using namespace boost::ut;
 
 [[maybe_unused]]
 const suite<"unit testing"> _ = [] {
-    "tyvi hello world"_test = [] {
-        // Expects hello world to print true.
-        expect(tyvi::hello_world());
-    };
-
-    "rocthrust is usable"_test = [] { expect(tyvi::hello_thrust()); };
+    "thrust is usable"_test = [] { expect(tyvi::thrust_test()); };
 
     "mdspan is usable"_test = [] {
         const auto buff = std::array{ 1, 2, 3, 4 };

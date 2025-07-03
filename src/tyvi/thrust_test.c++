@@ -1,27 +1,20 @@
-#include <iostream>
 #include <ranges>
 #include <tuple>
 
-#include "thrust/equal.h"
-#include "thrust/transform.h"
-
 #include "thrust/device_vector.h"
+#include "thrust/equal.h"
 #include "thrust/execution_policy.h"
 #include "thrust/host_vector.h"
 #include "thrust/random.h"
 #include "thrust/random/uniform_int_distribution.h"
+#include "thrust/transform.h"
 
-#include "tyvi/tyvi_hello_world.h"
+#include "tyvi/thrust_test.h"
 
 namespace tyvi {
-int
-hello_world() {
-    std::cout << "hello world\n";
-    return 1;
-}
 
 bool
-hello_thrust() {
+thrust_test() {
     const auto N = 64uz;
 
     using I = int;
@@ -51,4 +44,5 @@ hello_thrust() {
 
     return thrust::equal(thrust::device, vec2.begin(), vec2.end(), vec2_correct.begin());
 }
+
 } // namespace tyvi

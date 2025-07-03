@@ -5,13 +5,13 @@ target_include_directories(tyvi PUBLIC ".")
 
 target_sources(
     tyvi
-    PRIVATE tyvi/tyvi_hello_world.c++
+    PRIVATE tyvi/thrust_test.c++
     PUBLIC FILE_SET
            all_headers
            TYPE
            HEADERS
            FILES
-           tyvi/tyvi_hello_world.h
+           tyvi/thrust_test.h
            tyvi/mdspan.h
            tyvi/sstd.h
            tyvi/mdgrid.h

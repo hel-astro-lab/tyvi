@@ -1,9 +1,9 @@
 #pragma once
 
 namespace tyvi {
-int
-hello_world();
 
+/// Sanity checks if thrust is usable.
 bool
-hello_thrust();
+thrust_test();
+
 } // namespace tyvi
