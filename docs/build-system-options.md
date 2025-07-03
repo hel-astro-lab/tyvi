@@ -29,6 +29,15 @@ tyvi_ENABLE_BAR:BOOL=ON/OFF
 Lastly postfix `*` for `ON` denotes that it is on if the build system can detect
 if the option is supported by the used tooling and all required tools are found.
 
+## Testing
+
+```
+BUILD_TESTING:BOOL=ON/OFF
+```
+
+Tyvi respects standard ctest option `BUILD_TESTING`
+by conditionally fetching testing library boost-ext/ut and enabling tests based on it.
+
 ## Sanitizers
 
 ```

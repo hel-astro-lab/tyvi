@@ -27,13 +27,17 @@ include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
 tyvi_declare_options()
-
 tyvi_setup_global_options()
-include(Dependencies.cmake)
-
-tyvi_setup_dependencies()
-
 tyvi_setup_local_options()
+
+if(PROJECT_IS_TOP_LEVEL)
+    # Declares ENABLE_TESTING option (default: ON).
+    # Needs to happen before dependencies, because we fetch boost-ext/ut based on it.
+    include(CTest)
+endif()
+
+include(Dependencies.cmake)
+tyvi_setup_dependencies()
 
 # Potentially useful, see: https://gcc.gnu.org/wiki/Visibility
 # set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -46,17 +50,11 @@ add_library(tyvi::tyvi_warnings ALIAS tyvi_warnings)
 # Adding the src:
 add_subdirectory(src)
 
-# Don't even look at tests if we're not top level
-if(NOT PROJECT_IS_TOP_LEVEL)
-    return()
-endif()
-
-# Adding the tests:
-include(CTest)
-
-if(BUILD_TESTING)
-    message(AUTHOR_WARNING "Building Tests.")
+if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
+    message(STATUS "Adding tyvi tests.")
     add_subdirectory(test)
+else()
+    message(STATUS "Skipping tyvi tests.")
 endif()
 
 if(CMAKE_SKIP_INSTALL_RULES)
