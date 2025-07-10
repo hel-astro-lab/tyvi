@@ -281,6 +281,32 @@ const suite<"mdgrid_buffer"> _ = [] {
         auto mdg_buff_A = testing_mdgrid_buffer(4, 5, 6);
         expect(throws([&] { mdg_buff_A.set_underlying_buffer(vec{ 1, 2, 3, 4 }); }));
     };
+
+    "thrust::{host,device}_vector backged mdgrid_buffer can give spans"_test = [] {
+        using host_mdg_buff = tyvi::mdgrid_buffer<thrust::host_vector<int>,
+                                                  element_extents,
+                                                  element_layout_policy,
+                                                  grid_extents,
+                                                  grid_layout_policy>;
+
+        using device_mdg_buff = tyvi::mdgrid_buffer<thrust::device_vector<int>,
+                                                    element_extents,
+                                                    element_layout_policy,
+                                                    grid_extents,
+                                                    grid_layout_policy>;
+
+        auto mdgb_host          = host_mdg_buff(2, 3, 4);
+        auto mdgb_device        = device_mdg_buff(2, 3, 4);
+        const auto cmdgb_host   = host_mdg_buff(2, 3, 4);
+        const auto cmdgb_device = device_mdg_buff(2, 3, 4);
+
+        std::ignore = mdgb_host.span();
+        std::ignore = mdgb_device.span();
+        std::ignore = cmdgb_host.span();
+        std::ignore = cmdgb_device.span();
+
+        expect(true);
+    };
 };
 
 } // namespace

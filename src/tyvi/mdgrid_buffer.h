@@ -5,9 +5,12 @@
 #include <cstddef>
 #include <format>
 #include <iterator>
+#include <memory>
 #include <ranges>
 #include <span>
 #include <utility>
+
+#include "thrust/memory.h"
 
 #include "tyvi/mdspan.h"
 
@@ -198,7 +201,13 @@ class [[nodiscard]] mdgrid_buffer {
         using span_value_type =
             std::conditional_t<has_const, const element_element_type, element_element_type>;
         using S = std::span<span_value_type>;
-        return S(std::ranges::data(self.buff_), std::ranges::size(self.buff_));
+
+        // Somewhat a hack, but required to support thrust vectors.
+        if constexpr (requires(V v) { std::ranges::data(v); }) {
+            return S(std::ranges::data(self.buff_), std::ranges::size(self.buff_));
+        } else {
+            return S(thrust::raw_pointer_cast(self.buff_.data()), std::ranges::size(self.buff_));
+        }
     }
 };
 
