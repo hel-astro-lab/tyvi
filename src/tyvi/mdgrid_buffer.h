@@ -1,8 +1,12 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <cstddef>
+#include <format>
 #include <iterator>
+#include <ranges>
+#include <span>
 #include <utility>
 
 #include "tyvi/mdspan.h"
@@ -116,6 +120,34 @@ class [[nodiscard]] mdgrid_buffer {
     explicit constexpr mdgrid_buffer(const GridExtents& extents)
         : mdgrid_buffer(grid_mapping_type(extents)) {}
 
+    /// Get copy of the underlying buffer.
+    [[nodiscard]]
+    constexpr V underlying_buffer() const {
+        return buff_;
+    }
+
+    /// Set data in the underlying buffer.
+    ///
+    /// Invalidates any pointers to the underlying buffer.
+    /// This includes pointers in [md]spans.
+    ///
+    /// Throws std::invalid_argument if given buffer is not the same length
+    /// as the current underlying buffer.
+    template<std::ranges::sized_range T>
+        requires std::assignable_from<V&, T>
+    constexpr void set_underlying_buffer(T&& other) {
+        const auto my_size    = std::ranges::size(buff_);
+        const auto other_size = std::ranges::size(other);
+
+        if (my_size != other_size) {
+            throw std::invalid_argument{
+                std::format("Expected {} sized buffer, got: {}", my_size, other_size)
+            };
+        }
+
+        buff_ = std::forward<T>(other);
+    }
+
     template<typename Self>
     [[nodiscard]]
     constexpr auto mds(this Self& self) {
@@ -155,6 +187,11 @@ class [[nodiscard]] mdgrid_buffer {
     [[nodiscard]]
     constexpr auto element_extents() const {
         return element_mapping_.extents();
+    }
+
+    [[nodiscard]]
+    constexpr std::span<const element_element_type> span() const {
+        return buff_;
     }
 };
 

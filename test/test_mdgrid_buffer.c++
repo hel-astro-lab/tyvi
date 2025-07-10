@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <iterator>
 #include <ranges>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -205,6 +206,69 @@ const suite<"mdgrid_buffer"> _ = [] {
         thrust::all_of(thrust::device, device_vec.begin(), device_vec.end(), [=](const auto x) {
             return x == 0 or x == 1;
         });
+    };
+
+    "mdgrid_buffer offers span to the underlying bytes"_test = [] {
+        auto mdg_buff      = testing_mdgrid_buffer(4, 5, 6);
+        const auto mdg_mds = mdg_buff.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mdg_mds)) {
+            for (const auto tidx : tyvi::sstd::index_space(mdg_mds[idx])) {
+                mdg_mds[idx][tidx] = 100;
+            }
+        }
+
+        const auto mdg_span = mdg_buff.span();
+
+        namespace rn = std::ranges;
+        expect(rn::all_of(mdg_span, [](const auto x) { return x == 100; }));
+    };
+
+    "mdgrid_buffer offers copy of underlying buffer"_test = [] {
+        auto mdg_buff = testing_mdgrid_buffer(4, 5, 6);
+
+        const auto buff_A = mdg_buff.underlying_buffer();
+
+        // Make sure it is copy:
+        expect(buff_A.data() != mdg_buff.span().data());
+
+        namespace rn = std::ranges;
+        expect(rn::equal(buff_A, mdg_buff.span()));
+
+        const auto mdg_mds = mdg_buff.mds();
+        for (const auto idx : tyvi::sstd::index_space(mdg_mds)) {
+            for (const auto tidx : tyvi::sstd::index_space(mdg_mds[idx])) {
+                mdg_mds[idx][tidx] = 100;
+            }
+        }
+
+        expect(not rn::equal(buff_A, mdg_buff.span()));
+        expect(rn::equal(mdg_buff.underlying_buffer(), mdg_buff.span()));
+    };
+
+    "underlying buffer in mdgrid_buffer<V, ...> can be set with V"_test = [] {
+        auto mdg_buff_A  = testing_mdgrid_buffer(4, 5, 6);
+        const auto mds_A = mdg_buff_A.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mds_A)) {
+            for (const auto tidx : tyvi::sstd::index_space(mds_A[idx])) {
+                mds_A[idx][tidx] = static_cast<int>(idx[0] * tidx[0]) + 3;
+            }
+        }
+
+        auto mdg_buff_B = testing_mdgrid_buffer(4, 5, 6);
+
+        namespace rn = std::ranges;
+        expect(not rn::equal(mdg_buff_A.span(), mdg_buff_B.span()));
+
+        mdg_buff_B.set_underlying_buffer(mdg_buff_A.underlying_buffer());
+
+        expect(rn::equal(mdg_buff_A.span(), mdg_buff_B.span()));
+    };
+
+    "setting underlying buffer mdgrid_buffer<V, ...> with wrong sized buffer throws"_test = [] {
+        auto mdg_buff_A = testing_mdgrid_buffer(4, 5, 6);
+        expect(throws([&] { mdg_buff_A.set_underlying_buffer(vec{ 1, 2, 3, 4 }); }));
     };
 };
 
