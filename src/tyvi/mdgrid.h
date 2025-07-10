@@ -85,6 +85,55 @@ mdgrid {
     constexpr grid_extents_type extents() const {
         return device_buff_.grid_extents();
     }
+
+    /// Get span to the underlying data buffer.
+    [[nodiscard]]
+    constexpr auto span() const {
+        return device_buff_.span();
+    }
+
+    /// Get span to the underlying data buffer in staging buffer.
+    [[nodiscard]]
+    constexpr auto staging_span() const {
+        return staging_buff_.span();
+    }
+
+    /// Get copy of the underlying data buffer from staging buffer.
+    [[nodiscard]]
+    constexpr staging_vec underlying_staging_buffer() const {
+        return staging_buff_.underlying_buffer();
+    }
+
+    /// Get copy of the underlying data buffer.
+    [[nodiscard]]
+    constexpr device_vec underlying_buffer() const {
+        return device_buff_.underlying_buffer();
+    }
+
+    /// Set the underlying data buffer in staging buffer.
+    ///
+    /// Invalidates all pointers. This includes pointers in [md]span.
+    ///
+    /// Constraints are checked in mdgrid_buffer method.
+    ///
+    /// Throws if the given buffer is not the same legth as
+    /// the one it replaces.
+    constexpr void set_underlying_staging_buffer(auto&& buff) {
+        staging_buff_.set_underlying_buffer(std::forward<decltype(buff)>(buff));
+    }
+
+    /// Set the underlying data buffer.
+    ///
+    /// Invalidates all pointers to the staging buffer.
+    /// This includes pointers in [md]span.
+    ///
+    /// Constraints are checked in mdgrid_buffer method.
+    ///
+    /// Throws if the given buffer is not the same legth as
+    /// the one it replaces.
+    constexpr void set_underlying_buffer(auto&& buff) {
+        device_buff_.set_underlying_buffer(std::forward<decltype(buff)>(buff));
+    }
 };
 
 /// Move only DAG representing dependencies between async work.

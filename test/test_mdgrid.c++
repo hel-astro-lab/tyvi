@@ -289,6 +289,33 @@ const suite<"mdgrid"> _ = [] {
             }
         }
     };
+
+    "mdgrid getting and setting underlying buffer"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
+
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto gridA = mdg(7, 9, 2);
+        auto gridB = mdg(7, 9, 2);
+
+        auto staging_mds_A = gridA.staging_mds();
+        for (const auto idx : tyvi::sstd::index_space(staging_mds_A)) {
+            for (const auto Midx : tyvi::sstd::index_space(staging_mds_A[idx])) {
+                staging_mds_A[idx][Midx] = 7;
+            }
+        }
+
+        namespace rn = std::ranges;
+        expect(not rn::equal(gridA.staging_span(), gridB.staging_span()));
+        gridB.set_underlying_staging_buffer(gridA.underlying_staging_buffer());
+        expect(rn::equal(gridA.staging_span(), gridB.staging_span()));
+
+        tyvi::mdgrid_work{}.sync_from_staging(gridA).wait();
+
+        expect(gridA.underlying_buffer() != gridB.underlying_buffer());
+        gridB.set_underlying_buffer(gridA.underlying_buffer());
+        expect(gridA.underlying_buffer() == gridB.underlying_buffer());
+    };
 };
 
 } // namespace

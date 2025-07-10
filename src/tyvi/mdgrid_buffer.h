@@ -191,7 +191,8 @@ class [[nodiscard]] mdgrid_buffer {
 
     [[nodiscard]]
     constexpr std::span<const element_element_type> span() const {
-        return buff_;
+        using S = std::span<const element_element_type>;
+        return S(std::ranges::data(buff_), std::ranges::size(buff_));
     }
 };
 
