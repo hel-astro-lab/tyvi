@@ -88,14 +88,14 @@ mdgrid {
 
     /// Get span to the underlying data buffer.
     [[nodiscard]]
-    constexpr auto span() const {
-        return device_buff_.span();
+    constexpr auto span(this auto& self) {
+        return self.device_buff_.span();
     }
 
     /// Get span to the underlying data buffer in staging buffer.
     [[nodiscard]]
-    constexpr auto staging_span() const {
-        return staging_buff_.span();
+    constexpr auto staging_span(this auto& self) {
+        return self.staging_buff_.span();
     }
 
     /// Get copy of the underlying data buffer from staging buffer.

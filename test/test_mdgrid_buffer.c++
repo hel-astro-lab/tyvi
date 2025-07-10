@@ -224,6 +224,17 @@ const suite<"mdgrid_buffer"> _ = [] {
         expect(rn::all_of(mdg_span, [](const auto x) { return x == 100; }));
     };
 
+    "span from non-const mdgrid_buffer is non-const"_test = [] {
+        auto mdg_buff = testing_mdgrid_buffer(4, 5, 6);
+        const auto s  = mdg_buff.span();
+
+        const auto& mdg_buff_constref = mdg_buff;
+        const auto ss                 = mdg_buff_constref.span();
+
+        expect(std::same_as<decltype(s)::element_type, element_type>);
+        expect(std::same_as<decltype(ss)::element_type, const element_type>);
+    };
+
     "mdgrid_buffer offers copy of underlying buffer"_test = [] {
         auto mdg_buff = testing_mdgrid_buffer(4, 5, 6);
 

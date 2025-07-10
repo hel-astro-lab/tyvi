@@ -189,10 +189,16 @@ class [[nodiscard]] mdgrid_buffer {
         return element_mapping_.extents();
     }
 
+    /// Span of the underlying data buffer.
+    template<typename Self>
     [[nodiscard]]
-    constexpr std::span<const element_element_type> span() const {
-        using S = std::span<const element_element_type>;
-        return S(std::ranges::data(buff_), std::ranges::size(buff_));
+    constexpr auto span(this Self& self) {
+        static constexpr bool has_const = std::is_const_v<std::remove_reference_t<Self>>;
+
+        using span_value_type =
+            std::conditional_t<has_const, const element_element_type, element_element_type>;
+        using S = std::span<span_value_type>;
+        return S(std::ranges::data(self.buff_), std::ranges::size(self.buff_));
     }
 };
 
