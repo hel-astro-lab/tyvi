@@ -1,5 +1,3 @@
-# These are currently unused, but they are potentially useful later.
-
 # Include a system directory (which suppresses its warnings).
 function(tyvi_target_include_system_directories target)
     set(multiValueArgs INTERFACE PUBLIC PRIVATE)
