@@ -19,3 +19,6 @@ repos:
   hooks:
     - id: cmake-format
     - id: cmake-lint
+
+exclude:
+  cmake/CPM.cmake
