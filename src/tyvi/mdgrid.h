@@ -72,13 +72,23 @@ mdgrid {
           staging_buff_(grid_extents) {}
 
     [[nodiscard]]
-    constexpr auto mds(this auto& self) {
-        return self.device_buff_.mds();
+    constexpr auto mds() & {
+        return device_buff_.mds();
     }
 
     [[nodiscard]]
-    constexpr auto staging_mds(this auto& self) {
-        return self.staging_buff_.mds();
+    constexpr auto mds() const& {
+        return device_buff_.mds();
+    }
+
+    [[nodiscard]]
+    constexpr auto staging_mds() & {
+        return staging_buff_.mds();
+    }
+
+    [[nodiscard]]
+    constexpr auto staging_mds() const& {
+        return staging_buff_.mds();
     }
 
     [[nodiscard]]
@@ -88,14 +98,26 @@ mdgrid {
 
     /// Get span to the underlying data buffer.
     [[nodiscard]]
-    constexpr auto span(this auto& self) {
-        return self.device_buff_.span();
+    constexpr auto span() & {
+        return device_buff_.span();
+    }
+
+    /// Get span to the underlying data buffer.
+    [[nodiscard]]
+    constexpr auto span() const& {
+        return device_buff_.span();
     }
 
     /// Get span to the underlying data buffer in staging buffer.
     [[nodiscard]]
-    constexpr auto staging_span(this auto& self) {
-        return self.staging_buff_.span();
+    constexpr auto staging_span() & {
+        return staging_buff_.span();
+    }
+
+    /// Get span to the underlying data buffer in staging buffer.
+    [[nodiscard]]
+    constexpr auto staging_span() const& {
+        return staging_buff_.span();
     }
 
     /// Get copy of the underlying data buffer from staging buffer.

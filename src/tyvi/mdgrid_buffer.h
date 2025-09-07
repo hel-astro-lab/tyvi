@@ -151,35 +151,54 @@ class [[nodiscard]] mdgrid_buffer {
         buff_ = std::forward<T>(other);
     }
 
-    template<typename Self>
     [[nodiscard]]
-    constexpr auto mds(this Self& self) {
-        static constexpr bool has_const = std::is_const_v<std::remove_reference_t<Self>>;
-
-        using grid_acc = grid_accessor_policy<has_const>;
+    constexpr auto mds() {
+        static constexpr bool has_const = false;
+        using grid_acc                  = grid_accessor_policy<has_const>;
         using grid_mdspan =
             std::mdspan<typename grid_acc::element_type, GridExtents, GridLP, grid_acc>;
 
         return grid_mdspan(
-            typename grid_acc::data_handle_type{ .buff_ptr{ self.buff_.data() } },
-            self.grid_mapping_,
-            grid_acc{ .grid_required_span_size = self.grid_mapping_.required_span_size() });
+            typename grid_acc::data_handle_type{ .buff_ptr{ buff_.data() } },
+            grid_mapping_,
+            grid_acc{ .grid_required_span_size = grid_mapping_.required_span_size() });
+    }
+
+    [[nodiscard]]
+    constexpr auto mds() const {
+        static constexpr bool has_const = true;
+        using grid_acc                  = grid_accessor_policy<has_const>;
+        using grid_mdspan =
+            std::mdspan<typename grid_acc::element_type, GridExtents, GridLP, grid_acc>;
+
+        return grid_mdspan(
+            typename grid_acc::data_handle_type{ .buff_ptr{ buff_.data() } },
+            grid_mapping_,
+            grid_acc{ .grid_required_span_size = grid_mapping_.required_span_size() });
     }
 
     /// Iterate over all grid points and components at each grid point.
     ///
     /// Iteration order is not specified but such that sequential values are
     /// stored contiquously in memory.
-    template<typename Self>
     [[nodiscard]]
-    constexpr auto begin(this Self&& self) {
-        return std::ranges::begin(std::forward<Self>(self).buff_);
+    constexpr auto begin() {
+        return std::ranges::begin(buff_);
     }
 
-    template<typename Self>
     [[nodiscard]]
-    constexpr auto end(this Self&& self) {
-        return std::ranges::end(std::forward<Self>(self).buff_);
+    constexpr auto begin() const {
+        return std::ranges::begin(buff_);
+    }
+
+    [[nodiscard]]
+    constexpr auto end() {
+        return std::ranges::end(buff_);
+    }
+
+    [[nodiscard]]
+    constexpr auto end() const {
+        return std::ranges::end(buff_);
     }
 
     [[nodiscard]]
@@ -193,10 +212,9 @@ class [[nodiscard]] mdgrid_buffer {
     }
 
     /// Span of the underlying data buffer.
-    template<typename Self>
     [[nodiscard]]
-    constexpr auto span(this Self& self) {
-        static constexpr bool has_const = std::is_const_v<std::remove_reference_t<Self>>;
+    constexpr auto span() {
+        static constexpr bool has_const = false;
 
         using span_value_type =
             std::conditional_t<has_const, const element_element_type, element_element_type>;
@@ -204,9 +222,26 @@ class [[nodiscard]] mdgrid_buffer {
 
         // Somewhat a hack, but required to support thrust vectors.
         if constexpr (requires(V v) { std::ranges::data(v); }) {
-            return S(std::ranges::data(self.buff_), std::ranges::size(self.buff_));
+            return S(std::ranges::data(buff_), std::ranges::size(buff_));
         } else {
-            return S(thrust::raw_pointer_cast(self.buff_.data()), std::ranges::size(self.buff_));
+            return S(thrust::raw_pointer_cast(buff_.data()), std::ranges::size(buff_));
+        }
+    }
+
+    /// Span of the underlying data buffer.
+    [[nodiscard]]
+    constexpr auto span() const {
+        static constexpr bool has_const = true;
+
+        using span_value_type =
+            std::conditional_t<has_const, const element_element_type, element_element_type>;
+        using S = std::span<span_value_type>;
+
+        // Somewhat a hack, but required to support thrust vectors.
+        if constexpr (requires(V v) { std::ranges::data(v); }) {
+            return S(std::ranges::data(buff_), std::ranges::size(buff_));
+        } else {
+            return S(thrust::raw_pointer_cast(buff_.data()), std::ranges::size(buff_));
         }
     }
 };
