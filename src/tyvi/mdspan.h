@@ -4,6 +4,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <functional>
 #include <numeric>
 #include <ranges>
 #include <tuple>
