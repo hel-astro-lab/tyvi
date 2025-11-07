@@ -316,6 +316,22 @@ const suite<"mdgrid"> _ = [] {
         gridB.set_underlying_buffer(gridA.underlying_buffer());
         expect(gridA.underlying_buffer() == gridB.underlying_buffer());
     };
+
+    "mdgrid invalidating_resize"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
+
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using E   = mdg::grid_extents_type;
+
+        auto grid = mdg(7, 9, 2);
+        grid.invalidating_resize(1, 2, 3);
+        expect(grid.extents() == E{ 1, 2, 3 });
+
+        const auto e = E{ 4, 2, 1 };
+        grid.invalidating_resize(e);
+        expect(grid.mds().extents() == e);
+        expect(grid.staging_mds().extents() == e);
+    };
 };
 
 } // namespace

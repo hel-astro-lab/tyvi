@@ -156,6 +156,17 @@ mdgrid {
     constexpr void set_underlying_buffer(auto&& buff) {
         device_buff_.set_underlying_buffer(std::forward<decltype(buff)>(buff));
     }
+
+    constexpr void invalidating_resize(const grid_extents_type& extents) {
+        staging_buff_.invalidating_resize(extents);
+        device_buff_.invalidating_resize(extents);
+    }
+
+    template<typename... Indices>
+        requires std::constructible_from<grid_extents_type, Indices...>
+    constexpr void invalidating_resize(Indices... indices) {
+        this->invalidating_resize(grid_extents_type{ std::forward<Indices>(indices)... });
+    }
 };
 
 /// Move only DAG representing dependencies between async work.
