@@ -123,6 +123,17 @@ class [[nodiscard]] mdgrid_buffer {
     explicit constexpr mdgrid_buffer(const GridExtents& extents)
         : mdgrid_buffer(grid_mapping_type(extents)) {}
 
+    constexpr void invalidating_resize(const GridExtents& extents) {
+        this->grid_mapping_ = grid_mapping_type(extents);
+        buff_.resize(element_mapping_.required_span_size() * grid_mapping_.required_span_size());
+    }
+
+    template<typename... Indices>
+        requires std::constructible_from<GridExtents, Indices...>
+    constexpr void invalidating_resize(Indices... indices) {
+        this->invalidating_resize(GridExtents{ std::forward<Indices>(indices)... });
+    }
+
     /// Get copy of the underlying buffer.
     [[nodiscard]]
     constexpr V underlying_buffer() const {

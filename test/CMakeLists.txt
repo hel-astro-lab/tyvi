@@ -11,6 +11,7 @@ set(TESTS_TO_RUN
     sstd
     mdgrid
     mdgrid_buffer
+    mdgrid_buffer_resize
 )
 
 foreach(test ${TESTS_TO_RUN})
