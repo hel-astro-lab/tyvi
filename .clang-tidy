@@ -28,6 +28,7 @@ Checks: "*,
         -hicpp-named-parameter,
         -hicpp-uppercase-literal-suffix,
         -cppcoreguidelines-avoid-magic-numbers,
+        -cppcoreguidelines-prefer-member-initializer,
         -portability-avoid-pragma-once,
 "
 # misc-include-cleaner had too many false positives with Kokkos mdspan.
