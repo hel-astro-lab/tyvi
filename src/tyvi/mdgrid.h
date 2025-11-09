@@ -365,7 +365,7 @@ when_all(T&... w) {
         (detail::hip_check_error(hipEventRecord(events[I], w.handle_.get())), ...);
 
         const auto wait_all_events = [&](hipStream_t s) {
-            (detail::hip_check_error(hipStreamWaitEvent(s, events[I], hipEventWaitDefault)), ...);
+            (detail::hip_check_error(hipStreamWaitEvent(s, events[I], 0)), ...);
         };
 
         (wait_all_events(w.handle_.get()), ...);
