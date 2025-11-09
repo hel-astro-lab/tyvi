@@ -5,6 +5,7 @@ target_include_directories(tyvi PUBLIC ".")
 
 target_sources(
     tyvi
+    PRIVATE tyvi/mdgrid_work.cpp
     PUBLIC FILE_SET
            all_headers
            TYPE

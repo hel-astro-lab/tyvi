@@ -25,8 +25,8 @@ const suite<"mdgrid"> _ = [] {
     };
 
     "mdgrid_work is constructible and waitable"_test = [] {
-        auto w1 = tyvi::mdgrid_work{};
-        w1.wait();
+        auto w = tyvi::mdgrid_work{};
+        w.wait();
 
         expect(true);
     };
@@ -45,14 +45,12 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w1 = tyvi::mdgrid_work{};
-        auto w2 = w1.sync_from_staging(grid);
-        auto w3 = w2.for_each(grid, [](const auto& M) {
+        auto w = tyvi::mdgrid_work{};
+        w.sync_from_staging(grid).for_each(grid, [](const auto& M) {
             for (const auto Midx : tyvi::sstd::index_space(M)) { M[Midx] = M[Midx] * 3 * 2; }
         });
-        auto w4 = w3.sync_to_staging(grid);
 
-        w4.wait();
+        w.sync_to_staging(grid).wait();
 
         auto staging_mds_B = grid.staging_mds();
         for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
@@ -91,8 +89,8 @@ const suite<"mdgrid"> _ = [] {
         auto scalar_grid = scalar_mdg(8, 4, 6);
         auto vec_grid    = vec_mdg(8, 4, 6);
 
-        auto w1a = tyvi::mdgrid_work{};
-        auto w1b = tyvi::mdgrid_work{};
+        auto w          = tyvi::mdgrid_work{};
+        auto [w1a, w1b] = w.split<2>();
 
         {
             const auto smds_scalar = scalar_grid.staging_mds();
@@ -100,7 +98,7 @@ const suite<"mdgrid"> _ = [] {
                 smds_scalar[idx][] = static_cast<int>(idx[0]);
             }
         }
-        auto w2a = w1a.sync_from_staging(scalar_grid);
+        w1a.sync_from_staging(scalar_grid);
 
         {
             const auto smds_vec = vec_grid.staging_mds();
@@ -110,9 +108,9 @@ const suite<"mdgrid"> _ = [] {
                 }
             }
         }
-        auto w2b = w1b.sync_from_staging(vec_grid);
+        w1b.sync_from_staging(vec_grid);
 
-        auto w3 = tyvi::when_all(w2a, w2b);
+        tyvi::when_all(w1a, w1b);
 
         auto kernelA = [TYVI_CMDS(vec_grid, scalar_grid)](const auto& idx) {
             for (const auto jdx : tyvi::sstd::index_space(vec_grid_mds[idx])) {
@@ -120,16 +118,13 @@ const suite<"mdgrid"> _ = [] {
             }
         };
 
-        auto w4 = w3.for_each_index(vec_grid, std::move(kernelA));
+        w1a.for_each_index(vec_grid, std::move(kernelA));
 
         auto kernelB = [TYVI_CMDS(vec_grid, scalar_grid)](const auto& idx, const auto& jdx) {
             vec_grid_mds[idx][jdx] = vec_grid_mds[idx][jdx] * scalar_grid_mds[idx][];
         };
 
-        auto w5 = w4.for_each_index(vec_grid, std::move(kernelB));
-        auto w6 = w5.sync_to_staging(vec_grid);
-
-        w6.wait();
+        w1a.for_each_index(vec_grid, std::move(kernelB)).sync_to_staging(vec_grid).wait();
 
         {
             const auto smds_scalar = scalar_grid.staging_mds();
@@ -160,8 +155,8 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w1 = tyvi::mdgrid_work{};
-        auto w2 = w1.sync_from_staging(grid);
+        auto w = tyvi::mdgrid_work{};
+        w.sync_from_staging(grid);
 
         const auto gmds = grid.mds();
         const auto sub_gmds =
@@ -170,12 +165,11 @@ const suite<"mdgrid"> _ = [] {
                            std::tuple{ 1, 3 },
                            std::strided_slice{ .offset = 0, .extent = 5, .stride = 2 });
 
-        auto w3 = w2.for_each_index(sub_gmds, [sub_gmds](const auto& idx, const auto& tidx) {
-            sub_gmds[idx][tidx] = 42;
-        });
-        auto w4 = w3.sync_to_staging(grid);
-
-        w4.wait();
+        w.for_each_index(
+             sub_gmds,
+             [sub_gmds](const auto& idx, const auto& tidx) { sub_gmds[idx][tidx] = 42; })
+            .sync_to_staging(grid)
+            .wait();
 
         auto staging_mds_B = grid.staging_mds();
         for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
@@ -208,22 +202,20 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w1 = tyvi::mdgrid_work{};
-        auto w2 = w1.sync_from_staging(grid);
+        auto w = tyvi::mdgrid_work{};
+        w.sync_from_staging(grid);
 
         const auto gmds     = grid.mds();
         const auto di       = std::tuple{ 2, 4 };
         const auto dj       = std::tuple{ 1, 3 };
         const auto sub_gmds = std::submdspan(gmds, di, dj, dj);
 
-        auto w3 = w2.for_each_index(sub_gmds, [sub_gmds](const auto& idx) {
+        w.for_each_index(sub_gmds, [sub_gmds](const auto& idx) {
             sub_gmds[idx][0] = 42;
             sub_gmds[idx][1] = 43;
             sub_gmds[idx][2] = 44;
         });
-        auto w4 = w3.sync_to_staging(grid);
-
-        w4.wait();
+        w.sync_to_staging(grid).wait();
 
         auto staging_mds_B = grid.staging_mds();
         for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {
@@ -256,8 +248,8 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w1 = tyvi::mdgrid_work{};
-        auto w2 = w1.sync_from_staging(grid);
+        auto w = tyvi::mdgrid_work{};
+        w.sync_from_staging(grid);
 
         const auto gmds = grid.mds();
         const auto sub_gmds =
@@ -266,12 +258,11 @@ const suite<"mdgrid"> _ = [] {
                            std::strided_slice{ .offset = 2, .extent = 7, .stride = 2 },
                            std::full_extent);
 
-        auto w3 = w2.for_each_index(sub_gmds, [sub_gmds](const auto& idx, const auto& tidx) {
+        w.for_each_index(sub_gmds, [sub_gmds](const auto& idx, const auto& tidx) {
             sub_gmds[idx][tidx] = 42;
         });
-        auto w4 = w3.sync_to_staging(grid);
-
-        w4.wait();
+        w.sync_to_staging(grid);
+        w.wait();
 
         auto staging_mds_B = grid.staging_mds();
         for (const auto idx : tyvi::sstd::index_space(staging_mds_B)) {

@@ -3,14 +3,19 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <deque>
+#include <future>
+#include <mutex>
 #include <tuple>
 #include <utility>
 
-#include "thrust/async/copy.h"
-#include "thrust/async/for_each.h"
+#include "thrust/copy.h"
 #include "thrust/device_vector.h"
-#include "thrust/future.h"
+#include "thrust/execution_policy.h"
+#include "thrust/for_each.h"
 #include "thrust/host_vector.h"
+
+#include "hip/hip_runtime.h"
 
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
@@ -26,7 +31,6 @@ struct mdgrid_element_descriptor {
     std::size_t rank, dim;
 };
 
-template<typename Future>
 class mdgrid_work;
 
 template<auto ElemDesc, typename GridExtents, typename GridLayoutPolicy = std::layout_right>
@@ -59,7 +63,6 @@ mdgrid {
     device_buffer device_buff_;
     staging_buffer staging_buff_;
 
-    template<typename Future>
     friend class mdgrid_work;
 
   public:
@@ -169,26 +172,82 @@ mdgrid {
     }
 };
 
-/// Move only DAG representing dependencies between async work.
-///
-/// Known limitation is that this can not represent one to many dependency.
-template<typename Future = decltype(thrust::when_all())>
-class [[nodiscard]] mdgrid_work {
-    std::remove_cvref_t<Future> future_;
+namespace detail {
 
-    explicit mdgrid_work(Future&& future) : future_(std::move(future)) {}
+/// Manages streams in order to promote stream reuse.
+///
+/// When user asks for new stream, give it via stream_hadle which destructor
+/// will notify the factory that it has been freed via std::future/promise mechanism.
+class stream_factory : sstd::immovable {
+  public:
+    using stream_t = hipStream_t;
+
+    using stream_future  = std::future<stream_t>;
+    using stream_promise = std::promise<stream_t>;
+
+    class stream_handle {
+        bool active_{ false };
+        stream_t stream_;
+        stream_promise promise_;
+
+        void release_stream();
+
+        friend class stream_factory;
+
+        [[nodiscard]]
+        explicit stream_handle(stream_t, stream_promise);
+
+      public:
+        stream_handle(stream_handle&&) noexcept;                  // move constructor
+        stream_handle& operator=(stream_handle&& other) noexcept; // move assignment
+
+        stream_handle(const stream_handle&)            = delete; // copy constructor
+        stream_handle& operator=(const stream_handle&) = delete; // copy assignment
+
+        ~stream_handle();
+
+        [[nodiscard]]
+        stream_t get() const;
+        thrust::hip_rocprim::execute_on_stream_nosync on_stream();
+
+        void wait();
+    };
+
+  private:
+    std::mutex mutex_;
+    std::deque<stream_future> managed_streams_;
+
+  public:
+    [[nodiscard]]
+    stream_handle get();
+};
+
+[[nodiscard]]
+inline stream_factory&
+global_stream_factory();
+
+constexpr void
+hip_check_error(const hipError_t e) {
+    if (e != hipSuccess) { throw std::runtime_error{ "hipError_t != hipSuccess" }; }
+}
+
+} // namespace detail
+
+/// Move-only DAG representing dependencies between async work.
+class mdgrid_work {
+    using stream_handle = detail::stream_factory::stream_handle;
+    stream_handle handle_;
 
     template<auto, typename, typename>
     friend class mdgrid;
 
-    template<typename>
-    friend class mdgrid_work;
-
-    template<typename... T>
-    friend auto when_all(mdgrid_work<T>&...);
+    template<std::same_as<mdgrid_work>... T>
+        requires(sizeof...(T) != 0)
+    friend void when_all(T&... w);
 
   public:
-    explicit mdgrid_work() : future_(thrust::when_all()) {}
+    [[nodiscard]]
+    explicit mdgrid_work();
 
     ~mdgrid_work() noexcept = default;
 
@@ -199,21 +258,18 @@ class [[nodiscard]] mdgrid_work {
     mdgrid_work& operator=(const mdgrid_work&) = delete; // copy assignment
 
     template<typename MDG, typename F>
-    auto for_each(MDG& mdg, F&& f) {
+    mdgrid_work& for_each(MDG& mdg, F&& f) {
         auto grid_mds  = mdg.device_buff_.mds();
         auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
         const auto indices = sstd::index_space(grid_mds);
 
-        auto new_future = thrust::async::for_each(thrust::device.after(future_),
-                                                  indices.begin(),
-                                                  indices.end(),
-                                                  std::move(wrapped_f));
+        thrust::for_each(handle_.on_stream(), indices.begin(), indices.end(), std::move(wrapped_f));
 
-        return mdgrid_work<decltype(new_future)>(std::move(new_future));
+        return *this;
     }
 
     template<typename T, typename E, typename LP, typename AP, typename F>
-    auto for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) {
+    mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) {
         using MDS = std::mdspan<T, E, LP, AP>;
 
         const auto indices = sstd::index_space(mds);
@@ -227,12 +283,10 @@ class [[nodiscard]] mdgrid_work {
             std::ranges::range_reference_t<element_indices_range>;
 
         if constexpr (std::invocable<F, grid_indices_range_reference>) {
-            auto new_future = thrust::async::for_each(thrust::device.after(future_),
-                                                      indices.begin(),
-                                                      indices.end(),
-                                                      std::forward<F>(f));
-
-            return mdgrid_work<decltype(new_future)>(std::move(new_future));
+            thrust::for_each(handle_.on_stream(),
+                             indices.begin(),
+                             indices.end(),
+                             std::forward<F>(f));
         } else if constexpr (std::invocable<F,
                                             grid_indices_range_reference,
                                             element_indices_range_reference>) {
@@ -241,48 +295,83 @@ class [[nodiscard]] mdgrid_work {
                 for (const auto jdx : elem_indices) { f(idx, jdx); }
             };
 
-            auto new_future = thrust::async::for_each(thrust::device.after(future_),
-                                                      indices.begin(),
-                                                      indices.end(),
-                                                      std::move(wrapped_f));
-
-            return mdgrid_work<decltype(new_future)>(std::move(new_future));
+            thrust::for_each(handle_.on_stream(),
+                             indices.begin(),
+                             indices.end(),
+                             std::move(wrapped_f));
         }
+
+        return *this;
     }
 
     template<typename MDG, typename F>
-    auto for_each_index(MDG& mdg, F&& f) {
+    mdgrid_work& for_each_index(MDG& mdg, F&& f) {
         return for_each_index(mdg.device_buff_.mds(), std::forward<F>(f));
     }
 
     template<typename MDG>
-    auto sync_to_staging(MDG& mdg) {
-        auto new_future = thrust::async::copy(thrust::device.after(future_),
-                                              mdg.device_buff_.begin(),
-                                              mdg.device_buff_.end(),
-                                              mdg.staging_buff_.begin());
+    mdgrid_work& sync_to_staging(MDG& mdg) {
+        thrust::copy(handle_.on_stream(),
+                     mdg.device_buff_.begin(),
+                     mdg.device_buff_.end(),
+                     mdg.staging_buff_.begin());
 
-        return mdgrid_work<decltype(new_future)>(std::move(new_future));
+        return *this;
     }
 
     template<typename MDG>
-    auto sync_from_staging(MDG& mdg) {
-        auto new_future = thrust::async::copy(thrust::device.after(future_),
-                                              mdg.staging_buff_.begin(),
-                                              mdg.staging_buff_.end(),
-                                              mdg.device_buff_.begin());
-        return mdgrid_work<decltype(new_future)>(std::move(new_future));
+    mdgrid_work& sync_from_staging(MDG& mdg) {
+        thrust::copy(handle_.on_stream(),
+                     mdg.staging_buff_.begin(),
+                     mdg.staging_buff_.end(),
+                     mdg.device_buff_.begin());
+        return *this;
     }
 
-    void wait() { future_.wait(); }
+    void wait() { handle_.wait(); }
+
+    template<std::size_t N>
+        requires(N != 0)
+    std::array<mdgrid_work, N> split() {
+        std::array<mdgrid_work, N> new_works;
+
+        [&]<std::size_t... I>(std::index_sequence<I...>) {
+            when_all(new_works[I]...);
+        }(std::make_index_sequence<N>());
+
+        return new_works;
+    };
 };
 
-/// Returns a work_chain that completes when all given work_chains complete.
-template<typename... T>
-auto
-when_all(mdgrid_work<T>&... links) {
-    auto new_future = thrust::when_all(links.future_...);
-    return mdgrid_work<decltype(new_future)>(std::move(new_future));
+/// Insersts a synchronization point between the given mdgrid_works
+template<std::same_as<mdgrid_work>... T>
+    requires(sizeof...(T) != 0)
+void
+when_all(T&... w) {
+    // https://rocm.docs.amd.com/projects/HIP/en/develop/reference/hip_runtime_api/modules/event_management.html#_CPPv415hipEventDestroy10hipEvent_t
+    //
+    // "Releases memory associated with the event. If the event is recording but has not completed
+    //  recording when hipEventDestroy() is called, the function will return immediately
+    //  and the completion_future resources will be released later, when the hipDevice is synchronized."
+    //
+    // This means that we can create events, use them and destroy them in this function.
+    // We don't have to store them.
+
+    std::array<hipEvent_t, sizeof...(T)> events{};
+
+    [&]<std::size_t... I>(std::index_sequence<I...>) {
+        (detail::hip_check_error(hipEventCreate(&events[I])), ...);
+
+        (detail::hip_check_error(hipEventRecord(events[I], w.handle_.get())), ...);
+
+        const auto wait_all_events = [&](hipStream_t s) {
+            (detail::hip_check_error(hipStreamWaitEvent(s, events[I], hipEventWaitDefault)), ...);
+        };
+
+        (wait_all_events(w.handle_.get()), ...);
+
+        (detail::hip_check_error(hipEventDestroy(events[I])), ...);
+    }(std::make_index_sequence<sizeof...(T)>());
 }
 
 } // namespace tyvi

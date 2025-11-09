@@ -10,6 +10,7 @@ set(TESTS_TO_RUN
     tyvi_compilation
     sstd
     mdgrid
+    mdgrid_work
     mdgrid_buffer
     mdgrid_buffer_resize
 )
