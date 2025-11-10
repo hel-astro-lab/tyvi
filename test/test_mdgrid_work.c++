@@ -2,6 +2,12 @@
 
 #include <utility>
 
+#include "thrust/device_vector.h"
+#include "thrust/for_each.h"
+#include "thrust/generate.h"
+#include "thrust/host_vector.h"
+#include "thrust/sequence.h"
+
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
@@ -78,6 +84,26 @@ const suite<"mdgrid_work"> _ = [] {
             auto w1 = tyvi::mdgrid_work{};
             auto w2{ std::move(w1) };
             w2.wait();
+        }));
+    };
+
+    "work advertises its thrust execution policy"_test = [] {
+        expect(nothrow([] {
+            auto vec = thrust::device_vector<int>(10);
+
+            auto w = tyvi::mdgrid_work{};
+
+            thrust::sequence(w.on_this(), vec.begin(), vec.end());
+            thrust::for_each(w.on_this(), vec.begin(), vec.end(), [](auto& x) { x = x + 1; });
+
+            w.wait();
+
+            const auto host_vec = thrust::host_vector<int>(vec.begin(), vec.end());
+
+            auto sum = 0;
+            for (auto x : host_vec) { sum += x; }
+
+            expect((10 + 9 * 10 / 2 == sum));
         }));
     };
 };

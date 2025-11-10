@@ -341,6 +341,11 @@ class mdgrid_work {
 
         return new_works;
     };
+
+    [[nodiscard]]
+    auto on_this() {
+        return handle_.on_stream();
+    }
 };
 
 /// Insersts a synchronization point between the given mdgrid_works
