@@ -26,6 +26,7 @@ stream_handle::stream_handle(stream_handle&& other) noexcept {
     this->stream_  = other.stream_;
     this->promise_ = std::move(other.promise_);
     this->active_  = other.active_;
+    other.active_  = false;
 }
 
 stream_handle&
@@ -35,6 +36,7 @@ stream_handle::operator=(stream_handle&& other) noexcept {
     this->stream_  = other.stream_;
     this->promise_ = std::move(other.promise_);
     this->active_  = other.active_;
+    other.active_  = false;
 
     return *this;
 }
