@@ -25,7 +25,7 @@ const suite<"mdgrid"> _ = [] {
     };
 
     "mdgrid_work is constructible and waitable"_test = [] {
-        auto w = tyvi::mdgrid_work{};
+        const auto w = tyvi::mdgrid_work{};
         w.wait();
 
         expect(true);
@@ -45,7 +45,7 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w = tyvi::mdgrid_work{};
+        const auto w = tyvi::mdgrid_work{};
         w.sync_from_staging(grid).for_each(grid, [](const auto& M) {
             for (const auto Midx : tyvi::sstd::index_space(M)) { M[Midx] = M[Midx] * 3 * 2; }
         });
@@ -89,8 +89,8 @@ const suite<"mdgrid"> _ = [] {
         auto scalar_grid = scalar_mdg(8, 4, 6);
         auto vec_grid    = vec_mdg(8, 4, 6);
 
-        auto w          = tyvi::mdgrid_work{};
-        auto [w1a, w1b] = w.split<2>();
+        const auto w          = tyvi::mdgrid_work{};
+        const auto [w1a, w1b] = w.split<2>();
 
         {
             const auto smds_scalar = scalar_grid.staging_mds();
@@ -155,7 +155,7 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w = tyvi::mdgrid_work{};
+        const auto w = tyvi::mdgrid_work{};
         w.sync_from_staging(grid);
 
         const auto gmds = grid.mds();
@@ -202,7 +202,7 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w = tyvi::mdgrid_work{};
+        const auto w = tyvi::mdgrid_work{};
         w.sync_from_staging(grid);
 
         const auto gmds     = grid.mds();
@@ -248,7 +248,7 @@ const suite<"mdgrid"> _ = [] {
             }
         }
 
-        auto w = tyvi::mdgrid_work{};
+        const auto w = tyvi::mdgrid_work{};
         w.sync_from_staging(grid);
 
         const auto gmds = grid.mds();

@@ -50,13 +50,13 @@ stream_handle::get() const {
 }
 
 thrust::hip_rocprim::execute_on_stream_nosync
-stream_handle::on_stream() {
+stream_handle::on_stream() const {
     if (not active_) { throw std::runtime_error{ "Trying to use inactive stream." }; }
     return thrust::hip_rocprim::execute_on_stream_nosync{ stream_ };
 }
 
 void
-stream_handle::wait() {
+stream_handle::wait() const {
     if (active_) { tyvi::detail::hip_check_error(hipStreamSynchronize(stream_)); }
 }
 

@@ -208,9 +208,11 @@ class stream_factory : sstd::immovable {
 
         [[nodiscard]]
         stream_t get() const;
-        thrust::hip_rocprim::execute_on_stream_nosync on_stream();
 
-        void wait();
+        [[nodiscard]]
+        thrust::hip_rocprim::execute_on_stream_nosync on_stream() const;
+
+        void wait() const;
     };
 
   private:
@@ -243,7 +245,7 @@ class mdgrid_work {
 
     template<std::same_as<mdgrid_work>... T>
         requires(sizeof...(T) != 0)
-    friend void when_all(T&... w);
+    friend void when_all(const T&... w);
 
   public:
     [[nodiscard]]
@@ -258,7 +260,7 @@ class mdgrid_work {
     mdgrid_work& operator=(const mdgrid_work&) = delete; // copy assignment
 
     template<typename MDG, typename F>
-    mdgrid_work& for_each(MDG& mdg, F&& f) {
+    const mdgrid_work& for_each(MDG& mdg, F&& f) const {
         auto grid_mds  = mdg.device_buff_.mds();
         auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
         const auto indices = sstd::index_space(grid_mds);
@@ -269,7 +271,7 @@ class mdgrid_work {
     }
 
     template<typename T, typename E, typename LP, typename AP, typename F>
-    mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) {
+    const mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) const {
         using MDS = std::mdspan<T, E, LP, AP>;
 
         const auto indices = sstd::index_space(mds);
@@ -305,12 +307,12 @@ class mdgrid_work {
     }
 
     template<typename MDG, typename F>
-    mdgrid_work& for_each_index(MDG& mdg, F&& f) {
+    const mdgrid_work& for_each_index(MDG& mdg, F&& f) const {
         return for_each_index(mdg.device_buff_.mds(), std::forward<F>(f));
     }
 
     template<typename MDG>
-    mdgrid_work& sync_to_staging(MDG& mdg) {
+    const mdgrid_work& sync_to_staging(MDG& mdg) const {
         thrust::copy(handle_.on_stream(),
                      mdg.device_buff_.begin(),
                      mdg.device_buff_.end(),
@@ -320,7 +322,7 @@ class mdgrid_work {
     }
 
     template<typename MDG>
-    mdgrid_work& sync_from_staging(MDG& mdg) {
+    const mdgrid_work& sync_from_staging(MDG& mdg) const {
         thrust::copy(handle_.on_stream(),
                      mdg.staging_buff_.begin(),
                      mdg.staging_buff_.end(),
@@ -328,11 +330,12 @@ class mdgrid_work {
         return *this;
     }
 
-    void wait() { handle_.wait(); }
+    void wait() const { handle_.wait(); }
 
     template<std::size_t N>
         requires(N != 0)
-    std::array<mdgrid_work, N> split() {
+    [[nodiscard]]
+    std::array<mdgrid_work, N> split() const {
         std::array<mdgrid_work, N> new_works;
 
         [&]<std::size_t... I>(std::index_sequence<I...>) {
@@ -343,7 +346,7 @@ class mdgrid_work {
     };
 
     [[nodiscard]]
-    auto on_this() {
+    auto on_this() const {
         return handle_.on_stream();
     }
 };
@@ -352,7 +355,7 @@ class mdgrid_work {
 template<std::same_as<mdgrid_work>... T>
     requires(sizeof...(T) != 0)
 void
-when_all(T&... w) {
+when_all(const T&... w) {
     // https://rocm.docs.amd.com/projects/HIP/en/develop/reference/hip_runtime_api/modules/event_management.html#_CPPv415hipEventDestroy10hipEvent_t
     //
     // "Releases memory associated with the event. If the event is recording but has not completed
