@@ -17,6 +17,7 @@ target_sources(
            tyvi/mdgrid.h
            tyvi/mdgrid_buffer.h
            tyvi/backend.h
+           tyvi/execution.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
@@ -28,8 +29,14 @@ set_target_properties(tyvi PROPERTIES LINKER_LANGUAGE CXX)
 
 # Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
-tyvi_target_link_system_libraries(tyvi PUBLIC std::mdspan)
-tyvi_target_link_system_libraries(tyvi PUBLIC roc::rocthrust)
+tyvi_target_link_system_libraries(
+    tyvi
+    PUBLIC
+    std::mdspan
+    roc::rocthrust
+    pika::pika
+)
+
 if(${tyvi_BACKEND} STREQUAL "hip")
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_HIP)
 elseif(${tyvi_BACKEND} STREQUAL "cpu")
