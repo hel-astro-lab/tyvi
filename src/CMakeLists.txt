@@ -34,7 +34,6 @@ tyvi_target_link_system_libraries(
     PUBLIC
     std::mdspan
     roc::rocthrust
-    pika::pika
 )
 
 if(${tyvi_BACKEND} STREQUAL "hip")
@@ -45,3 +44,14 @@ elseif(${tyvi_BACKEND} STREQUAL "cpu")
 else()
     message(FATAL_ERROR "Unregonized tyvi_BACKEND: ${tyvi_BACKEND}")
 endif()
+
+# Compared to std::mdspan and roc::rocthrust,
+# pika does not set INTERFACE_INCLUDE_DIRECTORIES,
+# so the above is not enough to make -isystem appear.
+add_library(pika_system INTERFACE)
+target_link_libraries(pika_system INTERFACE pika::pika)
+target_include_directories(
+    pika_system SYSTEM INTERFACE $<TARGET_PROPERTY:pika::pika,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
+target_link_libraries(tyvi PUBLIC pika_system)

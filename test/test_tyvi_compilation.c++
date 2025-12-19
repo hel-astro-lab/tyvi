@@ -4,6 +4,7 @@
 
 #include <experimental/mdspan>
 
+#include "tyvi/execution.h"
 #include "tyvi/thrust_test.h"
 
 namespace {
@@ -22,8 +23,13 @@ const suite<"unit testing"> _ = [] {
         expect(mds[1, 0] == 3);
         expect(mds[1, 1] == 4);
     };
-};
 
+    "pika is usable"_test = [] {
+        auto s       = tyvi::exec::just(42) | tyvi::exec::then([](int x) { return 2 * x; });
+        const auto x = tyvi::this_thread::sync_wait(std::move(s));
+        expect(x == 2 * 42);
+    };
+};
 } // namespace
 
 int
