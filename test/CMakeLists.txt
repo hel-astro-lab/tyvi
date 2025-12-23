@@ -37,3 +37,25 @@ endforeach()
 # Provide a simple smoke test to make sure that the CLI works and can display a --help message.
 add_test(NAME unit_test_cli COMMAND unit_testing.test --help)
 set_property(TEST unit_test_cli PROPERTY PASS_REGULAR_EXPRESSION "help")
+
+find_package(MPI REQUIRED)
+
+# Add a test which should be run on given amount of ranks.
+function(add_multirank_test name ranks)
+    add_executable("${name}.multirank_test" "multirank_test_${name}.c++")
+
+    target_link_libraries(
+        "${name}.multirank_test"
+        PRIVATE tyvi_warnings
+                tyvi_options
+                tyvi
+                Boost::ut
+                roc::rocthrust
+    )
+
+    add_test(NAME "multirank-${name}" COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG}
+                                              ${ranks} "${name}.multirank_test"
+    )
+endfunction(add_multirank_test)
+
+add_multirank_test(pika 2)
