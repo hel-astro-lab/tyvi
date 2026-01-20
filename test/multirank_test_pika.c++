@@ -9,6 +9,7 @@
 
 #include "tyvi/execution.h"
 
+namespace ex   = pika::execution::experimental;
 namespace mpix = pika::mpi::experimental;
 
 namespace {
@@ -23,7 +24,7 @@ const suite<"pika"> _ = [] {
         mpix::enable_polling enable_polling{};
         int send_data{ rank }, recv_data{};
 
-        tyvi::exec::thread_pool_scheduler sch{};
+        ex::thread_pool_scheduler sch{};
 
         auto sch1 = tyvi::exec::just(&send_data, 1, MPI_INT, (rank + 1) % size, 0, comm)
                     | tyvi::exec::continues_on(sch) | mpix::transform_mpi(MPI_Isend);

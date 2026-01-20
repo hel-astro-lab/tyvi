@@ -17,6 +17,7 @@ target_sources(
            tyvi/mdgrid.h
            tyvi/mdgrid_buffer.h
            tyvi/execution.h
+           tyvi/distributed_grid.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)

@@ -13,6 +13,7 @@ set(TESTS_TO_RUN
     mdgrid_work
     mdgrid_buffer
     mdgrid_buffer_resize
+    distributed_grid
 )
 
 foreach(test ${TESTS_TO_RUN})
@@ -56,3 +57,4 @@ function(add_multirank_test name ranks)
 endfunction(add_multirank_test)
 
 add_multirank_test(pika 2)
+# add_multirank_test(distributed_grid_relative_comm 4)
