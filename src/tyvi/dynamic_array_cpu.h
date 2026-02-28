@@ -52,6 +52,25 @@ class dynamic_array {
           size_(count),
           capacity_(count) {}
 
+    template<std::input_iterator Iter>
+        requires(!std::same_as<std::remove_cvref_t<Iter>, size_type>)
+    dynamic_array(Iter first, Iter last)
+        : ptr_(nullptr),
+          size_(0),
+          capacity_(0) {
+        if constexpr (std::random_access_iterator<Iter>) {
+            const auto n = static_cast<size_type>(std::distance(first, last));
+            if (n > 0) {
+                ptr_      = new T[n];
+                size_     = n;
+                capacity_ = n;
+                std::copy(first, last, ptr_);
+            }
+        } else {
+            for (; first != last; ++first) { push_back(*first); }
+        }
+    }
+
     ~dynamic_array() { delete[] ptr_; }
 
     // copy constructor
@@ -123,6 +142,18 @@ class dynamic_array {
     }
 
     void clear() { size_ = 0; }
+
+    template<std::input_iterator Iter>
+    void assign(Iter first, Iter last) {
+        if constexpr (std::random_access_iterator<Iter>) {
+            const auto n = static_cast<size_type>(std::distance(first, last));
+            resize(n);
+            std::copy(first, last, ptr_);
+        } else {
+            clear();
+            for (; first != last; ++first) { push_back(*first); }
+        }
+    }
 
     void set_size(size_type new_size) { size_ = new_size; }
 

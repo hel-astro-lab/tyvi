@@ -4,6 +4,13 @@
 #include <ranges>
 #include <stdexcept>
 
+#include "tyvi/backend.h"
+
+#ifdef TYVI_USE_HIP_BACKEND
+#include "thrust/memory.h"
+#include "hip/hip_runtime.h"
+#endif
+
 namespace tyvi::sstd {
 
 template<std::integral T>
@@ -30,5 +37,36 @@ struct immovable {
     constexpr immovable(const immovable&)            = delete; // copy constructor
     constexpr immovable& operator=(const immovable&) = delete; // copy assignment
 };
+
+// =====================================================================
+// raw_ref — identity on CPU, thrust::raw_reference_cast on HIP
+// =====================================================================
+
+template<typename T>
+constexpr auto&
+raw_ref(T& x) {
+#ifdef TYVI_USE_CPU_BACKEND
+    return x;
+#elif defined(TYVI_USE_HIP_BACKEND)
+    return thrust::raw_reference_cast(x);
+#endif
+}
+
+// =====================================================================
+// atomic_add — direct += on CPU, unsafeAtomicAdd on HIP
+// =====================================================================
+
+template<typename T>
+constexpr void
+atomic_add(T* addr, T val) {
+    if constexpr (backend::is_cpu) {
+        *addr += val;
+    }
+#ifdef TYVI_USE_HIP_BACKEND
+    else {
+        ::unsafeAtomicAdd(addr, val);
+    }
+#endif
+}
 
 } // namespace tyvi::sstd

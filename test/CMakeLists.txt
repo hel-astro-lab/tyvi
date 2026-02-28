@@ -17,6 +17,9 @@ set(HIP_TESTS
 # Tests that only run on the CPU backend
 set(CPU_TESTS
     dynamic_array
+    containers
+    iterators
+    algo_extended
     mdgrid_buffer_cpu
     mdgrid_cpu
     mdgrid_work_cpu

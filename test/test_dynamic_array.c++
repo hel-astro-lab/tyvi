@@ -201,6 +201,60 @@ const suite<"dynamic_array"> _ = [] {
         expect(std::ranges::contiguous_range<tyvi::dynamic_array<int>>);
     };
 
+    "iterator-range construction"_test = [] {
+        auto src = std::vector<int>{ 10, 20, 30, 40 };
+        auto arr = tyvi::dynamic_array<int>(src.begin(), src.end());
+        expect(arr.size() == 4uz);
+        expect(arr[0] == 10);
+        expect(arr[1] == 20);
+        expect(arr[2] == 30);
+        expect(arr[3] == 40);
+    };
+
+    "iterator-range construction from empty range"_test = [] {
+        auto src = std::vector<int>{};
+        auto arr = tyvi::dynamic_array<int>(src.begin(), src.end());
+        expect(arr.size() == 0uz);
+        expect(arr.empty());
+    };
+
+    "iterator-range construction from another dynamic_array"_test = [] {
+        auto src = tyvi::dynamic_array<int>{};
+        src.push_back(1);
+        src.push_back(2);
+        src.push_back(3);
+
+        auto arr = tyvi::dynamic_array<int>(src.begin(), src.end());
+        expect(arr.size() == 3uz);
+        expect(arr[0] == 1);
+        expect(arr[1] == 2);
+        expect(arr[2] == 3);
+    };
+
+    "assign from iterator range"_test = [] {
+        auto arr = tyvi::dynamic_array<int>(5);
+        arr[0] = 100;
+
+        auto src = std::vector<int>{ 7, 8, 9 };
+        arr.assign(src.begin(), src.end());
+        expect(arr.size() == 3uz);
+        expect(arr[0] == 7);
+        expect(arr[1] == 8);
+        expect(arr[2] == 9);
+    };
+
+    "assign replaces existing content"_test = [] {
+        auto arr = tyvi::dynamic_array<int>{};
+        arr.push_back(1);
+        arr.push_back(2);
+
+        auto src = std::vector<int>{ 10, 20, 30, 40, 50 };
+        arr.assign(src.begin(), src.end());
+        expect(arr.size() == 5uz);
+        expect(arr[0] == 10);
+        expect(arr[4] == 50);
+    };
+
     "equality comparison"_test = [] {
         auto a = tyvi::dynamic_array<int>{};
         a.push_back(1);

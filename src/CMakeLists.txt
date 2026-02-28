@@ -16,6 +16,8 @@ if(TYVI_BACKEND STREQUAL "cpu")
                tyvi/backend.h
                tyvi/dynamic_array_cpu.h
                tyvi/algo.h
+               tyvi/containers.h
+               tyvi/iterators.h
                tyvi/mdspan.h
                tyvi/sstd.h
                tyvi/mdgrid.h
@@ -35,6 +37,8 @@ else()
                FILES
                tyvi/backend.h
                tyvi/algo.h
+               tyvi/containers.h
+               tyvi/iterators.h
                tyvi/thrust_test_hip.h
                tyvi/mdspan.h
                tyvi/sstd.h
