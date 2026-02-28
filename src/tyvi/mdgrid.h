@@ -3,19 +3,23 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
-#include <deque>
-#include <future>
-#include <mutex>
 #include <tuple>
 #include <utility>
 
+#ifdef TYVI_USE_CPU_BACKEND
+#include <algorithm>
+#include "tyvi/dynamic_array_cpu.h"
+#elif defined(TYVI_USE_HIP_BACKEND)
+#include <deque>
+#include <future>
+#include <mutex>
 #include "thrust/copy.h"
 #include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
 #include "thrust/for_each.h"
 #include "thrust/host_vector.h"
-
 #include "hip/hip_runtime.h"
+#endif
 
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
@@ -45,14 +49,20 @@ mdgrid {
     using grid_extents_type = GridExtents;
     using grid_layout_type  = GridLayoutPolicy;
 
-    using device_vec    = thrust::device_vector<value_type>;
+#ifdef TYVI_USE_CPU_BACKEND
+    using device_vec  = dynamic_array<value_type>;
+    using staging_vec = dynamic_array<value_type>;
+#elif defined(TYVI_USE_HIP_BACKEND)
+    using device_vec  = thrust::device_vector<value_type>;
+    using staging_vec = thrust::host_vector<value_type>;
+#endif
+
     using device_buffer = mdgrid_buffer<device_vec,
                                         element_extents_type,
                                         element_layout_type,
                                         grid_extents_type,
                                         grid_layout_type>;
 
-    using staging_vec    = thrust::host_vector<value_type>;
     using staging_buffer = mdgrid_buffer<staging_vec,
                                          element_extents_type,
                                          element_layout_type,
@@ -60,12 +70,33 @@ mdgrid {
                                          grid_layout_type>;
 
   private:
+#ifdef TYVI_USE_CPU_BACKEND
+    device_buffer buff_;
+
+    constexpr auto& primary_buffer() { return buff_; }
+    constexpr const auto& primary_buffer() const { return buff_; }
+    constexpr auto& staging_buffer_ref() { return buff_; }
+    constexpr const auto& staging_buffer_ref() const { return buff_; }
+#elif defined(TYVI_USE_HIP_BACKEND)
     device_buffer device_buff_;
     staging_buffer staging_buff_;
+
+    constexpr auto& primary_buffer() { return device_buff_; }
+    constexpr const auto& primary_buffer() const { return device_buff_; }
+    constexpr auto& staging_buffer_ref() { return staging_buff_; }
+    constexpr const auto& staging_buffer_ref() const { return staging_buff_; }
+#endif
 
     friend class mdgrid_work;
 
   public:
+#ifdef TYVI_USE_CPU_BACKEND
+    explicit constexpr mdgrid(const auto... grid_extents)
+        : buff_(grid_extents...) {}
+
+    explicit constexpr mdgrid(const grid_extents_type& grid_extents)
+        : buff_(grid_extents) {}
+#elif defined(TYVI_USE_HIP_BACKEND)
     explicit constexpr mdgrid(const auto... grid_extents)
         : device_buff_(grid_extents...),
           staging_buff_(grid_extents...) {}
@@ -73,66 +104,67 @@ mdgrid {
     explicit constexpr mdgrid(const grid_extents_type& grid_extents)
         : device_buff_(grid_extents),
           staging_buff_(grid_extents) {}
+#endif
 
     [[nodiscard]]
     constexpr auto mds() & {
-        return device_buff_.mds();
+        return primary_buffer().mds();
     }
 
     [[nodiscard]]
     constexpr auto mds() const& {
-        return device_buff_.mds();
+        return primary_buffer().mds();
     }
 
     [[nodiscard]]
     constexpr auto staging_mds() & {
-        return staging_buff_.mds();
+        return staging_buffer_ref().mds();
     }
 
     [[nodiscard]]
     constexpr auto staging_mds() const& {
-        return staging_buff_.mds();
+        return staging_buffer_ref().mds();
     }
 
     [[nodiscard]]
     constexpr grid_extents_type extents() const {
-        return device_buff_.grid_extents();
+        return primary_buffer().grid_extents();
     }
 
     /// Get span to the underlying data buffer.
     [[nodiscard]]
     constexpr auto span() & {
-        return device_buff_.span();
+        return primary_buffer().span();
     }
 
     /// Get span to the underlying data buffer.
     [[nodiscard]]
     constexpr auto span() const& {
-        return device_buff_.span();
+        return primary_buffer().span();
     }
 
     /// Get span to the underlying data buffer in staging buffer.
     [[nodiscard]]
     constexpr auto staging_span() & {
-        return staging_buff_.span();
+        return staging_buffer_ref().span();
     }
 
     /// Get span to the underlying data buffer in staging buffer.
     [[nodiscard]]
     constexpr auto staging_span() const& {
-        return staging_buff_.span();
+        return staging_buffer_ref().span();
     }
 
     /// Get copy of the underlying data buffer from staging buffer.
     [[nodiscard]]
     constexpr staging_vec underlying_staging_buffer() const {
-        return staging_buff_.underlying_buffer();
+        return staging_buffer_ref().underlying_buffer();
     }
 
     /// Get copy of the underlying data buffer.
     [[nodiscard]]
     constexpr device_vec underlying_buffer() const {
-        return device_buff_.underlying_buffer();
+        return primary_buffer().underlying_buffer();
     }
 
     /// Set the underlying data buffer in staging buffer.
@@ -144,7 +176,7 @@ mdgrid {
     /// Throws if the given buffer is not the same legth as
     /// the one it replaces.
     constexpr void set_underlying_staging_buffer(auto&& buff) {
-        staging_buff_.set_underlying_buffer(std::forward<decltype(buff)>(buff));
+        staging_buffer_ref().set_underlying_buffer(std::forward<decltype(buff)>(buff));
     }
 
     /// Set the underlying data buffer.
@@ -157,12 +189,16 @@ mdgrid {
     /// Throws if the given buffer is not the same legth as
     /// the one it replaces.
     constexpr void set_underlying_buffer(auto&& buff) {
-        device_buff_.set_underlying_buffer(std::forward<decltype(buff)>(buff));
+        primary_buffer().set_underlying_buffer(std::forward<decltype(buff)>(buff));
     }
 
     constexpr void invalidating_resize(const grid_extents_type& extents) {
+#ifdef TYVI_USE_CPU_BACKEND
+        buff_.invalidating_resize(extents);
+#elif defined(TYVI_USE_HIP_BACKEND)
         staging_buff_.invalidating_resize(extents);
         device_buff_.invalidating_resize(extents);
+#endif
     }
 
     template<typename... Indices>
@@ -171,6 +207,109 @@ mdgrid {
         this->invalidating_resize(grid_extents_type{ std::forward<Indices>(indices)... });
     }
 };
+
+// ============================================================================
+// CPU backend: sequential mdgrid_work
+// ============================================================================
+#ifdef TYVI_USE_CPU_BACKEND
+
+/// Move-only work unit — sequential execution on CPU.
+class mdgrid_work {
+    template<auto, typename, typename>
+    friend class mdgrid;
+
+    template<std::same_as<mdgrid_work>... T>
+        requires(sizeof...(T) != 0)
+    friend void when_all(const T&... w);
+
+  public:
+    [[nodiscard]]
+    mdgrid_work() = default;
+
+    ~mdgrid_work() noexcept = default;
+
+    mdgrid_work(mdgrid_work&&) noexcept                  = default; // move constructor
+    mdgrid_work& operator=(mdgrid_work&& other) noexcept = default; // move assignment
+
+    mdgrid_work(const mdgrid_work&)            = delete; // copy constructor
+    mdgrid_work& operator=(const mdgrid_work&) = delete; // copy assignment
+
+    template<typename MDG, typename F>
+    const mdgrid_work& for_each(MDG& mdg, F&& f) const {
+        auto grid_mds  = mdg.primary_buffer().mds();
+        auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
+        const auto indices = sstd::index_space(grid_mds);
+
+        std::for_each(indices.begin(), indices.end(), std::move(wrapped_f));
+
+        return *this;
+    }
+
+    template<typename T, typename E, typename LP, typename AP, typename F>
+    const mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) const {
+        using MDS = std::mdspan<T, E, LP, AP>;
+
+        const auto indices = sstd::index_space(mds);
+
+        using grid_indices_range = decltype(indices);
+        using element_indices_range =
+            decltype(sstd::index_space(std::declval<typename MDS::value_type>()));
+
+        using grid_indices_range_reference = std::ranges::range_reference_t<grid_indices_range>;
+        using element_indices_range_reference =
+            std::ranges::range_reference_t<element_indices_range>;
+
+        if constexpr (std::invocable<F, grid_indices_range_reference>) {
+            std::for_each(indices.begin(), indices.end(), std::forward<F>(f));
+        } else if constexpr (std::invocable<F,
+                                            grid_indices_range_reference,
+                                            element_indices_range_reference>) {
+            auto wrapped_f = [mds, f = std::forward<F>(f)](const auto& idx) {
+                const auto elem_indices = sstd::index_space(mds[idx]);
+                for (const auto jdx : elem_indices) { f(idx, jdx); }
+            };
+
+            std::for_each(indices.begin(), indices.end(), std::move(wrapped_f));
+        }
+
+        return *this;
+    }
+
+    template<typename MDG, typename F>
+    const mdgrid_work& for_each_index(MDG& mdg, F&& f) const {
+        return for_each_index(mdg.primary_buffer().mds(), std::forward<F>(f));
+    }
+
+    template<typename MDG>
+    const mdgrid_work& sync_to_staging(MDG& /*mdg*/) const {
+        return *this;
+    }
+
+    template<typename MDG>
+    const mdgrid_work& sync_from_staging(MDG& /*mdg*/) const {
+        return *this;
+    }
+
+    void wait() const {}
+
+    template<std::size_t N>
+        requires(N != 0)
+    [[nodiscard]]
+    std::array<mdgrid_work, N> split() const {
+        return std::array<mdgrid_work, N>{};
+    };
+};
+
+/// No-op synchronization on CPU.
+template<std::same_as<mdgrid_work>... T>
+    requires(sizeof...(T) != 0)
+void
+when_all(const T&... /*w*/) {}
+
+// ============================================================================
+// HIP backend: stream-based async mdgrid_work
+// ============================================================================
+#elif defined(TYVI_USE_HIP_BACKEND)
 
 namespace detail {
 
@@ -261,7 +400,7 @@ class mdgrid_work {
 
     template<typename MDG, typename F>
     const mdgrid_work& for_each(MDG& mdg, F&& f) const {
-        auto grid_mds  = mdg.device_buff_.mds();
+        auto grid_mds  = mdg.primary_buffer().mds();
         auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
         const auto indices = sstd::index_space(grid_mds);
 
@@ -308,15 +447,15 @@ class mdgrid_work {
 
     template<typename MDG, typename F>
     const mdgrid_work& for_each_index(MDG& mdg, F&& f) const {
-        return for_each_index(mdg.device_buff_.mds(), std::forward<F>(f));
+        return for_each_index(mdg.primary_buffer().mds(), std::forward<F>(f));
     }
 
     template<typename MDG>
     const mdgrid_work& sync_to_staging(MDG& mdg) const {
         thrust::copy(handle_.on_stream(),
-                     mdg.device_buff_.begin(),
-                     mdg.device_buff_.end(),
-                     mdg.staging_buff_.begin());
+                     mdg.primary_buffer().begin(),
+                     mdg.primary_buffer().end(),
+                     mdg.staging_buffer_ref().begin());
 
         return *this;
     }
@@ -324,9 +463,9 @@ class mdgrid_work {
     template<typename MDG>
     const mdgrid_work& sync_from_staging(MDG& mdg) const {
         thrust::copy(handle_.on_stream(),
-                     mdg.staging_buff_.begin(),
-                     mdg.staging_buff_.end(),
-                     mdg.device_buff_.begin());
+                     mdg.staging_buffer_ref().begin(),
+                     mdg.staging_buffer_ref().end(),
+                     mdg.primary_buffer().begin());
         return *this;
     }
 
@@ -381,6 +520,8 @@ when_all(const T&... w) {
         (detail::hip_check_error(hipEventDestroy(events[I])), ...);
     }(std::make_index_sequence<sizeof...(T)>());
 }
+
+#endif // TYVI_USE_CPU_BACKEND / TYVI_USE_HIP_BACKEND
 
 } // namespace tyvi
 

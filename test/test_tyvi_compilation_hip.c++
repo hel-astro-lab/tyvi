@@ -4,7 +4,7 @@
 
 #include <experimental/mdspan>
 
-#include "tyvi/thrust_test.h"
+#include "tyvi/thrust_test_hip.h"
 
 namespace {
 using namespace boost::ut;

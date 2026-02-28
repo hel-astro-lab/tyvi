@@ -60,6 +60,19 @@
                 "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
+        },
+        {
+            "name": "unixlike-clang-cpu-debug",
+            "displayName": "clang++ CPU Debug",
+            "description": "Target Unix-like OS with clang++, CPU backend, debug build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "mpic++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "TYVI_BACKEND": "cpu",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF"
+            }
         }
     ],
     "testPresets": [
@@ -95,6 +108,13 @@
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
             "configurePreset": "unixlike-hipcc-release"
+        },
+        {
+            "name": "test-unixlike-clang-cpu-debug",
+            "displayName": "clang++ CPU Debug",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "unixlike-clang-cpu-debug"
         }
     ]
 }

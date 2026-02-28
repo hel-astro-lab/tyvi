@@ -1,19 +1,32 @@
-# Provide a test to verify that the version being reported from the application
-# matches the version given to CMake. This will be important once you package
-# your program. Real world shows that this is the kind of simple mistake that is easy
-# to make, but also easy to test for.
-# add_test(NAME cli.version_matches COMMAND intro --version)
-# set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
-
-set(TESTS_TO_RUN
+# Tests that run on both CPU and HIP backends
+set(COMMON_TESTS
     unit_testing
-    tyvi_compilation
     sstd
+    mdgrid_buffer_resize
+    algo
+)
+
+# Tests that only run on the HIP backend
+set(HIP_TESTS
+    tyvi_compilation_hip
     mdgrid
     mdgrid_work
     mdgrid_buffer
-    mdgrid_buffer_resize
 )
+
+# Tests that only run on the CPU backend
+set(CPU_TESTS
+    dynamic_array
+    mdgrid_buffer_cpu
+    mdgrid_cpu
+    mdgrid_work_cpu
+)
+
+if(TYVI_BACKEND STREQUAL "cpu")
+    set(TESTS_TO_RUN ${COMMON_TESTS} ${CPU_TESTS})
+else()
+    set(TESTS_TO_RUN ${COMMON_TESTS} ${HIP_TESTS})
+endif()
 
 foreach(test ${TESTS_TO_RUN})
 
@@ -25,8 +38,11 @@ foreach(test ${TESTS_TO_RUN})
                 tyvi_options
                 tyvi
                 Boost::ut
-                roc::rocthrust
     )
+
+    if(TYVI_BACKEND STREQUAL "hip")
+        target_link_libraries("${test}.test" PRIVATE roc::rocthrust)
+    endif()
 
     add_test(NAME ${test} COMMAND "${test}.test")
 endforeach()

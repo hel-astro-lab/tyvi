@@ -14,27 +14,29 @@ function(tyvi_setup_dependencies)
         cpmaddpackage("gh:boost-ext/ut#v2.3.1")
     endif()
 
-    if(NOT TARGET roc::rocprim)
-        # rocThrust requires rocPRIM
-        # "/opt/rocm" - default install prefix
-        find_package(
-            rocprim
-            REQUIRED
-            CONFIG
-            PATHS
-            "/opt/rocm/rocprim"
-        )
-    endif()
+    if(TYVI_BACKEND STREQUAL "hip")
+        if(NOT TARGET roc::rocprim)
+            # rocThrust requires rocPRIM
+            # "/opt/rocm" - default install prefix
+            find_package(
+                rocprim
+                REQUIRED
+                CONFIG
+                PATHS
+                "/opt/rocm/rocprim"
+            )
+        endif()
 
-    if(NOT TARGET roc::rocthrust)
-        # "/opt/rocm" - default install prefix
-        find_package(
-            rocthrust
-            REQUIRED
-            CONFIG
-            PATHS
-            "/opt/rocm/rocthrust"
-        )
+        if(NOT TARGET roc::rocthrust)
+            # "/opt/rocm" - default install prefix
+            find_package(
+                rocthrust
+                REQUIRED
+                CONFIG
+                PATHS
+                "/opt/rocm/rocthrust"
+            )
+        endif()
     endif()
 
     if(NOT TARGET std::mdspan)

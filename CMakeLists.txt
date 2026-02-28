@@ -23,6 +23,9 @@ project(
     LANGUAGES CXX
 )
 
+set(TYVI_BACKEND "hip" CACHE STRING "Backend: hip or cpu")
+set_property(CACHE TYVI_BACKEND PROPERTY STRINGS "hip" "cpu")
+
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
