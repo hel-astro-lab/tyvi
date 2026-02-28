@@ -8,18 +8,17 @@
 
 #include "tyvi/backend.h"
 
+#include "tyvi/containers.h"
+
 #ifdef TYVI_USE_CPU_BACKEND
 #include <algorithm>
-#include "tyvi/dynamic_array_cpu.h"
 #elif defined(TYVI_USE_HIP_BACKEND)
 #include <deque>
 #include <future>
 #include <mutex>
 #include "thrust/copy.h"
-#include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
 #include "thrust/for_each.h"
-#include "thrust/host_vector.h"
 #include "hip/hip_runtime.h"
 #endif
 
@@ -51,13 +50,8 @@ mdgrid {
     using grid_extents_type = GridExtents;
     using grid_layout_type  = GridLayoutPolicy;
 
-#ifdef TYVI_USE_CPU_BACKEND
-    using device_vec  = dynamic_array<value_type>;
-    using staging_vec = dynamic_array<value_type>;
-#elif defined(TYVI_USE_HIP_BACKEND)
-    using device_vec  = thrust::device_vector<value_type>;
-    using staging_vec = thrust::host_vector<value_type>;
-#endif
+    using device_vec  = device_vector<value_type>;
+    using staging_vec = host_vector<value_type>;
 
     using device_buffer = mdgrid_buffer<device_vec,
                                         element_extents_type,

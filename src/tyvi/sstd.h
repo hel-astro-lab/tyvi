@@ -45,10 +45,13 @@ struct immovable {
 template<typename T>
 constexpr auto&
 raw_ref(T& x) {
-#ifdef TYVI_USE_CPU_BACKEND
-    return x;
-#elif defined(TYVI_USE_HIP_BACKEND)
-    return thrust::raw_reference_cast(x);
+    if constexpr (backend::is_cpu) {
+        return x;
+    }
+#ifdef TYVI_USE_HIP_BACKEND
+    else {
+        return thrust::raw_reference_cast(x);
+    }
 #endif
 }
 
