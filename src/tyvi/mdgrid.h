@@ -6,6 +6,8 @@
 #include <tuple>
 #include <utility>
 
+#include "tyvi/backend.h"
+
 #ifdef TYVI_USE_CPU_BACKEND
 #include <algorithm>
 #include "tyvi/dynamic_array_cpu.h"
@@ -193,12 +195,10 @@ mdgrid {
     }
 
     constexpr void invalidating_resize(const grid_extents_type& extents) {
-#ifdef TYVI_USE_CPU_BACKEND
-        buff_.invalidating_resize(extents);
-#elif defined(TYVI_USE_HIP_BACKEND)
-        staging_buff_.invalidating_resize(extents);
-        device_buff_.invalidating_resize(extents);
-#endif
+        primary_buffer().invalidating_resize(extents);
+        if constexpr (!backend::is_cpu) {
+            staging_buffer_ref().invalidating_resize(extents);
+        }
     }
 
     template<typename... Indices>

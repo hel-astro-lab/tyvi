@@ -233,13 +233,11 @@ class [[nodiscard]] mdgrid_buffer {
             std::conditional_t<has_const, const element_element_type, element_element_type>;
         using S = std::span<span_value_type>;
 
-#ifdef TYVI_USE_CPU_BACKEND
-        return S(std::ranges::data(buff_), std::ranges::size(buff_));
-#elif defined(TYVI_USE_HIP_BACKEND)
-        // Somewhat a hack, but required to support thrust vectors.
         if constexpr (requires(V v) { std::ranges::data(v); }) {
             return S(std::ranges::data(buff_), std::ranges::size(buff_));
-        } else {
+        }
+#ifdef TYVI_USE_HIP_BACKEND
+        else {
             return S(thrust::raw_pointer_cast(buff_.data()), std::ranges::size(buff_));
         }
 #endif
@@ -254,13 +252,11 @@ class [[nodiscard]] mdgrid_buffer {
             std::conditional_t<has_const, const element_element_type, element_element_type>;
         using S = std::span<span_value_type>;
 
-#ifdef TYVI_USE_CPU_BACKEND
-        return S(std::ranges::data(buff_), std::ranges::size(buff_));
-#elif defined(TYVI_USE_HIP_BACKEND)
-        // Somewhat a hack, but required to support thrust vectors.
         if constexpr (requires(V v) { std::ranges::data(v); }) {
             return S(std::ranges::data(buff_), std::ranges::size(buff_));
-        } else {
+        }
+#ifdef TYVI_USE_HIP_BACKEND
+        else {
             return S(thrust::raw_pointer_cast(buff_.data()), std::ranges::size(buff_));
         }
 #endif

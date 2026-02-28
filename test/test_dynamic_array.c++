@@ -16,7 +16,7 @@ const suite<"dynamic_array"> _ = [] {
         auto arr = tyvi::dynamic_array<int>{};
         expect(arr.size() == 0uz);
         expect(arr.empty());
-        expect(arr.capacity() > 0uz);
+        expect(arr.capacity() == 0uz);
     };
 
     "sized construction"_test = [] {

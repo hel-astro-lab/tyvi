@@ -1,7 +1,11 @@
 #include <boost/ut.hpp> // import boost.ut;
 
+#include <concepts>
 #include <cstddef>
+#include <iterator>
 #include <ranges>
+#include <stdexcept>
+#include <type_traits>
 
 #include "tyvi/dynamic_array_cpu.h"
 #include "tyvi/mdgrid_buffer.h"
@@ -100,6 +104,89 @@ const suite<"mdgrid_buffer_cpu"> _ = [] {
 
         namespace rn = std::ranges;
         expect(rn::equal(buf_A, buff.span()));
+    };
+
+    "mdgrid_buffer<dynamic_array> is constructible from grid extents"_test = [] {
+        auto mdgbA = testing_mdgrid_buffer(4, 2, 1);
+        auto mdgbB = testing_mdgrid_buffer(mdgbA.grid_extents());
+        expect(mdgbA.grid_extents() == mdgbB.grid_extents());
+    };
+
+    "mdgrid_buffer<dynamic_array> gives correct element extents"_test = [] {
+        auto mdgb = testing_mdgrid_buffer(4, 2, 1);
+        expect(mdgb.element_extents() == element_extents{});
+    };
+
+    "mdgrid_buffer<dynamic_array> mds() is const correct"_test = [] {
+        auto buff      = testing_mdgrid_buffer(2, 3, 4);
+        const auto mds = buff.mds();
+
+        expect(not std::is_const_v<
+               std::remove_reference_t<typename decltype(mds)::element_type::reference>>);
+
+        const auto cbuff = buff;
+        const auto cmds  = cbuff.mds();
+
+        expect(std::is_const_v<
+               std::remove_reference_t<typename decltype(cmds)::element_type::reference>>);
+    };
+
+    "mdgrid_buffer<dynamic_array> syntax sugar ctor"_test = [] {
+        const auto grid_mapping =
+            grid_layout_policy::template mapping<grid_extents>(grid_extents{ 2, 3, 4 });
+
+        auto buffA = testing_mdgrid_buffer(grid_mapping);
+        auto buffB = testing_mdgrid_buffer(2, 3, 4);
+
+        const auto eA = buffA.grid_extents();
+        const auto eB = buffB.grid_extents();
+
+        expect(eA == eB);
+        expect(eA == grid_extents{ 2, 3, 4 });
+    };
+
+    "mdgrid_buffer<dynamic_array> span const correctness"_test = [] {
+        auto mdg_buff = testing_mdgrid_buffer(4, 5, 6);
+        const auto s  = mdg_buff.span();
+
+        const auto& mdg_buff_constref = mdg_buff;
+        const auto ss                 = mdg_buff_constref.span();
+
+        expect(std::same_as<decltype(s)::element_type, element_type>);
+        expect(std::same_as<decltype(ss)::element_type, const element_type>);
+    };
+
+    "mdgrid_buffer<dynamic_array> set_underlying_buffer with wrong size throws"_test = [] {
+        auto mdg_buff  = testing_mdgrid_buffer(4, 5, 6);
+        auto wrong_buf = vec(4); // wrong size: 4 instead of 4*5*6*2*2 = 480
+        expect(throws([&] { mdg_buff.set_underlying_buffer(std::move(wrong_buf)); }));
+    };
+
+    "mdgrid_buffer<dynamic_array> models copyable range"_test = [] {
+        auto buff        = testing_mdgrid_buffer(2, 3, 4);
+        const auto cbuff = testing_mdgrid_buffer(2, 3, 4);
+
+        namespace rn     = std::ranges;
+        using Begin      = decltype(rn::begin(buff));
+        using End        = decltype(rn::end(buff));
+        using ConstBegin = decltype(rn::begin(cbuff));
+        using ConstEnd   = decltype(rn::end(cbuff));
+
+        expect(std::input_iterator<Begin>);
+        expect(std::input_iterator<End>);
+        expect(std::input_iterator<ConstBegin>);
+        expect(std::input_iterator<ConstEnd>);
+
+        using ValueType      = std::iterator_traits<Begin>::value_type;
+        using ConstValueType = std::iterator_traits<ConstBegin>::value_type;
+
+        expect(std::output_iterator<Begin, ValueType>);
+        expect(not std::output_iterator<ConstBegin, ValueType>);
+        expect(not std::output_iterator<ConstBegin, ConstValueType>);
+
+        constexpr auto N = 2 * 2 * 2 * 3 * 4;
+        expect(N == rn::distance(rn::begin(buff), rn::end(buff)));
+        expect(N == rn::distance(rn::begin(cbuff), rn::end(cbuff)));
     };
 };
 

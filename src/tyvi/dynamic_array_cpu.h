@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iterator>
 #include <ranges>
+#include <type_traits>
 #include <utility>
 
 namespace tyvi {
@@ -14,6 +15,7 @@ namespace tyvi {
 /// Modernized ManVec with C++23 type traits. Intended as a drop-in
 /// replacement for thrust::device_vector on the CPU backend.
 template<typename T>
+    requires std::is_trivially_copyable_v<T>
 class dynamic_array {
   public:
     using value_type      = T;
@@ -31,7 +33,7 @@ class dynamic_array {
     size_type size_{ 0 };
     size_type capacity_{ 0 };
 
-    static constexpr float over_alloc_factor_ = 1.2f;
+    static constexpr float over_alloc_factor_ = 1.5f;
 
     void reallocate(size_type new_cap) {
         auto* new_ptr      = new T[new_cap];
@@ -43,7 +45,7 @@ class dynamic_array {
     }
 
   public:
-    dynamic_array() : ptr_(new T[1]), size_(0), capacity_(1) {}
+    dynamic_array() = default;
 
     explicit dynamic_array(size_type count)
         : ptr_(new T[count]),
@@ -54,10 +56,10 @@ class dynamic_array {
 
     // copy constructor
     dynamic_array(const dynamic_array& other)
-        : ptr_(new T[other.capacity_]),
+        : ptr_(other.capacity_ ? new T[other.capacity_] : nullptr),
           size_(other.size_),
           capacity_(other.capacity_) {
-        std::memcpy(ptr_, other.ptr_, sizeof(T) * size_);
+        if (size_ > 0) { std::memcpy(ptr_, other.ptr_, sizeof(T) * size_); }
     }
 
     // move constructor
@@ -70,16 +72,19 @@ class dynamic_array {
         other.capacity_ = 0;
     }
 
-    // copy assignment
+    // copy assignment (copy-and-swap for exception safety)
     dynamic_array& operator=(const dynamic_array& other) {
         if (this != &other) {
-            delete[] ptr_;
-            capacity_ = other.capacity_;
-            size_     = other.size_;
-            ptr_      = new T[capacity_];
-            std::memcpy(ptr_, other.ptr_, sizeof(T) * size_);
+            auto tmp = other;
+            swap(*this, tmp);
         }
         return *this;
+    }
+
+    friend void swap(dynamic_array& a, dynamic_array& b) noexcept {
+        std::swap(a.ptr_, b.ptr_);
+        std::swap(a.size_, b.size_);
+        std::swap(a.capacity_, b.capacity_);
     }
 
     // move assignment
@@ -97,13 +102,11 @@ class dynamic_array {
     }
 
     void push_back(const T& val) {
-        if (size_ < capacity_) {
-            ptr_[size_++] = val;
-        } else {
+        if (size_ >= capacity_) {
             reallocate(static_cast<size_type>(
                 static_cast<float>(capacity_ + 1) * over_alloc_factor_));
-            push_back(val);
         }
+        ptr_[size_++] = val;
     }
 
     void resize(size_type new_size) {
@@ -193,10 +196,6 @@ class dynamic_array {
         return std::ranges::equal(a, b);
     }
 
-    [[nodiscard]]
-    friend bool operator!=(const dynamic_array& a, const dynamic_array& b) {
-        return !(a == b);
-    }
 };
 
 } // namespace tyvi
