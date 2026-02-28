@@ -30,23 +30,7 @@ template<typename T,
          typename AccessorPolicy = std::default_accessor<T>>
 using geometric_mdspan = std::mdspan<T, geometric_extents<rank, dim>, LayoutPolicy, AccessorPolicy>;
 
-template<std::size_t rank, std::size_t D>
-[[nodiscard]]
-consteval auto
-geometric_index_space() {
-    namespace rv = std::ranges::views;
-
-    return std::invoke(
-        []<std::size_t... I>(std::index_sequence<I...>) {
-            return rv::cartesian_product(rv::iota(I * 0uz, D)...)
-                   | std::views::transform([](const auto& t) {
-                         return std::apply(
-                             [](const auto... i) { return std::array<std::size_t, rank>{ i... }; },
-                             t);
-                     });
-        },
-        std::make_index_sequence<rank>());
-};
+// geometric_index_space is defined below index_space_view (it depends on it).
 
 /// Type trait to detect if type is specialization of std::extents.
 template<typename>
@@ -206,8 +190,8 @@ class index_space_iterator {
             return tmp;
         }();
 
-        for (const auto [i, d] : std::views::enumerate(sorted_dividers)) {
-            dividers_.at(sorted_rank_ordinals.at(static_cast<std::size_t>(i))) = d;
+        for (std::size_t i = 0; i < rank; ++i) {
+            dividers_.at(sorted_rank_ordinals.at(i)) = sorted_dividers[i];
         }
     }
 
@@ -361,6 +345,16 @@ template<typename T, typename E, typename LP, typename AP>
 constexpr random_access_view auto
 index_space(const std::mdspan<T, E, LP, AP>& mds) {
     return index_space(mds.mapping());
+};
+
+/// Iterate over the index space of a geometric grid (all dimensions equal to D).
+template<std::size_t rank, std::size_t D>
+[[nodiscard]]
+constexpr auto
+geometric_index_space() {
+    using extents_type = geometric_extents<rank, D>;
+    using mapping_type = std::layout_right::mapping<extents_type>;
+    return index_space_view<mapping_type>(mapping_type{});
 };
 
 } // namespace tyvi::sstd

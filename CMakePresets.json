@@ -67,7 +67,7 @@
             "description": "Target Unix-like OS with clang++, CPU backend, debug build type.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "mpic++",
+                "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "TYVI_BACKEND": "cpu",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",

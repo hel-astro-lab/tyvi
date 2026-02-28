@@ -312,7 +312,7 @@ const suite<"mdgrid_cpu"> _ = [] {
         }
     };
 
-    "mdgrid getting and setting underlying buffer"_test = [] {
+    "mdgrid getting and setting underlying staging buffer"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
         using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
@@ -331,9 +331,24 @@ const suite<"mdgrid_cpu"> _ = [] {
         expect(not rn::equal(gridA.staging_span(), gridB.staging_span()));
         gridB.set_underlying_staging_buffer(gridA.underlying_staging_buffer());
         expect(rn::equal(gridA.staging_span(), gridB.staging_span()));
+    };
 
-        tyvi::mdgrid_work{}.sync_from_staging(gridA).wait();
+    "mdgrid getting and setting underlying buffer"_test = [] {
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto gridA = mdg(7, 9, 2);
+        auto gridB = mdg(7, 9, 2);
+
+        auto mds_A = gridA.mds();
+        for (const auto idx : tyvi::sstd::index_space(mds_A)) {
+            for (const auto Midx : tyvi::sstd::index_space(mds_A[idx])) {
+                mds_A[idx][Midx] = 7;
+            }
+        }
+
+        namespace rn = std::ranges;
         expect(gridA.underlying_buffer() != gridB.underlying_buffer());
         gridB.set_underlying_buffer(gridA.underlying_buffer());
         expect(gridA.underlying_buffer() == gridB.underlying_buffer());
