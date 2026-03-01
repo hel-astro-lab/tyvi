@@ -4,6 +4,13 @@ include(cmake/CPM.cmake)
 # CMAKE_CXX_FLAGS don't propagate out to other targets.
 function(tyvi_setup_dependencies)
 
+    # Hide clang-tidy and cppcheck from dependencies.
+    # These are re-assigned at the end of this function.
+    set(old_cmake_cxx_clang_tidy "${CMAKE_CXX_CLANG_TIDY}")
+    set(old_cmake_cxx_cppcheck "${CMAKE_CXX_CPPCHECK}")
+    unset(CMAKE_CXX_CLANG_TIDY)
+    unset(CMAKE_CXX_CPPCHECK)
+
     # For each dependency, see if it's
     # already been provided to us by a parent project.
 
@@ -62,5 +69,10 @@ function(tyvi_setup_dependencies)
             "MDSPAN_GENERATE_STD_NAMESPACE_TARGETS ON"
         )
     endif()
+
+    # cmake-lint: disable=C0103
+    set(CMAKE_CXX_CLANG_TIDY "${old_cmake_cxx_clang_tidy}")
+    set(CMAKE_CXX_CPPCHECK "${old_cmake_cxx_cppcheck}")
+    # cmake-lint: disable=C0103
 
 endfunction()
