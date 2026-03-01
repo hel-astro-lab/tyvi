@@ -207,6 +207,9 @@ mdgrid {
 // ============================================================================
 #ifdef TYVI_USE_CPU_BACKEND
 
+/// No-op execution policy tag for CPU backend.
+struct cpu_exec_policy {};
+
 /// Move-only work unit — sequential execution on CPU.
 class mdgrid_work {
     template<auto, typename, typename>
@@ -285,6 +288,9 @@ class mdgrid_work {
     }
 
     void wait() const {}
+
+    [[nodiscard]]
+    constexpr cpu_exec_policy on_this() const { return {}; }
 
     template<std::size_t N>
         requires(N != 0)

@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cmath>
 #include <concepts>
 #include <ranges>
 #include <stdexcept>
+#include <type_traits>
 
 #include "tyvi/backend.h"
 
@@ -70,6 +72,30 @@ atomic_add(T* addr, T val) {
         ::unsafeAtomicAdd(addr, val);
     }
 #endif
+}
+
+// =====================================================================
+// sin / cos — constexpr wrappers for CPU and HIP
+// =====================================================================
+
+template<typename T>
+constexpr auto
+sin(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::sinf(x);
+    } else {
+        return ::sin(x);
+    }
+}
+
+template<typename T>
+constexpr auto
+cos(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::cosf(x);
+    } else {
+        return ::cos(x);
+    }
 }
 
 } // namespace tyvi::sstd

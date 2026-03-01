@@ -6,11 +6,15 @@
 #include <compare>
 #include <cstddef>
 #include <iterator>
+#include <memory>
+#include <tuple>
 #include <type_traits>
 #elif defined(TYVI_USE_HIP_BACKEND)
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 #include "thrust/iterator/transform_output_iterator.h"
+#include "thrust/iterator/zip_iterator.h"
+#include "thrust/tuple.h"
 #endif
 
 namespace tyvi {
@@ -94,8 +98,31 @@ class transform_iterator {
     using reference         = value_type;
     using pointer           = void;
 
+    constexpr transform_iterator() = default;
+
     constexpr transform_iterator(Iter base, F func)
         : base_(base), func_(func) {}
+
+    constexpr transform_iterator(const transform_iterator&) = default;
+    constexpr transform_iterator(transform_iterator&&) noexcept = default;
+
+    // Lambdas are not assignable, so we use destroy+construct to enable assignment.
+    constexpr transform_iterator& operator=(const transform_iterator& other) {
+        if (this != &other) {
+            std::destroy_at(this);
+            std::construct_at(this, other);
+        }
+        return *this;
+    }
+    constexpr transform_iterator& operator=(transform_iterator&& other) noexcept {
+        if (this != &other) {
+            std::destroy_at(this);
+            std::construct_at(this, std::move(other));
+        }
+        return *this;
+    }
+
+    constexpr ~transform_iterator() = default;
 
     constexpr value_type operator*() const { return func_(*base_); }
     constexpr value_type operator[](difference_type n) const { return func_(base_[n]); }
@@ -194,6 +221,72 @@ template<typename Iter, typename F>
 constexpr auto
 make_transform_output_iterator(Iter it, F f) {
     return thrust::make_transform_output_iterator(it, f);
+}
+
+#endif
+
+// =====================================================================
+// zip_iterator (via make_zip_iterator)
+// =====================================================================
+
+#ifdef TYVI_USE_CPU_BACKEND
+
+template<typename Iter1, typename Iter2>
+class zip_iterator {
+    Iter1 it1_;
+    Iter2 it2_;
+
+  public:
+    using value_type        = std::tuple<std::iter_value_t<Iter1>, std::iter_value_t<Iter2>>;
+    using reference         = std::tuple<std::iter_reference_t<Iter1>, std::iter_reference_t<Iter2>>;
+    using difference_type   = std::ptrdiff_t;
+    using iterator_category = std::random_access_iterator_tag;
+    using pointer           = void;
+
+    constexpr zip_iterator(Iter1 it1, Iter2 it2) : it1_(it1), it2_(it2) {}
+
+    constexpr reference operator*() const { return { *it1_, *it2_ }; }
+    constexpr reference operator[](difference_type n) const { return { it1_[n], it2_[n] }; }
+
+    constexpr zip_iterator& operator++() { ++it1_; ++it2_; return *this; }
+    constexpr zip_iterator  operator++(int) { auto t = *this; ++it1_; ++it2_; return t; }
+    constexpr zip_iterator& operator--() { --it1_; --it2_; return *this; }
+    constexpr zip_iterator  operator--(int) { auto t = *this; --it1_; --it2_; return t; }
+
+    constexpr zip_iterator& operator+=(difference_type n) { it1_ += n; it2_ += n; return *this; }
+    constexpr zip_iterator& operator-=(difference_type n) { it1_ -= n; it2_ -= n; return *this; }
+
+    friend constexpr zip_iterator operator+(zip_iterator it, difference_type n) {
+        it.it1_ += n; it.it2_ += n;
+        return it;
+    }
+    friend constexpr zip_iterator operator+(difference_type n, zip_iterator it) {
+        return it + n;
+    }
+    friend constexpr zip_iterator operator-(zip_iterator it, difference_type n) {
+        it.it1_ -= n; it.it2_ -= n;
+        return it;
+    }
+    friend constexpr difference_type operator-(zip_iterator a, zip_iterator b) {
+        return a.it1_ - b.it1_;
+    }
+
+    constexpr bool operator==(const zip_iterator& o) const { return it1_ == o.it1_; }
+    constexpr auto operator<=>(const zip_iterator& o) const { return it1_ <=> o.it1_; }
+};
+
+template<typename Iter1, typename Iter2>
+constexpr auto
+make_zip_iterator(Iter1 it1, Iter2 it2) {
+    return zip_iterator<Iter1, Iter2>(it1, it2);
+}
+
+#else // HIP backend
+
+template<typename Iter1, typename Iter2>
+constexpr auto
+make_zip_iterator(Iter1 it1, Iter2 it2) {
+    return thrust::make_zip_iterator(thrust::make_tuple(it1, it2));
 }
 
 #endif

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <concepts>
 #include <functional>
 #include <iterator>
 #include <numeric>
@@ -8,6 +9,10 @@
 #include <vector>
 
 #include "tyvi/backend.h"
+
+#ifdef TYVI_USE_CPU_BACKEND
+struct cpu_exec_policy;
+#endif
 
 #ifdef TYVI_USE_HIP_BACKEND
 #include "thrust/copy.h"
@@ -19,6 +24,19 @@
 #endif
 
 namespace tyvi::algo {
+
+// =====================================================================
+// Execution policy concept
+// =====================================================================
+
+template<typename T>
+concept exec_policy =
+#ifdef TYVI_USE_CPU_BACKEND
+    std::same_as<std::remove_cvref_t<T>, cpu_exec_policy>
+#elif defined(TYVI_USE_HIP_BACKEND)
+    std::same_as<std::remove_cvref_t<T>, thrust::hip_rocprim::execute_on_stream_nosync>
+#endif
+;
 
 // =====================================================================
 // for_each
@@ -33,6 +51,19 @@ for_each(InputIt first, InputIt last, F f) {
 #ifdef TYVI_USE_HIP_BACKEND
     else {
         thrust::for_each(thrust::device, first, last, f);
+    }
+#endif
+}
+
+template<exec_policy ExecPolicy, typename InputIt, typename F>
+void
+for_each([[maybe_unused]] ExecPolicy&& policy, InputIt first, InputIt last, F f) {
+    if constexpr (backend::is_cpu) {
+        std::for_each(first, last, std::move(f));
+    }
+#ifdef TYVI_USE_HIP_BACKEND
+    else {
+        thrust::for_each(std::forward<ExecPolicy>(policy), first, last, std::move(f));
     }
 #endif
 }
@@ -133,6 +164,19 @@ reduce(InputIt first, InputIt last, T init = T{}) {
 #ifdef TYVI_USE_HIP_BACKEND
     else {
         return thrust::reduce(thrust::device, first, last, init);
+    }
+#endif
+}
+
+template<exec_policy ExecPolicy, typename InputIt, typename T = std::iter_value_t<InputIt>>
+T
+reduce([[maybe_unused]] ExecPolicy&& policy, InputIt first, InputIt last, T init = T{}) {
+    if constexpr (backend::is_cpu) {
+        return std::reduce(first, last, init);
+    }
+#ifdef TYVI_USE_HIP_BACKEND
+    else {
+        return thrust::reduce(std::forward<ExecPolicy>(policy), first, last, init);
     }
 #endif
 }

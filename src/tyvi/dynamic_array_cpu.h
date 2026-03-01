@@ -48,7 +48,7 @@ class dynamic_array {
     dynamic_array() = default;
 
     explicit dynamic_array(size_type count)
-        : ptr_(new T[count]),
+        : ptr_(new T[count]{}),
           size_(count),
           capacity_(count) {}
 
