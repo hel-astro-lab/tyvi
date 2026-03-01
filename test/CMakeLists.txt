@@ -21,6 +21,9 @@ set(TESTS_TO_RUN
     mdsegments
     mdsegments_leaks
     mdsegments_component_views
+    actions_ast
+    actions_lists
+    actions_eval
 )
 
 add_library(tyvi_constant_testing)
