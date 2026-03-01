@@ -26,7 +26,7 @@ const suite<"unit testing"> _ = [] {
 
     "pika is usable"_test = [] {
         auto s       = tyvi::exec::just(42) | tyvi::exec::then([](int x) { return 2 * x; });
-        const auto x = tyvi::this_thread::sync_wait(std::move(s));
+        const auto x = tyvi::this_thread::sync_wait(s);
         expect(x == 2 * 42);
     };
 };
