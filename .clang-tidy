@@ -38,4 +38,4 @@ FormatStyle:     file
 
 CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
-    value: "thrust/.*;experimental/.*"
+    value: "thrust/.*;experimental/.*;pika/*"
