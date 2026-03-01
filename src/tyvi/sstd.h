@@ -98,4 +98,60 @@ cos(const T x) {
     }
 }
 
+// =====================================================================
+// sqrt — constexpr wrapper for CPU and HIP
+// =====================================================================
+
+template<typename T>
+constexpr auto
+sqrt(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::sqrtf(x);
+    } else {
+        return ::sqrt(x);
+    }
+}
+
+// =====================================================================
+// min / max — SIMD-friendly value-based min/max
+// =====================================================================
+// Using ternary instead of std::min/std::max to avoid reference
+// semantics that can inhibit auto-vectorization.
+
+template<typename T>
+constexpr auto
+min(const T a, const T b) {
+    return a < b ? a : b;
+}
+
+template<typename T>
+constexpr auto
+max(const T a, const T b) {
+    return a > b ? a : b;
+}
+
+// =====================================================================
+// abs — SIMD-friendly absolute value
+// =====================================================================
+
+template<typename T>
+constexpr auto
+abs(const T x) {
+    return x < T{ 0 } ? -x : x;
+}
+
+// =====================================================================
+// fmod — constexpr wrapper for CPU and HIP
+// =====================================================================
+
+template<typename T>
+constexpr auto
+fmod(const T a, const T b) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::fmodf(a, b);
+    } else {
+        return ::fmod(a, b);
+    }
+}
+
 } // namespace tyvi::sstd

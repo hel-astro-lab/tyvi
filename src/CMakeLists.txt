@@ -25,7 +25,7 @@ if(TYVI_BACKEND STREQUAL "cpu")
     )
 
     target_compile_definitions(tyvi PUBLIC TYVI_USE_CPU_BACKEND)
-    target_compile_options(tyvi PUBLIC -fopenmp-simd)
+    target_compile_options(tyvi PUBLIC -fopenmp-simd -march=native)
 else()
     target_compile_definitions(tyvi PUBLIC TYVI_USE_HIP_BACKEND)
     target_sources(
