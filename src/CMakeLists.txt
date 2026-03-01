@@ -17,6 +17,9 @@ target_sources(
            tyvi/mdgrid.h
            tyvi/mdgrid_buffer.h
            tyvi/execution.h
+           tyvi/actions_ast.h
+           tyvi/actions_list.h
+           tyvi/actions_eval.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)

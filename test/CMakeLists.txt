@@ -13,6 +13,9 @@ set(TESTS_TO_RUN
     mdgrid_work
     mdgrid_buffer
     mdgrid_buffer_resize
+    actions_ast
+    actions_lists
+    actions_eval
 )
 
 add_library(tyvi_constant_testing)
