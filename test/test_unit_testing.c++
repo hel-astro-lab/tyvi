@@ -3,6 +3,8 @@
 
 #include <boost/ut.hpp> // import boost.ut;
 
+#include "constant_testing.h"
+
 namespace {
 
 constexpr auto
@@ -25,6 +27,13 @@ const suite<"unit testing"> _ = [] {
     };
 
     "subfunctions"_test = [] { call_expect_with(true); };
+
+    "constant testing"_test = []() {
+        tyvi::constant_testing([](auto& tester) static consteval {
+            const auto foo = 42;
+            tester.expect(foo == 42_i);
+        });
+    };
 };
 
 } // namespace
