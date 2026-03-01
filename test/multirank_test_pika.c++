@@ -16,14 +16,14 @@ using namespace boost::ut;
 [[maybe_unused]]
 const suite<"pika"> _ = [] {
     "mpi polling"_test = [] {
-        int size, rank;
+        int size{}, rank{};
         MPI_Comm comm = MPI_COMM_WORLD;
         MPI_Comm_size(comm, &size);
         MPI_Comm_rank(comm, &rank);
-        mpix::enable_polling enable_polling{};
+        const mpix::enable_polling enable_polling{};
         int send_data{ rank }, recv_data{};
 
-        tyvi::exec::thread_pool_scheduler sch{};
+        const tyvi::exec::thread_pool_scheduler sch{};
 
         auto sch1 = tyvi::exec::just(&send_data, 1, MPI_INT, (rank + 1) % size, 0, comm)
                     | tyvi::exec::continues_on(sch) | mpix::transform_mpi(MPI_Isend);
@@ -41,7 +41,7 @@ const suite<"pika"> _ = [] {
 
 int
 main(int argc, char** argv) {
-    int provided, preferred = mpix::get_preferred_thread_mode();
+    int provided{}, preferred = mpix::get_preferred_thread_mode();
 
     MPI_Init_thread(&argc, &argv, preferred, &provided);
     if (provided != preferred) { throw std::runtime_error{ "Provided MPI is not as requested" }; }
@@ -59,7 +59,7 @@ main(int argc, char** argv) {
         nullptr,
         init_args);
 
-    if (MPI_Finalize()) { throw std::runtime_error{ "MPI_Finalize() failed!" }; }
+    if (static_cast<bool>(MPI_Finalize())) { throw std::runtime_error{ "MPI_Finalize() failed!" }; }
 
     return result;
 }
