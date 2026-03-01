@@ -50,26 +50,6 @@ function(tyvi_setup_dependencies)
         )
     endif()
 
-    if(NOT TARGET Boost::boost)
-        set(boost_url_prefix "https://github.com/boostorg/boost/releases/download/")
-        set(boost_release "boost-1.86.0/boost-1.86.0-cmake.tar.xz")
-        cpmaddpackage(
-            NAME
-            Boost
-            VERSION
-            1.86.0 # Versions less than 1.85.0 may need patches for installation targets.
-            URL
-            "${boost_url_prefix}${boost_release}"
-            URL_HASH
-            SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
-            OPTIONS
-            "BOOST_ENABLE_CMAKE ON"
-            "BOOST_SKIP_INSTALL_RULES ON" # Set `OFF` for installation
-            "BUILD_SHARED_LIBS OFF"
-            "BOOST_INCLUDE_LIBRARIES context" # Note the escapes!
-        )
-    endif()
-
     if(${tyvi_BACKEND} STREQUAL "hip" AND NOT TARGET whip::whip)
         # pika explicitly wants whip 0.1.0
         cpmaddpackage(
@@ -91,14 +71,6 @@ function(tyvi_setup_dependencies)
         if(TARGET Boost::headers AND NOT TARGET Boost::boost)
             add_library(Boost::boost INTERFACE IMPORTED)
             target_link_libraries(Boost::boost INTERFACE Boost::headers)
-        endif()
-
-        # Compatibility alias for pika that expects Boost::disable_autolink.
-        if(NOT TARGET Boost::disable_autolinking)
-            add_library(Boost::disable_autolinking INTERFACE IMPORTED)
-            target_compile_definitions(
-                Boost::disable_autolinking INTERFACE $<$<CXX_COMPILER_ID:MSVC>:BOOST_ALL_NO_LIB>
-            )
         endif()
 
         # pika gets confused about whip when it is used through cpm.
