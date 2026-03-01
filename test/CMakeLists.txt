@@ -15,6 +15,21 @@ set(TESTS_TO_RUN
     mdgrid_buffer_resize
 )
 
+add_library(tyvi_constant_testing)
+target_include_directories(tyvi_constant_testing PUBLIC ".")
+target_sources(
+    tyvi_constant_testing
+    PRIVATE constant_testing.c++
+    PUBLIC FILE_SET
+           constant_testing_headers
+           TYPE
+           HEADERS
+           FILES
+           constant_testing.h
+)
+
+target_link_libraries(tyvi_constant_testing PRIVATE tyvi_warnings tyvi_options Boost::ut)
+
 foreach(test ${TESTS_TO_RUN})
 
     add_executable("${test}.test" "test_${test}.c++")
@@ -23,6 +38,7 @@ foreach(test ${TESTS_TO_RUN})
         "${test}.test"
         PRIVATE tyvi_warnings
                 tyvi_options
+                tyvi_constant_testing
                 tyvi
                 Boost::ut
                 roc::rocthrust
