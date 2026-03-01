@@ -203,9 +203,37 @@ mdgrid {
 };
 
 // ============================================================================
-// CPU backend: sequential mdgrid_work
+// CPU backend: sequential mdgrid_work with SIMD-friendly nested loops
 // ============================================================================
 #ifdef TYVI_USE_CPU_BACKEND
+
+namespace detail {
+
+/// Compile-time recursive nested-loop generator.
+///
+/// Produces:  for (dim0) for (dim1) ... #pragma omp simd for (dimR-1) f(idx)
+///
+/// The innermost dimension is annotated with #pragma omp simd so the
+/// compiler vectorizes stride-1 accesses through the mdspan accessor chain.
+template<std::size_t Dim, std::size_t Rank, typename Extents, typename F>
+void nested_for(const Extents& ext, F& f, std::array<std::size_t, Rank>& idx) {
+    if constexpr (Dim == Rank - 1) {
+        // Innermost loop — enable SIMD vectorization.
+        const auto n = ext.extent(Dim);
+        #pragma omp simd
+        for (std::size_t k = 0; k < n; ++k) {
+            idx[Dim] = k;
+            f(idx);
+        }
+    } else {
+        for (std::size_t i = 0; i < ext.extent(Dim); ++i) {
+            idx[Dim] = i;
+            nested_for<Dim + 1, Rank>(ext, f, idx);
+        }
+    }
+}
+
+} // namespace detail
 
 /// No-op execution policy tag for CPU backend.
 struct cpu_exec_policy {};
@@ -235,9 +263,14 @@ class mdgrid_work {
     const mdgrid_work& for_each(MDG& mdg, F&& f) const {
         auto grid_mds  = mdg.primary_buffer().mds();
         auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
-        const auto indices = sstd::index_space(grid_mds);
 
-        std::for_each(indices.begin(), indices.end(), std::move(wrapped_f));
+        constexpr auto Rank = std::remove_cvref_t<decltype(grid_mds)>::rank();
+        if constexpr (Rank == 0) {
+            wrapped_f(std::array<std::size_t, 0>{});
+        } else {
+            auto idx = std::array<std::size_t, Rank>{};
+            detail::nested_for<0, Rank>(grid_mds.extents(), wrapped_f, idx);
+        }
 
         return *this;
     }
@@ -245,7 +278,12 @@ class mdgrid_work {
     template<typename T, typename E, typename LP, typename AP, typename F>
     const mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) const {
         using MDS = std::mdspan<T, E, LP, AP>;
+        constexpr auto Rank = E::rank();
 
+        // Determine which callable signature the user provided.
+        using idx_type = std::array<std::size_t, Rank>;
+
+        // Build type-detection helpers via index_space.
         const auto indices = sstd::index_space(mds);
 
         using grid_indices_range = decltype(indices);
@@ -257,16 +295,29 @@ class mdgrid_work {
             std::ranges::range_reference_t<element_indices_range>;
 
         if constexpr (std::invocable<F, grid_indices_range_reference>) {
-            std::for_each(indices.begin(), indices.end(), std::forward<F>(f));
+            // Grid-index-only callback:  f(idx)
+            if constexpr (Rank == 0) {
+                f(idx_type{});
+            } else {
+                auto ff  = std::forward<F>(f);
+                auto idx = idx_type{};
+                detail::nested_for<0, Rank>(mds.extents(), ff, idx);
+            }
         } else if constexpr (std::invocable<F,
                                             grid_indices_range_reference,
                                             element_indices_range_reference>) {
+            // Grid + element callback:  f(idx, jdx)
             auto wrapped_f = [mds, f = std::forward<F>(f)](const auto& idx) {
                 const auto elem_indices = sstd::index_space(mds[idx]);
                 for (const auto jdx : elem_indices) { f(idx, jdx); }
             };
 
-            std::for_each(indices.begin(), indices.end(), std::move(wrapped_f));
+            if constexpr (Rank == 0) {
+                wrapped_f(idx_type{});
+            } else {
+                auto idx = idx_type{};
+                detail::nested_for<0, Rank>(mds.extents(), wrapped_f, idx);
+            }
         }
 
         return *this;

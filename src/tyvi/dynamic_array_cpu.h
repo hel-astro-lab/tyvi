@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
 #include <ranges>
@@ -34,12 +35,34 @@ class dynamic_array {
     size_type capacity_{ 0 };
 
     static constexpr float over_alloc_factor_ = 1.5f;
+    static constexpr std::size_t alignment_   = 64;
+
+    /// Allocate count elements with SIMD-friendly alignment.
+    [[nodiscard]]
+    static pointer aligned_new(size_type count) {
+        if (count == 0) { return nullptr; }
+        // std::aligned_alloc requires size to be a multiple of alignment.
+        const auto bytes = ((sizeof(T) * count + alignment_ - 1) / alignment_) * alignment_;
+        auto* p = static_cast<pointer>(std::aligned_alloc(alignment_, bytes));
+        if (!p) { throw std::bad_alloc{}; }
+        return p;
+    }
+
+    /// Allocate count zero-initialized elements.
+    [[nodiscard]]
+    static pointer aligned_new_zeroed(size_type count) {
+        auto* p = aligned_new(count);
+        if (p) { std::memset(p, 0, sizeof(T) * count); }
+        return p;
+    }
+
+    static void aligned_delete(pointer p) noexcept { std::free(p); }
 
     void reallocate(size_type new_cap) {
-        auto* new_ptr      = new T[new_cap];
+        auto* new_ptr      = aligned_new(new_cap);
         const auto to_copy = std::min(size_, new_cap);
         if (ptr_ && to_copy > 0) { std::memcpy(new_ptr, ptr_, sizeof(T) * to_copy); }
-        delete[] ptr_;
+        aligned_delete(ptr_);
         ptr_      = new_ptr;
         capacity_ = new_cap;
     }
@@ -48,7 +71,7 @@ class dynamic_array {
     dynamic_array() = default;
 
     explicit dynamic_array(size_type count)
-        : ptr_(new T[count]{}),
+        : ptr_(aligned_new_zeroed(count)),
           size_(count),
           capacity_(count) {}
 
@@ -61,7 +84,7 @@ class dynamic_array {
         if constexpr (std::random_access_iterator<Iter>) {
             const auto n = static_cast<size_type>(std::distance(first, last));
             if (n > 0) {
-                ptr_      = new T[n];
+                ptr_      = aligned_new(n);
                 size_     = n;
                 capacity_ = n;
                 std::copy(first, last, ptr_);
@@ -71,11 +94,11 @@ class dynamic_array {
         }
     }
 
-    ~dynamic_array() { delete[] ptr_; }
+    ~dynamic_array() { aligned_delete(ptr_); }
 
     // copy constructor
     dynamic_array(const dynamic_array& other)
-        : ptr_(other.capacity_ ? new T[other.capacity_] : nullptr),
+        : ptr_(other.capacity_ ? aligned_new(other.capacity_) : nullptr),
           size_(other.size_),
           capacity_(other.capacity_) {
         if (size_ > 0) { std::memcpy(ptr_, other.ptr_, sizeof(T) * size_); }
@@ -109,7 +132,7 @@ class dynamic_array {
     // move assignment
     dynamic_array& operator=(dynamic_array&& other) noexcept {
         if (this != &other) {
-            delete[] ptr_;
+            aligned_delete(ptr_);
             ptr_            = other.ptr_;
             size_           = other.size_;
             capacity_       = other.capacity_;
