@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
     - id: trailing-whitespace
     - id: end-of-file-fixer
@@ -10,12 +10,12 @@ repos:
     - id: check-added-large-files
     - id: check-symlinks
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v20.1.4
+  rev: v22.1.0
   hooks:
     - id: clang-format
       types_or: [c++, c]
 - repo: https://github.com/MiroPalmu/cmake-format-precommit
-  rev: b2c149f
+  rev: b2c149fc937eea263dbc7b0827f0f5cf4aa77ccc
   hooks:
     - id: cmake-format
     - id: cmake-lint
