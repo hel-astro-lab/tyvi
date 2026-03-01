@@ -22,6 +22,10 @@ target_sources(
            tyvi/backend.h
            tyvi/mdsegments.h
            tyvi/device_allocator.h
+           tyvi/execution.h
+           tyvi/actions_ast.h
+           tyvi/actions_list.h
+           tyvi/actions_eval.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
