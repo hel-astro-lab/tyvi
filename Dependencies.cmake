@@ -14,7 +14,7 @@ function(tyvi_setup_dependencies)
         cpmaddpackage("gh:boost-ext/ut#v2.3.1")
     endif()
 
-    if(NOT TARGET roc::rocprim)
+    if(NOT TARGET roc::rocprim AND ${tyvi_BACKEND} STREQUAL "hip")
         # rocThrust requires rocPRIM
         # "/opt/rocm" - default install prefix
         find_package(
@@ -27,14 +27,29 @@ function(tyvi_setup_dependencies)
     endif()
 
     if(NOT TARGET roc::rocthrust)
-        # "/opt/rocm" - default install prefix
-        find_package(
-            rocthrust
-            REQUIRED
-            CONFIG
-            PATHS
-            "/opt/rocm/rocthrust"
-        )
+        if(${tyvi_BACKEND} STREQUAL "hip")
+            # "/opt/rocm" - default install prefix
+            find_package(
+                rocthrust
+                REQUIRED
+                CONFIG
+                PATHS
+                "/opt/rocm/rocthrust"
+            )
+        elseif(${tyvi_BACKEND} STREQUAL "cpu")
+            # "/opt/rocm" - default install prefix
+            find_package(
+                rocthrust
+                REQUIRED
+                CONFIG
+                PATHS
+                "/opt/rocm/rocthrust"
+                OPTIONS
+                "ROCTHRUST_DEVICE_SYSTEM OpenMP"
+            )
+        else()
+            message(FATAL_ERROR "Unregonized tyvi_BACKEND: ${tyvi_BACKEND}")
+        endif()
     endif()
 
     if(NOT TARGET std::mdspan)

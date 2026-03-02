@@ -27,9 +27,8 @@ set_target_properties(tyvi PROPERTIES LINKER_LANGUAGE CXX)
 
 # Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
-tyvi_target_link_system_libraries(
-    tyvi
-    PUBLIC
-    std::mdspan
-    roc::rocthrust
-)
+tyvi_target_link_system_libraries(tyvi PUBLIC std::mdspan)
+
+if(${tyvi_BACKEND} STREQUAL "hip")
+    tyvi_target_link_system_libraries(tyvi PUBLIC roc::rocthrust)
+endif()

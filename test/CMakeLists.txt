@@ -25,8 +25,11 @@ foreach(test ${TESTS_TO_RUN})
                 tyvi_options
                 tyvi
                 Boost::ut
-                roc::rocthrust
     )
+
+    if(${tyvi_BACKEND} STREQUAL "hip")
+        tyvi_target_link_system_libraries("${test}.test" PRIVATE roc::rocthrust)
+    endif()
 
     add_test(NAME ${test} COMMAND "${test}.test")
 endforeach()

@@ -29,6 +29,14 @@ tyvi_ENABLE_BAR:BOOL=ON/OFF
 Lastly postfix `*` for `ON` denotes that it is on if the build system can detect
 if the option is supported by the used tooling and all required tools are found.
 
+## Backend
+
+```
+tyvi_BACKEND:STRING=cpu
+```
+
+Choose tyvi backend. Options are: cpu and hip
+
 ## Testing
 
 ```
