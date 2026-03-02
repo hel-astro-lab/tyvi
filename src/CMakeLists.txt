@@ -16,6 +16,7 @@ target_sources(
            tyvi/sstd.h
            tyvi/mdgrid.h
            tyvi/mdgrid_buffer.h
+           tyvi/backend.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
@@ -28,7 +29,11 @@ set_target_properties(tyvi PROPERTIES LINKER_LANGUAGE CXX)
 # Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
 tyvi_target_link_system_libraries(tyvi PUBLIC std::mdspan)
-
+tyvi_target_link_system_libraries(tyvi PUBLIC roc::rocthrust)
 if(${tyvi_BACKEND} STREQUAL "hip")
-    tyvi_target_link_system_libraries(tyvi PUBLIC roc::rocthrust)
+    target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_HIP)
+elseif(${tyvi_BACKEND} STREQUAL "cpu")
+    target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_CPU)
+else()
+    message(FATAL_ERROR "Unregonized tyvi_BACKEND: ${tyvi_BACKEND}")
 endif()
