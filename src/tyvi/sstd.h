@@ -47,13 +47,10 @@ struct immovable {
 template<typename T>
 constexpr auto&
 raw_ref(T& x) {
-    if constexpr (backend::is_cpu) {
-        return x;
-    }
-#ifdef TYVI_USE_HIP_BACKEND
-    else {
-        return thrust::raw_reference_cast(x);
-    }
+#ifdef TYVI_USE_CPU_BACKEND
+    return x;
+#elif defined(TYVI_USE_HIP_BACKEND)
+    return thrust::raw_reference_cast(x);
 #endif
 }
 
@@ -64,13 +61,10 @@ raw_ref(T& x) {
 template<typename T>
 constexpr void
 atomic_add(T* addr, T val) {
-    if constexpr (backend::is_cpu) {
-        *addr += val;
-    }
-#ifdef TYVI_USE_HIP_BACKEND
-    else {
-        ::unsafeAtomicAdd(addr, val);
-    }
+#ifdef TYVI_USE_CPU_BACKEND
+    *addr += val;
+#elif defined(TYVI_USE_HIP_BACKEND)
+    ::unsafeAtomicAdd(addr, val);
 #endif
 }
 
@@ -151,6 +145,20 @@ fmod(const T a, const T b) {
         return ::fmodf(a, b);
     } else {
         return ::fmod(a, b);
+    }
+}
+
+// =====================================================================
+// floor — SIMD-friendly floor (FRINTM on ARM NEON)
+// =====================================================================
+
+template<typename T>
+constexpr auto
+floor(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::floorf(x);
+    } else {
+        return ::floor(x);
     }
 }
 
