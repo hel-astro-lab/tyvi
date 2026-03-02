@@ -190,9 +190,9 @@ mdgrid {
 
     constexpr void invalidating_resize(const grid_extents_type& extents) {
         primary_buffer().invalidating_resize(extents);
-        if constexpr (!backend::is_cpu) {
-            staging_buffer_ref().invalidating_resize(extents);
-        }
+#ifdef TYVI_USE_HIP_BACKEND
+        staging_buffer_ref().invalidating_resize(extents);
+#endif
     }
 
     template<typename... Indices>
