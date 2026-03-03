@@ -36,7 +36,8 @@
                 "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF"
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "tyvi_BACKEND": "hip"
             }
         },
         {
@@ -48,7 +49,8 @@
                 "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "ON",
-                "tyvi_ENABLE_CPPCHECK": "ON"
+                "tyvi_ENABLE_CPPCHECK": "ON",
+                "tyvi_BACKEND": "hip"
             }
         },
         {
@@ -58,7 +60,82 @@
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "hipcc",
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "tyvi_BACKEND": "hip"
+            }
+        },
+        {
+            "name": "unixlike-g++-debug",
+            "displayName": "hipcc Debug",
+            "description": "Target Unix-like OS with g++, debug build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-g++-debug-static-analysis",
+            "displayName": "g++ Debug [static-analysis]",
+            "description": "Target Unix-like OS with g++, debug build type with static analysis.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "ON",
+                "tyvi_ENABLE_CPPCHECK": "ON",
+                "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-g++-release",
+            "displayName": "g++ Release",
+            "description": "Target Unix-like OS with g++, release build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-clang++-debug",
+            "displayName": "hipcc Debug",
+            "description": "Target Unix-like OS with clang++, debug build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-clang++-debug-static-analysis",
+            "displayName": "clang++ Debug [static-analysis]",
+            "description": "Target Unix-like OS with clang++, debug build type with static analysis.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "ON",
+                "tyvi_ENABLE_CPPCHECK": "ON",
+                "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-clang++-release",
+            "displayName": "clang++ Release",
+            "description": "Target Unix-like OS with clang++, release build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "tyvi_BACKEND": "cpu"
             }
         }
     ],
