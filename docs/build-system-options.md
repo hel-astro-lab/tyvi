@@ -26,7 +26,7 @@ tyvi_ENABLE_BAR:BOOL=ON/OFF
 `tyvi_ENABLE_FOO` defaults to `ON` in both cases.
 `tyvi_ENABLE_BAR` defaults to `ON` in toplevel build and to `OFF` in subproject mode.
 
-Lastly postfix `*` for `ON` denotes that it is on if the build system can detect
+Lastly, postfix `*` for `ON` denotes that it is on if the build system can detect
 if the option is supported by the used tooling and all required tools are found.
 
 ## Backend
@@ -35,7 +35,30 @@ if the option is supported by the used tooling and all required tools are found.
 tyvi_BACKEND:STRING=cpu
 ```
 
-Choose tyvi backend. Options are: cpu and hip
+Choose tyvi backend. Options are: `cpu` and `hip`
+
+If `cpu` backend is used rocThurst has to be configured to use its OpenMP backend.
+Note that most of the rocThrust packages are configured to use HIP backend
+and do not support OpenMP backend, so we have to do it manually:
+
+```
+git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
+cd rocm-libraries
+git sparse-checkout init --cone
+git sparse-checkout set projects/rocthrust
+git checkout develop # Or whatever branch you want to use.
+cd projects/rocthrust
+ROCTHRUST_INSTALL_PREFIX="$PWD/rocthrust-install" # or wherever you want to install rocThrust.
+cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=OpenMP -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_INSTALL_PREFIX" .
+make -C build install
+```
+
+Now when configuring tyvi either with CMake presets or manually and `cpu` backend is used
+then we can give the OpenMP enabled rocThrust with additional CMake flag:
+
+```
+cmake ... -Drocthrust_DIR="$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust"
+```
 
 ## Testing
 
