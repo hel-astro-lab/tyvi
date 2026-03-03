@@ -15,8 +15,14 @@
 #include "thrust/for_each.h"
 #include "thrust/host_vector.h"
 
-#include "hip/hip_runtime.h"
+#if defined(TYVI_BACKEND_CPU)
+#elif defined(TYVI_BACKEND_HIP)
+#    include "hip/hip_runtime.h"
+#else
+static_assert(false, "Unregonized backend!");
+#endif
 
+#include "tyvi/backend.h"
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
 #include "tyvi/sstd.h"
@@ -172,8 +178,9 @@ mdgrid {
     }
 };
 
+#if defined(TYVI_BACKEND_CPU)
+#elif defined(TYVI_BACKEND_HIP)
 namespace detail {
-
 /// Manages streams in order to promote stream reuse.
 ///
 /// When user asks for new stream, give it via stream_hadle which destructor
@@ -232,13 +239,21 @@ constexpr void
 hip_check_error(const hipError_t e) {
     if (e != hipSuccess) { throw std::runtime_error{ "hipError_t != hipSuccess" }; }
 }
-
 } // namespace detail
+#else
+static_assert(false, "Unregonized backend!");
+#endif
 
 /// Move-only DAG representing dependencies between async work.
 class mdgrid_work {
+#if defined(TYVI_BACKEND_CPU)
+    // MVP cpu backend is blocking, so there is no handle.
+#elif defined(TYVI_BACKEND_HIP)
     using stream_handle = detail::stream_factory::stream_handle;
     stream_handle handle_;
+#else
+    static_assert(false, "Unregonized backend!");
+#endif
 
     template<auto, typename, typename>
     friend class mdgrid;
@@ -253,8 +268,8 @@ class mdgrid_work {
 
     ~mdgrid_work() noexcept = default;
 
-    mdgrid_work(mdgrid_work&&) noexcept                  = default; // move constructor
-    mdgrid_work& operator=(mdgrid_work&& other) noexcept = default; // move assignment
+    mdgrid_work(mdgrid_work&&) noexcept            = default; // move constructor
+    mdgrid_work& operator=(mdgrid_work&&) noexcept = default; // move assignment
 
     mdgrid_work(const mdgrid_work&)            = delete; // copy constructor
     mdgrid_work& operator=(const mdgrid_work&) = delete; // copy assignment
@@ -265,7 +280,13 @@ class mdgrid_work {
         auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
         const auto indices = sstd::index_space(grid_mds);
 
+#if defined(TYVI_BACKEND_CPU)
+        thrust::for_each(thrust::device, indices.begin(), indices.end(), std::move(wrapped_f));
+#elif defined(TYVI_BACKEND_HIP)
         thrust::for_each(handle_.on_stream(), indices.begin(), indices.end(), std::move(wrapped_f));
+#else
+        static_assert(false, "Unregonized backend!");
+#endif
 
         return *this;
     }
@@ -285,10 +306,17 @@ class mdgrid_work {
             std::ranges::range_reference_t<element_indices_range>;
 
         if constexpr (std::invocable<F, grid_indices_range_reference>) {
+#if defined(TYVI_BACKEND_CPU)
+            thrust::for_each(thrust::device, indices.begin(), indices.end(), std::forward<F>(f));
+#elif defined(TYVI_BACKEND_HIP)
             thrust::for_each(handle_.on_stream(),
                              indices.begin(),
                              indices.end(),
                              std::forward<F>(f));
+#else
+            static_assert(false, "Unregonized backend!");
+#endif
+
         } else if constexpr (std::invocable<F,
                                             grid_indices_range_reference,
                                             element_indices_range_reference>) {
@@ -296,11 +324,16 @@ class mdgrid_work {
                 const auto elem_indices = sstd::index_space(mds[idx]);
                 for (const auto jdx : elem_indices) { f(idx, jdx); }
             };
-
+#if defined(TYVI_BACKEND_CPU)
+            thrust::for_each(thrust::device, indices.begin(), indices.end(), std::move(wrapped_f));
+#elif defined(TYVI_BACKEND_HIP)
             thrust::for_each(handle_.on_stream(),
                              indices.begin(),
                              indices.end(),
                              std::move(wrapped_f));
+#else
+            static_assert(false, "Unregonized backend!");
+#endif
         }
 
         return *this;
@@ -313,24 +346,50 @@ class mdgrid_work {
 
     template<typename MDG>
     const mdgrid_work& sync_to_staging(MDG& mdg) const {
+#if defined(TYVI_BACKEND_CPU)
+        thrust::copy(thrust::device,
+                     mdg.device_buff_.begin(),
+                     mdg.device_buff_.end(),
+                     mdg.staging_buff_.begin());
+#elif defined(TYVI_BACKEND_HIP)
         thrust::copy(handle_.on_stream(),
                      mdg.device_buff_.begin(),
                      mdg.device_buff_.end(),
                      mdg.staging_buff_.begin());
+#else
+        static_assert(false, "Unregonized backend!");
+#endif
 
         return *this;
     }
 
     template<typename MDG>
     const mdgrid_work& sync_from_staging(MDG& mdg) const {
+#if defined(TYVI_BACKEND_CPU)
+        thrust::copy(thrust::device,
+                     mdg.staging_buff_.begin(),
+                     mdg.staging_buff_.end(),
+                     mdg.device_buff_.begin());
+#elif defined(TYVI_BACKEND_HIP)
         thrust::copy(handle_.on_stream(),
                      mdg.staging_buff_.begin(),
                      mdg.staging_buff_.end(),
                      mdg.device_buff_.begin());
+#else
+        static_assert(false, "Unregonized backend!");
+#endif
         return *this;
     }
 
-    void wait() const { handle_.wait(); }
+    void wait() const {
+#if defined(TYVI_BACKEND_CPU)
+        // MVP cpu backend in eager, so there is nothing to wait.
+#elif defined(TYVI_BACKEND_HIP)
+        handle_.wait();
+#else
+        static_assert(false, "Unregonized backend!");
+#endif
+    }
 
     template<std::size_t N>
         requires(N != 0)
@@ -346,8 +405,16 @@ class mdgrid_work {
     };
 
     [[nodiscard]]
-    auto on_this() const {
+    auto on_this() const { // NOLINT
+
+#if defined(TYVI_BACKEND_CPU)
+        // MVP cpu backend is eager.
+        return thrust::device;
+#elif defined(TYVI_BACKEND_HIP)
         return handle_.on_stream();
+#else
+        static_assert(false, "Unregonized backend!");
+#endif
     }
 };
 
@@ -355,7 +422,10 @@ class mdgrid_work {
 template<std::same_as<mdgrid_work>... T>
     requires(sizeof...(T) != 0)
 void
-when_all(const T&... w) {
+when_all([[maybe_unused]] const T&... w) {
+#if defined(TYVI_BACKEND_CPU)
+    // MVP cpu backend in eager, so there is nothing to wait.
+#elif defined(TYVI_BACKEND_HIP)
     // https://rocm.docs.amd.com/projects/HIP/en/develop/reference/hip_runtime_api/modules/event_management.html#_CPPv415hipEventDestroy10hipEvent_t
     //
     // "Releases memory associated with the event. If the event is recording but has not completed
@@ -380,6 +450,9 @@ when_all(const T&... w) {
 
         (detail::hip_check_error(hipEventDestroy(events[I])), ...);
     }(std::make_index_sequence<sizeof...(T)>());
+#else
+    static_assert(false, "Unregonized backend!");
+#endif
 }
 
 } // namespace tyvi

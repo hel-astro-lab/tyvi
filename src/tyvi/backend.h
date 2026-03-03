@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 namespace tyvi {
 
-enum class backend { cpu, hip };
+enum class backend : std::uint8_t { cpu, hip };
 
 #if defined(TYVI_BACKEND_CPU)
 static constexpr auto active_backend = backend::cpu;

@@ -1,9 +1,12 @@
 #include "tyvi/mdgrid.h"
 
-#include <algorithm>
-#include <chrono>
-#include <stdexcept>
-#include <utility>
+#if defined(TYVI_BACKEND_CPU)
+tyvi::mdgrid_work::mdgrid_work() {}
+#elif defined(TYVI_BACKEND_HIP)
+#    include <algorithm>
+#    include <chrono>
+#    include <stdexcept>
+#    include <utility>
 
 using stream_factory = tyvi::detail::stream_factory;
 using stream_handle  = stream_factory::stream_handle;
@@ -104,3 +107,6 @@ tyvi::detail::global_stream_factory() {
 }
 
 tyvi::mdgrid_work::mdgrid_work() : handle_{ tyvi::detail::global_stream_factory().get() } {}
+#else
+static_assert(false, "Unregonized backend!");
+#endif
