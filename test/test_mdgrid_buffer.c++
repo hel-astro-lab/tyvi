@@ -78,9 +78,16 @@ const suite<"mdgrid_buffer"> _ = [] {
             return static_cast<element_type>(i + 10 * j + 100 * k + 1000 * idx[0] + 10000 * idx[1]);
         };
 
-        for (const auto [i, j, k] : rv::cartesian_product(i_space, j_space, k_space)) {
-            for (const auto idx : tyvi::sstd::geometric_index_space<2, 2>()) {
-                mds[i, j, k][idx] = bad_hash(i, j, k, idx);
+        // NOTE: when libc++ supports std::views::cartesian_product, these
+        // nested loops can be replaced with:
+        // for (const auto [i, j, k] : rv::cartesian_product(i_space, j_space, k_space))
+        for (const auto i : i_space) {
+            for (const auto j : j_space) {
+                for (const auto k : k_space) {
+                    for (const auto idx : tyvi::sstd::geometric_index_space<2, 2>()) {
+                        mds[i, j, k][idx] = bad_hash(i, j, k, idx);
+                    }
+                }
             }
         }
 
@@ -90,9 +97,14 @@ const suite<"mdgrid_buffer"> _ = [] {
         expect(std::is_const_v<
                std::remove_reference_t<typename decltype(cmds)::element_type::reference>>);
 
-        for (const auto [i, j, k] : rv::cartesian_product(i_space, j_space, k_space)) {
-            for (const auto idx : tyvi::sstd::geometric_index_space<2, 2>()) {
-                expect(cmds[i, j, k][idx] == bad_hash(i, j, k, idx));
+        // NOTE: see above re: std::views::cartesian_product
+        for (const auto i : i_space) {
+            for (const auto j : j_space) {
+                for (const auto k : k_space) {
+                    for (const auto idx : tyvi::sstd::geometric_index_space<2, 2>()) {
+                        expect(cmds[i, j, k][idx] == bad_hash(i, j, k, idx));
+                    }
+                }
             }
         }
     };

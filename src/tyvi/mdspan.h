@@ -30,22 +30,29 @@ template<typename T,
          typename AccessorPolicy = std::default_accessor<T>>
 using geometric_mdspan = std::mdspan<T, geometric_extents<rank, dim>, LayoutPolicy, AccessorPolicy>;
 
+// NOTE: when libc++ supports std::views::cartesian_product, this can be
+// simplified to use rv::cartesian_product(rv::iota(0uz, D), ...) per rank.
 template<std::size_t rank, std::size_t D>
 [[nodiscard]]
 consteval auto
 geometric_index_space() {
-    namespace rv = std::ranges::views;
+    // Total number of indices: D^rank
+    constexpr auto total = []() {
+        std::size_t n = 1;
+        for (std::size_t r = 0; r < rank; ++r) n *= D;
+        return n;
+    }();
 
-    return std::invoke(
-        []<std::size_t... I>(std::index_sequence<I...>) {
-            return rv::cartesian_product(rv::iota(I * 0uz, D)...)
-                   | std::views::transform([](const auto& t) {
-                         return std::apply(
-                             [](const auto... i) { return std::array<std::size_t, rank>{ i... }; },
-                             t);
-                     });
-        },
-        std::make_index_sequence<rank>());
+    auto result = std::array<std::array<std::size_t, rank>, total>{};
+    for (std::size_t flat = 0; flat < total; ++flat) {
+        auto remaining = flat;
+        // row-major order: last index varies fastest
+        for (std::size_t r = rank; r > 0; --r) {
+            result[flat][r - 1] = remaining % D;
+            remaining /= D;
+        }
+    }
+    return result;
 };
 
 /// Type trait to detect if type is specialization of std::extents.
@@ -206,8 +213,10 @@ class index_space_iterator {
             return tmp;
         }();
 
-        for (const auto [i, d] : std::views::enumerate(sorted_dividers)) {
-            dividers_.at(sorted_rank_ordinals.at(static_cast<std::size_t>(i))) = d;
+        // NOTE: when libc++ supports std::views::enumerate, this can use
+        // for (const auto [i, d] : std::views::enumerate(sorted_dividers))
+        for (std::size_t i = 0; i < rank; ++i) {
+            dividers_.at(sorted_rank_ordinals.at(i)) = sorted_dividers[i];
         }
     }
 
