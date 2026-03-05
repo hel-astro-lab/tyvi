@@ -1,5 +1,6 @@
 #include <boost/ut.hpp> // import boost.ut;
 
+#include <cstdint>
 #include <vector>
 
 #include "tyvi/mdgrid_buffer.h"
@@ -34,7 +35,7 @@ const suite<"mdgrid_buffer resize"> _ = [] {
     using grid_layout_policy    = std::layout_right;
 
     "resizing rank 1 grid"_test = [] {
-        using grid_extents = std::dextents<std::size_t, 1>;
+        using grid_extents = std::dextents<uint32_t, 1>;
 
         using testing_mdgrid_buffer = tyvi::mdgrid_buffer<vec,
                                                           element_extents,
@@ -60,7 +61,7 @@ const suite<"mdgrid_buffer resize"> _ = [] {
     };
 
     "resizing rank 3 grid"_test = [] {
-        using grid_extents = std::dextents<std::size_t, 3>;
+        using grid_extents = std::dextents<uint32_t, 3>;
 
         using testing_mdgrid_buffer = tyvi::mdgrid_buffer<vec,
                                                           element_extents,

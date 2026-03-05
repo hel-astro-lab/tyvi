@@ -4,6 +4,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <numeric>
 #include <ranges>
@@ -19,7 +20,7 @@ namespace tyvi::sstd {
 template<std::size_t rank, std::size_t dim>
 using geometric_extents = decltype(std::invoke(
     []<std::size_t... I>(std::index_sequence<I...>) {
-        return std::extents<std::size_t, (0 * I + dim)...>{};
+        return std::extents<uint32_t, (0 * I + dim)...>{};
     },
     std::make_index_sequence<rank>()));
 
@@ -130,7 +131,7 @@ class index_space_iterator {
     using pointer = void;
 
   private:
-    std::size_t offset_{ std::dynamic_extent };
+    IndexType offset_{ static_cast<IndexType>(-1) };
 
     // Ideally there could just be a pointer to the index_space_view,
     // but it is possible to have the view live on host and
@@ -143,7 +144,7 @@ class index_space_iterator {
   public:
     template<mapping_of_rank<rank> M>
         requires(rank == 0uz)
-    explicit constexpr index_space_iterator(const std::size_t offset,
+    explicit constexpr index_space_iterator(const IndexType offset,
                                             [[maybe_unused]]
                                             const M&)
         : offset_{ offset },
@@ -152,7 +153,7 @@ class index_space_iterator {
 
     template<mapping_of_rank<rank> M>
         requires exhaustive_invertable_strided_mapping<M> and mapping_of_nonzero_rank<M>
-    explicit constexpr index_space_iterator(const std::size_t offset, const M& m)
+    explicit constexpr index_space_iterator(const IndexType offset, const M& m)
         : offset_{ offset },
           dividers_{ [&]<std::size_t... I>(std::index_sequence<I...>) {
               return std::array{ m.stride(I)... };
@@ -161,7 +162,7 @@ class index_space_iterator {
 
     template<mapping_of_rank<rank> M>
         requires invertable_strided_mapping<M> and mapping_of_nonzero_rank<M>
-    explicit constexpr index_space_iterator(const std::size_t offset, const M& m)
+    explicit constexpr index_space_iterator(const IndexType offset, const M& m)
         : offset_{ offset },
           extents_{ as_array(m.extents()) } {
         const auto sorted_rank_ordinals = [&] {
@@ -232,7 +233,7 @@ class index_space_iterator {
         } else {
             // Strided implementation (currently only one supported).
             return [&]<std::size_t... I>(std::index_sequence<I...>) {
-                return reference{ (static_cast<IndexType>(offset_) / dividers_[I])
+                return reference{ (offset_ / dividers_[I])
                                   % extents_[I]... };
             }(std::make_index_sequence<rank>());
         }
@@ -261,7 +262,7 @@ class index_space_iterator {
     friend constexpr index_space_iterator operator+(const index_space_iterator& lhs,
                                                     const difference_type rhs) {
         auto result    = lhs;
-        result.offset_ = static_cast<std::size_t>(static_cast<difference_type>(lhs.offset_) + rhs);
+        result.offset_ = static_cast<IndexType>(static_cast<difference_type>(lhs.offset_) + rhs);
         return result;
     }
 
@@ -314,7 +315,7 @@ class [[nodiscard]] index_space_view : public std::ranges::view_interface<index_
 
     [[nodiscard]]
     constexpr auto begin() const {
-        return iterator_type(0uz, mapping_);
+        return iterator_type(typename M::index_type{ 0 }, mapping_);
     }
     [[nodiscard]]
     constexpr auto end() const {

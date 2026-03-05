@@ -4,6 +4,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <print>
 #include <ranges>
@@ -66,10 +67,10 @@ const suite<"sstd"> _ = [] {
         using ge2 = tyvi::sstd::geometric_extents<2, 2>;
         using ge3 = tyvi::sstd::geometric_extents<3, 3>;
 
-        expect(std::same_as<ge0, std::extents<std::size_t>>);
-        expect(std::same_as<ge1, std::extents<std::size_t, 1>>);
-        expect(std::same_as<ge2, std::extents<std::size_t, 2, 2>>);
-        expect(std::same_as<ge3, std::extents<std::size_t, 3, 3, 3>>);
+        expect(std::same_as<ge0, std::extents<uint32_t>>);
+        expect(std::same_as<ge1, std::extents<uint32_t, 1>>);
+        expect(std::same_as<ge2, std::extents<uint32_t, 2, 2>>);
+        expect(std::same_as<ge3, std::extents<uint32_t, 3, 3, 3>>);
     };
 
     "geometric mdspan"_test = [] {

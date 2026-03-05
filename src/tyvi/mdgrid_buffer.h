@@ -22,6 +22,8 @@ class [[nodiscard]] mdgrid_buffer {
     using element_element_type = V::value_type;
     using element_mapping_type = ElemLP::template mapping<ElemExtents>;
     using grid_mapping_type    = GridLP::template mapping<GridExtents>;
+    using grid_index_type    = typename GridExtents::index_type;
+    using element_index_type = typename ElemExtents::index_type;
 
     static_assert(ElemExtents::rank_dynamic() == 0);
     static_assert(element_mapping_type::is_always_exhaustive());
@@ -41,9 +43,9 @@ class [[nodiscard]] mdgrid_buffer {
     struct [[nodiscard]]
     element_accessor_policy {
         /// Element accessor has to know about which element element in the grid it accesses.
-        std::size_t grid_offset;
+        grid_index_type grid_offset;
         /// Element accessor has to know how many elements there are in the grid.
-        std::size_t grid_required_span_size;
+        grid_index_type grid_required_span_size;
 
         using element_type =
             std::conditional_t<has_const, const element_element_type, element_element_type>;
@@ -55,14 +57,14 @@ class [[nodiscard]] mdgrid_buffer {
 
         [[nodiscard]]
         constexpr reference access(data_handle_type const buff_ptr,
-                                   const std::size_t element_offset) const {
-            return buff_ptr[static_cast<std::ptrdiff_t>((element_offset * grid_required_span_size)
-                                                        + grid_offset)];
+                                   const element_index_type element_offset) const {
+            return buff_ptr[static_cast<std::ptrdiff_t>(
+                element_offset * grid_required_span_size + grid_offset)];
         }
 
         [[nodiscard]]
         constexpr offset_policy::data_handle_type offset(data_handle_type const buff_ptr,
-                                                         const std::size_t element_offset) const {
+                                                         const element_index_type element_offset) const {
             return std::ranges::next(buff_ptr, element_offset * grid_required_span_size);
         }
     };
@@ -76,7 +78,7 @@ class [[nodiscard]] mdgrid_buffer {
     template<bool has_const>
     struct [[nodiscard]]
     grid_accessor_policy {
-        std::size_t grid_required_span_size;
+        grid_index_type grid_required_span_size;
 
         using element_type = element_mdspan<has_const>;
         struct data_handle_type {
@@ -84,14 +86,14 @@ class [[nodiscard]] mdgrid_buffer {
                 std::conditional_t<has_const, typename V::const_pointer, typename V::pointer>;
 
             buff_ptr_type buff_ptr{ nullptr };
-            std::size_t grid_offset{ 0uz };
+            grid_index_type grid_offset{ 0 };
         };
         using reference     = element_type;
         using offset_policy = grid_accessor_policy;
 
         [[nodiscard]]
         constexpr reference access(data_handle_type const grid_handle,
-                                   const std::size_t grid_offset) const {
+                                   const grid_index_type grid_offset) const {
             const auto acc = element_accessor_policy<has_const>{
                 .grid_offset             = grid_offset + grid_handle.grid_offset,
                 .grid_required_span_size = grid_required_span_size
@@ -101,7 +103,7 @@ class [[nodiscard]] mdgrid_buffer {
 
         [[nodiscard]]
         constexpr offset_policy::data_handle_type offset(data_handle_type const grid_handle,
-                                                         const std::size_t grid_offset) const {
+                                                         const grid_index_type grid_offset) const {
             auto new_handle = grid_handle;
             new_handle.grid_offset += grid_offset;
             return new_handle;

@@ -188,16 +188,17 @@ namespace detail {
 
 template<std::size_t Dim, std::size_t Rank, typename Extents, typename F>
 void
-nested_for(const Extents& ext, F& f, std::array<std::size_t, Rank>& idx) {
+nested_for(const Extents& ext, F& f, std::array<typename Extents::index_type, Rank>& idx) {
+    using index_type = typename Extents::index_type;
     if constexpr (Dim == Rank - 1) {
         const auto n = ext.extent(Dim);
 #    pragma omp simd
-        for (std::size_t k = 0; k < n; ++k) {
+        for (index_type k = 0; k < n; ++k) {
             idx[Dim] = k;
             f(idx);
         }
     } else {
-        for (std::size_t i = 0; i < ext.extent(Dim); ++i) {
+        for (index_type i = 0; i < ext.extent(Dim); ++i) {
             idx[Dim] = i;
             nested_for<Dim + 1, Rank>(ext, f, idx);
         }
@@ -308,10 +309,11 @@ class mdgrid_work {
 
 #if defined(TYVI_BACKEND_CPU)
         constexpr auto Rank = std::remove_cvref_t<decltype(grid_mds)>::rank();
+        using idx_t = typename std::remove_cvref_t<decltype(grid_mds)>::index_type;
         if constexpr (Rank == 0) {
-            wrapped_f(std::array<std::size_t, 0>{});
+            wrapped_f(std::array<idx_t, 0>{});
         } else {
-            auto idx = std::array<std::size_t, Rank>{};
+            auto idx = std::array<idx_t, Rank>{};
             detail::nested_for<0, Rank>(grid_mds.extents(), wrapped_f, idx);
         }
 #elif defined(TYVI_BACKEND_HIP)
@@ -341,10 +343,11 @@ class mdgrid_work {
         if constexpr (std::invocable<F, grid_indices_range_reference>) {
 #if defined(TYVI_BACKEND_CPU)
             constexpr auto Rank = std::remove_cvref_t<decltype(mds)>::rank();
+            using idx_t = typename std::remove_cvref_t<decltype(mds)>::index_type;
             if constexpr (Rank == 0) {
-                f(std::array<std::size_t, 0>{});
+                f(std::array<idx_t, 0>{});
             } else {
-                auto idx = std::array<std::size_t, Rank>{};
+                auto idx = std::array<idx_t, Rank>{};
                 detail::nested_for<0, Rank>(mds.extents(), f, idx);
             }
 #elif defined(TYVI_BACKEND_HIP)
@@ -362,10 +365,11 @@ class mdgrid_work {
             };
 #if defined(TYVI_BACKEND_CPU)
             constexpr auto Rank = std::remove_cvref_t<decltype(mds)>::rank();
+            using idx_t = typename std::remove_cvref_t<decltype(mds)>::index_type;
             if constexpr (Rank == 0) {
-                wrapped_f(std::array<std::size_t, 0>{});
+                wrapped_f(std::array<idx_t, 0>{});
             } else {
-                auto idx = std::array<std::size_t, Rank>{};
+                auto idx = std::array<idx_t, Rank>{};
                 detail::nested_for<0, Rank>(mds.extents(), wrapped_f, idx);
             }
 #elif defined(TYVI_BACKEND_HIP)

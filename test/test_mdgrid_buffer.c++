@@ -1,6 +1,7 @@
 #include <boost/ut.hpp> // import boost.ut;
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <ranges>
 #include <stdexcept>
@@ -29,7 +30,7 @@ const suite<"mdgrid_buffer"> _ = [] {
     using vec                   = std::vector<element_type>;
     using element_extents       = tyvi::sstd::geometric_extents<2, 2>;
     using element_layout_policy = std::layout_right;
-    using grid_extents          = std::dextents<std::size_t, 3>;
+    using grid_extents          = std::dextents<uint32_t, 3>;
     using grid_layout_policy    = std::layout_right;
 
     using testing_mdgrid_buffer = tyvi::mdgrid_buffer<vec,

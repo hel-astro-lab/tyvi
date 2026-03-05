@@ -1,6 +1,7 @@
 #include <boost/ut.hpp> // import boost.ut;
 
 #include <cstddef>
+#include <cstdint>
 #include <tuple>
 #include <utility>
 
@@ -17,7 +18,7 @@ const suite<"mdgrid"> _ = [] {
     "3D mdgrid is constructible"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<float>{ .rank = 2, .dim = 2 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         [[maybe_unused]]
         auto _ = mdg(3, 4, 5);
@@ -34,7 +35,7 @@ const suite<"mdgrid"> _ = [] {
     "mdgrid staging buffer round trip"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         auto grid = mdg(3, 4, 5);
 
@@ -62,7 +63,7 @@ const suite<"mdgrid"> _ = [] {
 
     "mdgrid is constructible from other mdgrid's extents"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
-        using mdg                = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg                = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         auto gridA = mdg(3, 4, 5);
 
@@ -83,8 +84,8 @@ const suite<"mdgrid"> _ = [] {
         constexpr auto scalar_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 0, .dim = 3 };
         constexpr auto vec_desc    = tyvi::mdgrid_element_descriptor<int>{ .rank = 1, .dim = 3 };
 
-        using scalar_mdg = tyvi::mdgrid<scalar_desc, std::dextents<std::size_t, 3>>;
-        using vec_mdg    = tyvi::mdgrid<vec_desc, std::dextents<std::size_t, 3>>;
+        using scalar_mdg = tyvi::mdgrid<scalar_desc, std::dextents<uint32_t, 3>>;
+        using vec_mdg    = tyvi::mdgrid<vec_desc, std::dextents<uint32_t, 3>>;
 
         auto scalar_grid = scalar_mdg(8, 4, 6);
         auto vec_grid    = vec_mdg(8, 4, 6);
@@ -144,7 +145,7 @@ const suite<"mdgrid"> _ = [] {
     "mdgrid for each over submdspan 1"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         auto grid = mdg(3, 4, 5);
 
@@ -191,7 +192,7 @@ const suite<"mdgrid"> _ = [] {
     "mdgrid for each over submdspan 2"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 1, .dim = 3 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         auto grid = mdg(4, 4, 4);
 
@@ -237,7 +238,7 @@ const suite<"mdgrid"> _ = [] {
     "mdgrid for each over submdspan 3"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         auto grid = mdg(7, 9, 2);
 
@@ -284,7 +285,7 @@ const suite<"mdgrid"> _ = [] {
     "mdgrid getting and setting underlying buffer"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
 
         auto gridA = mdg(7, 9, 2);
         auto gridB = mdg(7, 9, 2);
@@ -311,7 +312,7 @@ const suite<"mdgrid"> _ = [] {
     "mdgrid invalidating_resize"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 2, .dim = 3 };
 
-        using mdg = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+        using mdg = tyvi::mdgrid<elem_desc, std::dextents<uint32_t, 3>>;
         using E   = mdg::grid_extents_type;
 
         auto grid = mdg(7, 9, 2);
