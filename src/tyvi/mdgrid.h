@@ -179,6 +179,31 @@ mdgrid {
 };
 
 #if defined(TYVI_BACKEND_CPU)
+namespace detail {
+
+/* Using this results in better auto vectorization over sstd::index_space
+   with thrust::for_each. However, compared to sstd::index_space
+   it does not take mdspan layout into account and always iterates
+   as in std::layout_right (i.e. row-marjor order). */
+
+template<std::size_t Dim, std::size_t Rank, typename Extents, typename F>
+void
+nested_for(const Extents& ext, F& f, std::array<std::size_t, Rank>& idx) {
+    if constexpr (Dim == Rank - 1) {
+        const auto n = ext.extent(Dim);
+#    pragma omp simd
+        for (std::size_t k = 0; k < n; ++k) {
+            idx[Dim] = k;
+            f(idx);
+        }
+    } else {
+        for (std::size_t i = 0; i < ext.extent(Dim); ++i) {
+            idx[Dim] = i;
+            nested_for<Dim + 1, Rank>(ext, f, idx);
+        }
+    }
+}
+} // namespace detail
 #elif defined(TYVI_BACKEND_HIP)
 namespace detail {
 /// Manages streams in order to promote stream reuse.
@@ -274,15 +299,23 @@ class mdgrid_work {
     mdgrid_work(const mdgrid_work&)            = delete; // copy constructor
     mdgrid_work& operator=(const mdgrid_work&) = delete; // copy assignment
 
+    // NOLINTBEGIN{modernize-use-nodiscard}
+
     template<typename MDG, typename F>
-    const mdgrid_work& for_each(MDG& mdg, F&& f) const {
+    const mdgrid_work& for_each(MDG& mdg, F f) const {
         auto grid_mds  = mdg.device_buff_.mds();
-        auto wrapped_f = [grid_mds, f = std::forward<F>(f)](const auto& idx) { f(grid_mds[idx]); };
-        const auto indices = sstd::index_space(grid_mds);
+        auto wrapped_f = [grid_mds, f = std::move(f)](const auto& idx) { f(grid_mds[idx]); };
 
 #if defined(TYVI_BACKEND_CPU)
-        thrust::for_each(thrust::device, indices.begin(), indices.end(), std::move(wrapped_f));
+        constexpr auto Rank = std::remove_cvref_t<decltype(grid_mds)>::rank();
+        if constexpr (Rank == 0) {
+            wrapped_f(std::array<std::size_t, 0>{});
+        } else {
+            auto idx = std::array<std::size_t, Rank>{};
+            detail::nested_for<0, Rank>(grid_mds.extents(), wrapped_f, idx);
+        }
 #elif defined(TYVI_BACKEND_HIP)
+        const auto indices = sstd::index_space(grid_mds);
         thrust::for_each(handle_.on_stream(), indices.begin(), indices.end(), std::move(wrapped_f));
 #else
         static_assert(false, "Unregonized backend!");
@@ -292,7 +325,7 @@ class mdgrid_work {
     }
 
     template<typename T, typename E, typename LP, typename AP, typename F>
-    const mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F&& f) const {
+    const mdgrid_work& for_each_index(const std::mdspan<T, E, LP, AP>& mds, F f) const {
         using MDS = std::mdspan<T, E, LP, AP>;
 
         const auto indices = sstd::index_space(mds);
@@ -307,12 +340,15 @@ class mdgrid_work {
 
         if constexpr (std::invocable<F, grid_indices_range_reference>) {
 #if defined(TYVI_BACKEND_CPU)
-            thrust::for_each(thrust::device, indices.begin(), indices.end(), std::forward<F>(f));
+            constexpr auto Rank = std::remove_cvref_t<decltype(mds)>::rank();
+            if constexpr (Rank == 0) {
+                f(std::array<std::size_t, 0>{});
+            } else {
+                auto idx = std::array<std::size_t, Rank>{};
+                detail::nested_for<0, Rank>(mds.extents(), f, idx);
+            }
 #elif defined(TYVI_BACKEND_HIP)
-            thrust::for_each(handle_.on_stream(),
-                             indices.begin(),
-                             indices.end(),
-                             std::forward<F>(f));
+            thrust::for_each(handle_.on_stream(), indices.begin(), indices.end(), std::move(f));
 #else
             static_assert(false, "Unregonized backend!");
 #endif
@@ -320,12 +356,18 @@ class mdgrid_work {
         } else if constexpr (std::invocable<F,
                                             grid_indices_range_reference,
                                             element_indices_range_reference>) {
-            auto wrapped_f = [mds, f = std::forward<F>(f)](const auto& idx) {
+            auto wrapped_f = [mds, f = std::move(f)](const auto& idx) {
                 const auto elem_indices = sstd::index_space(mds[idx]);
                 for (const auto jdx : elem_indices) { f(idx, jdx); }
             };
 #if defined(TYVI_BACKEND_CPU)
-            thrust::for_each(thrust::device, indices.begin(), indices.end(), std::move(wrapped_f));
+            constexpr auto Rank = std::remove_cvref_t<decltype(mds)>::rank();
+            if constexpr (Rank == 0) {
+                wrapped_f(std::array<std::size_t, 0>{});
+            } else {
+                auto idx = std::array<std::size_t, Rank>{};
+                detail::nested_for<0, Rank>(mds.extents(), wrapped_f, idx);
+            }
 #elif defined(TYVI_BACKEND_HIP)
             thrust::for_each(handle_.on_stream(),
                              indices.begin(),
@@ -340,8 +382,8 @@ class mdgrid_work {
     }
 
     template<typename MDG, typename F>
-    const mdgrid_work& for_each_index(MDG& mdg, F&& f) const {
-        return for_each_index(mdg.device_buff_.mds(), std::forward<F>(f));
+    const mdgrid_work& for_each_index(MDG& mdg, F f) const {
+        return for_each_index(mdg.device_buff_.mds(), std::move(f));
     }
 
     template<typename MDG>
@@ -380,6 +422,8 @@ class mdgrid_work {
 #endif
         return *this;
     }
+
+    // NOLINTEND{modernize-use-nodiscard}
 
     void wait() const {
 #if defined(TYVI_BACKEND_CPU)
