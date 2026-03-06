@@ -59,14 +59,28 @@ endmacro()
 # Declares options for the project.
 macro(TYVI_DECLARE_OPTIONS)
     option(tyvi_ENABLE_COVERAGE "Enable coverage reporting" OFF)
-    option(tyvi_BACKEND "Tyvi backend to use.")
-    # CMake defaults to OFF (and there can not be string default options?)
-    # se we will set backend to cpu if it is not given
-    if(${tyvi_BACKEND} EQUAL OFF)
-        set(tyvi_BACKEND "cpu")
-    endif()
 
-    message(STATUS "Selected backend: ${tyvi_BACKEND}")
+    # cmake-lint: disable=C0103
+    set(tyvi_BACKEND
+        "Not given! Set with -Dtyvi_BACKEND=<cpu|hip>"
+        CACHE STRING "Backend to use: cpu|hip"
+    )
+    set_property(CACHE tyvi_BACKEND PROPERTY STRINGS "cpu" "hip")
+
+    get_property(
+        tyvi_BACKEND_STRINGS
+        CACHE tyvi_BACKEND
+        PROPERTY STRINGS
+    )
+    if(NOT
+       tyvi_BACKEND
+       IN_LIST
+       tyvi_BACKEND_STRINGS
+    )
+        message(FATAL_ERROR "Invalid tyvi_BACKEND given: ${tyvi_BACKEND}")
+    else()
+        message(STATUS "Selected backend: ${tyvi_BACKEND}")
+    endif()
 
     tyvi_check_sanitizer_support()
 
