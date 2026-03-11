@@ -32,14 +32,14 @@ if the option is supported by the used tooling and all required tools are found.
 ## Backend
 
 ```
-tyvi_BACKEND:STRING=cpu
+tyvi_BACKEND:STRING=no-default
 ```
 
 Choose tyvi backend. Options are: `cpu` and `hip`
 
-If `cpu` backend is used rocThurst has to be configured to use its OpenMP backend.
+If `cpu` backend is used rocThurst has to be configured to use one of its device CPU backends.
 Note that most of the rocThrust packages are configured to use HIP backend
-and do not support OpenMP backend, so we have to do it manually:
+and do not support CPU backends, so we have to do it manually:
 
 ```
 git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
@@ -49,7 +49,7 @@ git sparse-checkout set projects/rocthrust
 git checkout develop # Or whatever branch you want to use.
 cd projects/rocthrust
 ROCTHRUST_INSTALL_PREFIX="$PWD/rocthrust-install" # or wherever you want to install rocThrust.
-cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=OpenMP -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_INSTALL_PREFIX" .
+cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=CPP -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_INSTALL_PREFIX" .
 make -C build install
 ```
 

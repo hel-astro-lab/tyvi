@@ -44,8 +44,6 @@ function(tyvi_setup_dependencies)
                 CONFIG
                 PATHS
                 "/opt/rocm/rocthrust"
-                OPTIONS
-                "ROCTHRUST_DEVICE_SYSTEM OpenMP"
             )
         else()
             message(FATAL_ERROR "Unregonized tyvi_BACKEND: ${tyvi_BACKEND}")
