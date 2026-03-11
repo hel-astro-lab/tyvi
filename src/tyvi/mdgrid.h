@@ -194,8 +194,9 @@ nested_for(const Extents& ext, F& f, std::array<typename Extents::index_type, Ra
         const auto n = ext.extent(Dim);
 #    pragma omp simd
         for (index_type k = 0; k < n; ++k) {
-            idx[Dim] = k;
-            f(idx);
+            auto local_idx = idx;
+            local_idx[Dim] = k;
+            f(local_idx);
         }
     } else {
         for (index_type i = 0; i < ext.extent(Dim); ++i) {
