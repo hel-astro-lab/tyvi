@@ -16,7 +16,7 @@
 namespace tyvi::sstd {
 
 /// Geometric extents are all static and the same.
-template<std::size_t rank, std::size_t dim>
+template<std::size_t rank, std::size_t dim, typename IndexType = std::size_t>
 using geometric_extents = decltype(std::invoke(
     []<std::size_t... I>(std::index_sequence<I...>) {
         return std::extents<std::size_t, (0 * I + dim)...>{};
@@ -26,9 +26,11 @@ using geometric_extents = decltype(std::invoke(
 template<typename T,
          std::size_t rank,
          std::size_t dim,
+         typename IndexType      = std::size_t,
          typename LayoutPolicy   = std::layout_right,
          typename AccessorPolicy = std::default_accessor<T>>
-using geometric_mdspan = std::mdspan<T, geometric_extents<rank, dim>, LayoutPolicy, AccessorPolicy>;
+using geometric_mdspan =
+    std::mdspan<T, geometric_extents<rank, dim, IndexType>, LayoutPolicy, AccessorPolicy>;
 
 /// Type trait to detect if type is specialization of std::extents.
 template<typename>
@@ -347,11 +349,11 @@ index_space(const std::mdspan<T, E, LP, AP>& mds) {
     return index_space(mds.mapping());
 };
 
-template<std::size_t rank, std::size_t D>
+template<std::size_t rank, std::size_t D, typename IndexType = std::size_t>
 [[nodiscard]]
 consteval auto
 geometric_index_space() {
-    return index_space(geometric_mdspan<int, rank, D>(nullptr));
+    return index_space(geometric_mdspan<int, rank, D, IndexType>(nullptr));
 };
 
 } // namespace tyvi::sstd
