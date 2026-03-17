@@ -21,7 +21,7 @@ target_sources(
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
 
-target_compile_features(tyvi PUBLIC cxx_std_23)
+target_compile_features(tyvi PUBLIC cxx_std_26)
 
 set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(tyvi PROPERTIES LINKER_LANGUAGE CXX)
