@@ -349,11 +349,14 @@ index_space(const std::mdspan<T, E, LP, AP>& mds) {
     return index_space(mds.mapping());
 };
 
-template<std::size_t rank, std::size_t D, typename IndexType = std::size_t>
+template<std::size_t rank,
+         std::size_t D,
+         typename IndexType    = std::size_t,
+         typename LayoutPolicy = std::layout_right>
 [[nodiscard]]
 consteval auto
 geometric_index_space() {
-    return index_space(geometric_mdspan<int, rank, D, IndexType>(nullptr));
+    return index_space(geometric_mdspan<int, rank, D, IndexType, LayoutPolicy>(nullptr));
 };
 
 } // namespace tyvi::sstd

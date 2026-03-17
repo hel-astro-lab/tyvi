@@ -109,6 +109,18 @@ const suite<"sstd"> _ = [] {
             expect(1 == std::ranges::distance(tyvi::sstd::geometric_index_space<0, 42>()));
             expect(0 == std::ranges::size(tyvi::sstd::geometric_index_space<0, 42>()[0]));
         };
+
+        "geometric index space for matrix layout_right is transpose of layout_left"_test = [] {
+            const auto indices_left =
+                tyvi::sstd::geometric_index_space<2, 3, std::size_t, std::layout_left>();
+            const auto indices_right =
+                tyvi::sstd::geometric_index_space<2, 3, std::size_t, std::layout_right>();
+
+            for (const auto [l, r] : std::views::zip(indices_left, indices_right)) {
+                expect(l[0] == r[1]);
+                expect(l[1] == r[0]);
+            }
+        };
     };
 
     "index_space(strided_mds)"_test = [] {
