@@ -19,7 +19,7 @@ namespace tyvi::sstd {
 template<std::size_t rank, std::size_t dim, typename IndexType = std::size_t>
 using geometric_extents = decltype(std::invoke(
     []<std::size_t... I>(std::index_sequence<I...>) {
-        return std::extents<std::size_t, (0 * I + dim)...>{};
+        return std::extents<IndexType, (0 * I + dim)...>{};
     },
     std::make_index_sequence<rank>()));
 
