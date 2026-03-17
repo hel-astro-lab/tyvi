@@ -175,10 +175,12 @@ const suite<"sstd"> _ = [] {
         const auto buff = std::array{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
         const auto mds_left =
-            tyvi::sstd::geometric_mdspan<const int, 2, 3, std::layout_left>(buff.data());
+            tyvi::sstd::geometric_mdspan<const int, 2, 3, std::size_t, std::layout_left>(
+                buff.data());
 
         const auto mds_right =
-            tyvi::sstd::geometric_mdspan<const int, 2, 3, std::layout_right>(buff.data());
+            tyvi::sstd::geometric_mdspan<const int, 2, 3, std::size_t, std::layout_right>(
+                buff.data());
 
         const auto indices_left  = tyvi::sstd::index_space(mds_left);
         const auto indices_right = tyvi::sstd::index_space(mds_right);
