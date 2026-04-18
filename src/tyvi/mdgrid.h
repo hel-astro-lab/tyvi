@@ -176,6 +176,60 @@ mdgrid {
     constexpr void invalidating_resize(Indices... indices) {
         this->invalidating_resize(grid_extents_type{ std::forward<Indices>(indices)... });
     }
+
+    // Deducing this would be really nice to reduce the duplication below.
+
+    template<typename element_extents_type::index_type... idx>
+    [[nodiscard]]
+    constexpr auto device_component_span() {
+        return device_buff_.template component_span<idx...>();
+    }
+
+    template<
+        std::array<typename element_extents_type::index_type, element_extents_type::rank()> idx>
+    [[nodiscard]]
+    constexpr auto device_component_span() {
+        return device_buff_.template component_span<idx>();
+    }
+
+    template<typename element_extents_type::index_type... idx>
+    [[nodiscard]]
+    constexpr auto device_component_cspan() const {
+        return device_buff_.template component_cspan<idx...>();
+    }
+
+    template<
+        std::array<typename element_extents_type::index_type, element_extents_type::rank()> idx>
+    [[nodiscard]]
+    constexpr auto device_component_cspan() const {
+        return device_buff_.template component_span<idx>();
+    }
+
+    template<typename element_extents_type::index_type... idx>
+    [[nodiscard]]
+    constexpr auto host_component_span() {
+        return staging_buff_.template component_span<idx...>();
+    }
+
+    template<
+        std::array<typename element_extents_type::index_type, element_extents_type::rank()> idx>
+    [[nodiscard]]
+    constexpr auto host_component_span() {
+        return staging_buff_.template component_span<idx>();
+    }
+
+    template<typename element_extents_type::index_type... idx>
+    [[nodiscard]]
+    constexpr auto host_component_cspan() const {
+        return staging_buff_.template component_cspan<idx...>();
+    }
+
+    template<
+        std::array<typename element_extents_type::index_type, element_extents_type::rank()> idx>
+    [[nodiscard]]
+    constexpr auto host_component_cspan() const {
+        return staging_buff_.template component_span<idx>();
+    }
 };
 
 #if defined(TYVI_BACKEND_CPU)
