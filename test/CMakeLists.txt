@@ -13,6 +13,7 @@ set(TESTS_TO_RUN
     mdgrid_work
     mdgrid_buffer
     mdgrid_buffer_resize
+    mdgrid_buffer_component_spans
 )
 
 foreach(test ${TESTS_TO_RUN})

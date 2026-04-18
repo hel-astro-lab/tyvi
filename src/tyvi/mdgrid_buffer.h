@@ -4,6 +4,7 @@
 #include <concepts>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <ranges>
@@ -255,6 +256,39 @@ class [[nodiscard]] mdgrid_buffer {
             return S(thrust::raw_pointer_cast(buff_.data()), std::ranges::size(buff_));
         }
     }
-};
 
+    template<ElemExtents::index_type... idx>
+    [[nodiscard]]
+    constexpr auto component_span() {
+        const auto element_offset = element_mapping_(idx...);
+        const auto grid_size      = grid_mapping_.required_span_size();
+        const auto total_offset   = element_offset * grid_size;
+        return this->span().subspan(total_offset, grid_size);
+    }
+
+    template<std::array<typename ElemExtents::index_type, ElemExtents::rank()> idx>
+    [[nodiscard]]
+    constexpr auto component_span() {
+        return [&]<std::size_t... I>(std::index_sequence<I...>) {
+            return this->component_span<idx[I]...>();
+        }(std::make_index_sequence<ElemExtents::rank()>());
+    }
+
+    template<ElemExtents::index_type... idx>
+    [[nodiscard]]
+    constexpr auto component_cspan() const {
+        const auto element_offset = element_mapping_(idx...);
+        const auto grid_size      = grid_mapping_.required_span_size();
+        const auto total_offset   = element_offset * grid_size;
+        return this->span().subspan(total_offset, grid_size);
+    }
+
+    template<std::array<typename ElemExtents::index_type, ElemExtents::rank()> idx>
+    [[nodiscard]]
+    constexpr auto component_cspan() const {
+        return [&]<std::size_t... I>(std::index_sequence<I...>) {
+            return this->component_cspan<idx[I]...>();
+        }(std::make_index_sequence<ElemExtents::rank()>());
+    }
+};
 } // namespace tyvi
