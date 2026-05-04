@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 cmake_minimum_required(VERSION 3.21)
 
 # This template attempts to be "fetch_content"-able

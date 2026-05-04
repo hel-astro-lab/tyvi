@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 include(cmake/CPM.cmake)
 
 # Done as a function so that updates to variables like

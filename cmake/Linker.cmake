@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Configures user linker for configured_target.
 macro(TYVI_CONFIGURE_TARGET_LINKER configured_target)
     include(CheckCXXCompilerFlag)

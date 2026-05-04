@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Setup sanitizers from arguments for target.
 function(
     tyvi_setup_target_sanitizers

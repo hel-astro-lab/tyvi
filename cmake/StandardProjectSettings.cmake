@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")

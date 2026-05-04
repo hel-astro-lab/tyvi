@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Setups cppcheck for the project.
 macro(TYVI_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
     find_program(CPPCHECK cppcheck)

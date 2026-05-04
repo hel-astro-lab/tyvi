@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Miro Palmu and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Provide a test to verify that the version being reported from the application
 # matches the version given to CMake. This will be important once you package
 # your program. Real world shows that this is the kind of simple mistake that is easy
