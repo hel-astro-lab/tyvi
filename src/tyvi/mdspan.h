@@ -18,13 +18,21 @@
 
 namespace tyvi::sstd {
 
-/// Geometric extents are all static and the same.
-template<std::size_t rank, std::size_t dim, typename IndexType = std::size_t>
-using geometric_extents = decltype(std::invoke(
+/* geometric_extents is split into two, because geometric_extents_value
+   can not be inside of the decltype in geometric_extents due to:
+   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=125268 */
+
+template<std::size_t rank, std::size_t dim, typename IndexType>
+static constexpr auto geometric_extents_value = std::invoke(
     []<std::size_t... I>(std::index_sequence<I...>) {
         return std::extents<IndexType, (0 * I + dim)...>{};
     },
-    std::make_index_sequence<rank>()));
+    std::make_index_sequence<rank>());
+
+/// Geometric extents are all static and the same.
+template<std::size_t rank, std::size_t dim, typename IndexType = std::size_t>
+using geometric_extents =
+    std::remove_cvref_t<decltype(geometric_extents_value<rank, dim, IndexType>)>;
 
 template<typename T,
          std::size_t rank,

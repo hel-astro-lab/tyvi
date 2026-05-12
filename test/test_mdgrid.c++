@@ -326,6 +326,25 @@ const suite<"mdgrid"> _ = [] {
         expect(grid.mds().extents() == e);
         expect(grid.staging_mds().extents() == e);
     };
+
+    "mdgrid::*_component_span is usable"_test = [] {
+        /* On GCC this triggers ICE without the workaround in tyvi::sstd::geometric_extents */
+
+        constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<int>{ .rank = 1, .dim = 3 };
+        using mdg                = tyvi::mdgrid<elem_desc, std::dextents<std::size_t, 3>>;
+
+        auto grid = mdg(7, 9, 2);
+
+        const auto d_span  = grid.device_component_span<0>();
+        const auto d_cspan = grid.device_component_cspan<0>();
+        const auto h_span  = grid.host_component_span<0>();
+        const auto h_cspan = grid.host_component_cspan<0>();
+
+        expect(d_span.size() == 7uz * 9uz * 2uz);
+        expect(d_cspan.size() == 7uz * 9uz * 2uz);
+        expect(h_span.size() == 7uz * 9uz * 2uz);
+        expect(h_cspan.size() == 7uz * 9uz * 2uz);
+    };
 };
 
 } // namespace
