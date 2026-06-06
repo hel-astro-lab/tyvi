@@ -20,6 +20,8 @@ target_sources(
            tyvi/mdgrid.h
            tyvi/mdgrid_buffer.h
            tyvi/backend.h
+           tyvi/mdsegments.h
+           tyvi/device_allocator.h
 )
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
