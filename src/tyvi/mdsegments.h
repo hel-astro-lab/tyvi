@@ -34,11 +34,11 @@ mdsegments {
     explicit constexpr mdsegments() = default;
     explicit constexpr mdsegments(std::size_t);
 
-    constexpr ~mdsegments()                            = default;
-    constexpr mdsegments(const mdsegments&)            = default;
-    constexpr mdsegments(mdsegments&&)                 = default;
-    constexpr mdsegments& operator=(const mdsegments&) = default;
-    constexpr mdsegments& operator=(mdsegments&&)      = default;
+    constexpr ~mdsegments();
+    constexpr mdsegments(const mdsegments&) = delete;
+    constexpr mdsegments(mdsegments&&);
+    constexpr mdsegments& operator=(const mdsegments&) = delete;
+    constexpr mdsegments& operator=(mdsegments&&);
 
     [[nodiscard]]
     constexpr bool empty() const;
@@ -113,6 +113,8 @@ mdsegments {
     Allocator allocator_{};
     [[no_unique_address]]
     segment_ptr_allocator segment_ptr_allocator_{ allocator_ };
+
+    constexpr void free_memory();
 };
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -164,6 +166,23 @@ struct mdsegments<T, SG, E, LP, A>::outer_accessor_policy {
 };
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr void
+mdsegments<T, SG, E, LP, A>::free_memory() {
+    segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
+                                             this->segment_ptrs_,
+                                             this->segments_.size());
+    const auto m   = typename LP::template mapping<E>{};
+    const auto rss = m.required_span_size();
+
+    for (const auto& p : this->segments_) {
+        allocator_traits::deallocate(this->allocator_, p, rss * SG);
+    }
+
+    this->segments_.clear();
+    this->outer_size_ = 0;
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::mds() -> outer_mds<T> {
     return mdsegments::outer_mds<T>({ this->raw_view().begin(), 0uz }, this->size());
@@ -195,22 +214,30 @@ mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
     const auto required_segments  = outer_size ? (outer_size - 1uz) / SG + 1uz : 0uz;
     const auto need_more_segments = required_segments > this->segments_.size();
     if (need_more_segments) {
+        if (not this->segments_.empty()) {
+            // These will be recomputed...
+            segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
+                                                     this->segment_ptrs_,
+                                                     this->segments_.size());
+        }
+
         const auto how_many_more = required_segments - this->segments_.size();
         for (auto _ : std::views::iota(0uz, how_many_more)) {
             this->segments_.push_back(allocator_traits::allocate(this->allocator_, SG * rss));
         }
+
+        this->segment_ptrs_ = segment_ptr_allocator_traits::allocate(this->segment_ptr_allocator_,
+                                                                     this->segments_.size());
+
+        for (auto i = 0uz; i < this->segments_.size(); ++i) {
+            // ...here.
+            segment_ptr_allocator_traits::construct(
+                this->segment_ptr_allocator_,
+                std::ranges::next(this->segment_ptrs_, static_cast<std::ptrdiff_t>(i)),
+                this->segments_[i]);
+        }
     }
     this->outer_size_ = outer_size;
-
-    this->segment_ptrs_ = segment_ptr_allocator_traits::allocate(this->segment_ptr_allocator_,
-                                                                 this->segments_.size());
-
-    for (auto i = 0uz; i < this->segments_.size(); ++i) {
-        segment_ptr_allocator_traits::construct(
-            this->segment_ptr_allocator_,
-            std::ranges::next(this->segment_ptrs_, static_cast<std::ptrdiff_t>(i)),
-            this->segments_[i]);
-    }
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -357,6 +384,33 @@ mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
         .end_   = typename raw_view_type<const T>::iterator(this->segment_ptrs_,
                                                           SG * rss * this->segments_.size())
     };
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr mdsegments<T, SG, E, LP, A>::~mdsegments() {
+    if (this->segments_.empty()) { return; }
+    free_memory();
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr mdsegments<T, SG, E, LP, A>::mdsegments(mdsegments&& other) {
+    *this = std::move(other);
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr auto
+mdsegments<T, SG, E, LP, A>::operator=(mdsegments&& other) -> mdsegments& {
+    if (not this->segments_.empty()) { this->free_memory(); }
+
+    this->segments_              = std::move(other.segments_);
+    this->segment_ptrs_          = std::move(other.segment_ptrs_);
+    this->outer_size_            = other.outer_size_;
+    this->allocator_             = std::move(other.allocator_);
+    this->segment_ptr_allocator_ = std::move(other.segment_ptr_allocator_);
+
+    other.outer_size_ = 0;
+
+    return *this;
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
