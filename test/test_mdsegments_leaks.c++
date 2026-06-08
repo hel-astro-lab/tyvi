@@ -3,6 +3,7 @@
 
 #include <boost/ut.hpp> // import boost.ut;
 
+#include <bit>
 #include <cstddef>
 #include <memory>
 #include <print>
@@ -17,7 +18,10 @@
 namespace {
 using namespace boost::ut;
 
-static std::unordered_map<std::size_t, std::size_t> track_data;
+// NOLINTBEGIN{cppcoreguidelines-avoid-non-const-global-variables}
+std::unordered_map<std::size_t, std::size_t> track_data;
+// NOLINTEND{cppcoreguidelines-avoid-non-const-global-variables}
+
 void
 check() {
     for (const auto& [p, n] : track_data) { expect(n == 0) << p; }
@@ -31,17 +35,17 @@ struct [[nodiscard]] tracked_allocator {
     tracked_allocator() = default;
 
     template<typename U>
-    tracked_allocator(const tracked_allocator<U>&) {}
+    explicit tracked_allocator(const tracked_allocator<U>&) {}
 
     T* allocate(const std::size_t n) {
-        auto* const p                                = std::allocator<T>{}.allocate(n);
-        track_data[reinterpret_cast<std::size_t>(p)] = n * sizeof(T);
+        auto* const p                             = std::allocator<T>{}.allocate(n);
+        track_data[std::bit_cast<std::size_t>(p)] = n * sizeof(T);
         return p;
     }
 
     void deallocate(T* const p, const std::size_t n) {
         expect(p != nullptr);
-        track_data[reinterpret_cast<std::size_t>(p)] -= sizeof(T) * n;
+        track_data[std::bit_cast<std::size_t>(p)] -= sizeof(T) * n;
         std::allocator<T>{}.deallocate(p, n);
     }
 };
@@ -96,7 +100,7 @@ const suite<"mdsegments memory leaks"> _ = [] {
         {
             auto s1 = segments(1000);
             [[maybe_unused]]
-            segments _{ std::move(s1) };
+            const segments _{ std::move(s1) };
         }
         check();
     };

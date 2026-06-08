@@ -36,9 +36,9 @@ mdsegments {
 
     constexpr ~mdsegments();
     constexpr mdsegments(const mdsegments&) = delete;
-    constexpr mdsegments(mdsegments&&);
+    constexpr mdsegments(mdsegments&&) noexcept;
     constexpr mdsegments& operator=(const mdsegments&) = delete;
-    constexpr mdsegments& operator=(mdsegments&&);
+    constexpr mdsegments& operator=(mdsegments&&) noexcept;
 
     [[nodiscard]]
     constexpr bool empty() const;
@@ -68,6 +68,9 @@ mdsegments {
     [[nodiscard]]
     constexpr outer_mds<const T> mds() const;
 
+    // Making raw_view_type conform to this complicates them unneccessearly.
+    // NOLINTBEGIN{misc-non-private-member-variables-in-classes}
+
     template<typename U>
     struct [[nodiscard]] raw_view_type : std::ranges::view_interface<raw_view_type<U>> {
         using iterator_category = std::random_access_iterator_tag;
@@ -79,23 +82,29 @@ mdsegments {
         class [[nodiscard]] iterator_type;
         using iterator = iterator_type;
 
-        constexpr iterator begin() const;
-        constexpr iterator end() const;
+        constexpr iterator_type begin() const;
+        constexpr iterator_type end() const;
 
         iterator begin_;
         iterator end_;
     };
 
+    // NOLINTEND{misc-non-private-member-variables-in-classes}
+
     constexpr raw_view_type<T> raw_view();
+
+    // Somehow this is triggered even if there is the attribute on the type itself.
+    // NOLINTBEGIN{modernize-use-nodiscard}
     constexpr raw_view_type<const T> raw_view() const;
+    // NOLINTEND{modernize-use-nodiscard}
 
     template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
-    friend constexpr void h2d_copy(const mdsegments<t, sg, e, lp, a>& on_host,
-                                   mdsegments<t, sg, e, lp, b>& on_device);
+    friend constexpr void h2d_copy(const mdsegments<t, sg, e, lp, a>&,
+                                   mdsegments<t, sg, e, lp, b>&);
 
     template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
-    friend constexpr void d2h_copy(const mdsegments<t, sg, e, lp, a>& on_device,
-                                   mdsegments<t, sg, e, lp, b>& on_host);
+    friend constexpr void d2h_copy(const mdsegments<t, sg, e, lp, a>&,
+                                   mdsegments<t, sg, e, lp, b>&);
 
   private:
     using allocator_value_type = typename allocator_traits::value_type;
@@ -211,7 +220,7 @@ constexpr void
 mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
     const auto m                  = typename LP::template mapping<E>{};
     const auto rss                = m.required_span_size();
-    const auto required_segments  = outer_size ? (outer_size - 1uz) / SG + 1uz : 0uz;
+    const auto required_segments  = (outer_size > 0uz) ? (outer_size - 1uz) / SG + 1uz : 0uz;
     const auto need_more_segments = required_segments > this->segments_.size();
     if (need_more_segments) {
         if (not this->segments_.empty()) {
@@ -393,13 +402,13 @@ constexpr mdsegments<T, SG, E, LP, A>::~mdsegments() {
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
-constexpr mdsegments<T, SG, E, LP, A>::mdsegments(mdsegments&& other) {
+constexpr mdsegments<T, SG, E, LP, A>::mdsegments(mdsegments&& other) noexcept {
     *this = std::move(other);
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::operator=(mdsegments&& other) -> mdsegments& {
+mdsegments<T, SG, E, LP, A>::operator=(mdsegments&& other) noexcept -> mdsegments& {
     if (not this->segments_.empty()) { this->free_memory(); }
 
     this->segments_              = std::move(other.segments_);
