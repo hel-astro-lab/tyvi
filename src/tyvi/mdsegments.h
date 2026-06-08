@@ -9,6 +9,9 @@
 #include <tuple>
 #include <vector>
 
+#include "thrust/copy.h"
+#include "thrust/device_ptr.h"
+
 #include "tyvi/mdspan.h"
 
 namespace tyvi {
@@ -85,6 +88,14 @@ mdsegments {
 
     constexpr raw_view_type<T> raw_view();
     constexpr raw_view_type<const T> raw_view() const;
+
+    template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
+    friend constexpr void h2d_copy(const mdsegments<t, sg, e, lp, a>& on_host,
+                                   mdsegments<t, sg, e, lp, b>& on_device);
+
+    template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
+    friend constexpr void d2h_copy(const mdsegments<t, sg, e, lp, a>& on_device,
+                                   mdsegments<t, sg, e, lp, b>& on_host);
 
   private:
     using allocator_value_type = typename allocator_traits::value_type;
@@ -346,5 +357,35 @@ mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
         .end_   = typename raw_view_type<const T>::iterator(this->segment_ptrs_,
                                                           SG * rss * this->segments_.size())
     };
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
+constexpr void
+h2d_copy(const mdsegments<T, SG, E, LP, A>& h, mdsegments<T, SG, E, LP, B>& d) {
+    if (h.size() != d.size()) { d.resize(h.size()); }
+    const auto m   = typename LP::template mapping<E>{};
+    const auto rss = m.required_span_size();
+
+    for (const auto [h_ptr, d_ptr] : std::views::zip(h.segments_, d.segments_)) {
+        const auto b    = h_ptr;
+        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+        const auto dest = thrust::device_pointer_cast(d_ptr);
+        std::ignore     = thrust::copy(b, e, dest);
+    }
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
+constexpr void
+d2h_copy(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
+    if (d.size() != h.size()) { h.resize(d.size()); }
+    const auto m   = typename LP::template mapping<E>{};
+    const auto rss = m.required_span_size();
+
+    for (const auto [h_ptr, d_ptr] : std::views::zip(h.segments_, d.segments_)) {
+        const auto b    = thrust::device_pointer_cast(d_ptr);
+        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+        const auto dest = h_ptr;
+        std::ignore     = thrust::copy(b, e, dest);
+    }
 }
 } // namespace tyvi

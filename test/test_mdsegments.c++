@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "tyvi/device_allocator.h"
+#include "tyvi/mdgrid.h"
 #include "tyvi/mdsegments.h"
 #include "tyvi/mdspan.h"
 #include "tyvi/sstd.h"
@@ -27,6 +29,7 @@ const suite<"mdsegments"> _ = [] {
     using LP                = std::layout_right;
     using allocator         = std::allocator<T>;
     using segments          = tyvi::mdsegments<T, N, E, LP, allocator>;
+    using device_segments   = tyvi::mdsegments<T, N, E, LP, tyvi::device_allocator<T>>;
 
     "default constructed is empty"_test = [] {
         auto s = segments();
@@ -171,6 +174,34 @@ const suite<"mdsegments"> _ = [] {
         for (const auto idx : tyvi::sstd::index_space(cmds)) {
             for (const auto tidx : tyvi::sstd::index_space(cmds[idx])) {
                 expect(cmds[idx][tidx] == bad_hash(idx[0], tidx[0], tidx[1]));
+            }
+        }
+    };
+
+    "host to device copy and device to host copy"_test = [] {
+        auto host   = segments(3);
+        auto device = device_segments(0);
+
+        const auto hmds = host.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(hmds)) {
+            for (const auto tidx : tyvi::sstd::index_space(hmds[idx])) { hmds[idx][tidx] = 21; }
+        }
+
+        tyvi::h2d_copy(host, device);
+
+        const auto dmds = device.mds();
+        tyvi::mdgrid_work()
+            .for_each_index(
+                dmds,
+                [=](const auto idx, const auto tidx) { dmds[idx][tidx] = 2 * dmds[idx][tidx]; })
+            .wait();
+
+        tyvi::d2h_copy(device, host);
+
+        for (const auto idx : tyvi::sstd::index_space(hmds)) {
+            for (const auto tidx : tyvi::sstd::index_space(hmds[idx])) {
+                expect(hmds[idx][tidx] == 42) << hmds[idx][tidx];
             }
         }
     };
