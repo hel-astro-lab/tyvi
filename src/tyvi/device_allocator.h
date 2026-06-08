@@ -24,8 +24,9 @@ struct [[nodiscard]] device_allocator {
     constexpr device_allocator() = default;
 
     template<typename U>
-    device_allocator(const device_allocator<U>&) {}
+    explicit device_allocator(const device_allocator<U>&) {}
 
+    [[nodiscard]]
     pointer allocate(const size_type n) const {
         return thrust::raw_pointer_cast(thrust::device_allocator<T>{}.allocate(n));
     }
