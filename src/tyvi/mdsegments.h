@@ -29,6 +29,10 @@ mdsegments {
     using allocator_type   = Allocator;
     using allocator_traits = std::allocator_traits<Allocator>;
 
+    // This assumes that LP::mapping<E> is constexpr constructible.
+    static constexpr auto mapping = typename LP::template mapping<E>{};
+    static constexpr auto rss     = mapping.required_span_size();
+
     // TODO: support allocator aware constructors (there is no need atm).
 
     explicit constexpr mdsegments() = default;
@@ -196,8 +200,6 @@ struct mdsegments<T, SG, E, LP, A>::outer_accessor_policy {
         const auto n         = offset + std::get<1>(h);
         const auto segments  = n / SG;
         const auto left_over = n % SG;
-        const auto m         = typename LP::template mapping<E>{};
-        const auto rss       = m.required_span_size();
         const auto skip      = segments * SG * rss + left_over;
         return element_type(std::ranges::next(b, static_cast<std::ptrdiff_t>(skip)));
     }
@@ -215,8 +217,6 @@ mdsegments<T, SG, E, LP, A>::free_memory() {
     segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
                                              this->segment_ptrs_,
                                              this->segments_.size());
-    const auto m   = typename LP::template mapping<E>{};
-    const auto rss = m.required_span_size();
 
     for (const auto& p : this->segments_) {
         allocator_traits::deallocate(this->allocator_, p, rss * SG);
@@ -259,8 +259,6 @@ mdsegments<T, SG, E, LP, A>::size() const {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr void
 mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
-    const auto m                  = typename LP::template mapping<E>{};
-    const auto rss                = m.required_span_size();
     const auto required_segments  = (outer_size > 0uz) ? (outer_size - 1uz) / SG + 1uz : 0uz;
     const auto need_more_segments = required_segments > this->segments_.size();
     if (need_more_segments) {
@@ -369,8 +367,6 @@ class mdsegments<T, SG, E, LP, A>::raw_view_type<U>::iterator_type {
 
     [[nodiscard]]
     constexpr reference operator*() const {
-        const auto m         = typename LP::template mapping<E>{};
-        const auto rss       = m.required_span_size();
         const auto segment   = this->offset_ / (rss * SG);
         const auto left_over = this->offset_ % (rss * SG);
 
@@ -429,8 +425,6 @@ class mdsegments<T, SG, E, LP, A>::raw_view_type<U>::iterator_type {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::raw_view() -> raw_view_type<T> {
-    const auto m   = typename LP::template mapping<E>{};
-    const auto rss = m.required_span_size();
     return raw_view_type<T>{
         .begin_ = typename raw_view_type<T>::iterator(this->segment_ptrs_, 0uz),
         .end_   = typename raw_view_type<T>::iterator(this->segment_ptrs_,
@@ -441,8 +435,6 @@ mdsegments<T, SG, E, LP, A>::raw_view() -> raw_view_type<T> {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::raw_cview() const -> raw_view_type<const T> {
-    const auto m   = typename LP::template mapping<E>{};
-    const auto rss = m.required_span_size();
     return raw_view_type<const T>{
         .begin_ = typename raw_view_type<const T>::iterator(this->segment_ptrs_, 0uz),
         .end_   = typename raw_view_type<const T>::iterator(this->segment_ptrs_,
@@ -502,12 +494,10 @@ class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type
 
     [[nodiscard]]
     constexpr reference operator*() const {
-        const auto m         = typename LP::template mapping<E>{};
-        const auto rss       = m.required_span_size();
         const auto segment   = this->offset_ / SG;
         const auto left_over = this->offset_ % SG;
 
-        const auto component_offset_in_segment = rss * m(idx...);
+        const auto component_offset_in_segment = rss * mapping(idx...);
 
         return this->ptr_[segment][component_offset_in_segment + left_over];
     }
@@ -631,8 +621,8 @@ template<typename T, std::size_t SG, typename E, typename LP, typename A, typena
 constexpr void
 h2d_copy(const mdsegments<T, SG, E, LP, A>& h, mdsegments<T, SG, E, LP, B>& d) {
     if (h.size() != d.size()) { d.resize(h.size()); }
-    const auto m   = typename LP::template mapping<E>{};
-    const auto rss = m.required_span_size();
+
+    static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
 
     for (const auto [h_ptr, d_ptr] : std::views::zip(h.segments_, d.segments_)) {
         const auto b    = h_ptr;
@@ -646,8 +636,8 @@ template<typename T, std::size_t SG, typename E, typename LP, typename A, typena
 constexpr void
 d2h_copy(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
     if (d.size() != h.size()) { h.resize(d.size()); }
-    const auto m   = typename LP::template mapping<E>{};
-    const auto rss = m.required_span_size();
+
+    static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
 
     for (const auto [h_ptr, d_ptr] : std::views::zip(h.segments_, d.segments_)) {
         const auto b    = thrust::device_pointer_cast(d_ptr);
