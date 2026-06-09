@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -155,6 +156,9 @@ mdsegments {
 
     std::vector<allocator_pointer> segments_{};
     segment_ptr_allocator_traits::pointer segment_ptrs_{ nullptr };
+    std::size_t number_of_segments_{};
+    std::vector<std::size_t> segment_allocation_sizes_{};
+    constexpr void calculate_segment_allocation_sizes();
     std::size_t outer_size_{};
 
     [[no_unique_address]]
@@ -164,6 +168,37 @@ mdsegments {
 
     constexpr void free_memory();
 };
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr void
+mdsegments<T, SG, E, LP, A>::calculate_segment_allocation_sizes() {
+    const auto n = std::ranges::max(this->number_of_segments_,
+                                    std::reduce(this->segment_allocation_sizes_.begin(),
+                                                this->segment_allocation_sizes_.end()));
+    if (n == 0uz) {
+        this->segment_allocation_sizes_.clear();
+        return;
+    }
+    if (n >= 1uz) {
+        this->segment_allocation_sizes_.resize(1uz);
+        this->segment_allocation_sizes_.at(0uz) = 1uz;
+    }
+    if (n >= 2uz) {
+        this->segment_allocation_sizes_.resize(2uz);
+        this->segment_allocation_sizes_.at(1uz) = 1uz;
+    }
+
+    auto sum =
+        std::reduce(this->segment_allocation_sizes_.begin(), this->segment_allocation_sizes_.end());
+
+    for (auto i = 2uz; sum < n; ++i) {
+        const auto a = this->segment_allocation_sizes_.at(i - 2uz);
+        const auto b = this->segment_allocation_sizes_.at(i - 1uz);
+        const auto c = a + b;
+        this->segment_allocation_sizes_.push_back(c);
+        sum += c;
+    }
+}
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
@@ -216,14 +251,16 @@ constexpr void
 mdsegments<T, SG, E, LP, A>::free_memory() {
     segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
                                              this->segment_ptrs_,
-                                             this->segments_.size());
+                                             this->number_of_segments_);
 
-    for (const auto& p : this->segments_) {
-        allocator_traits::deallocate(this->allocator_, p, rss * SG);
+    for (const auto& [p, n] : std::views::zip(this->segments_, this->segment_allocation_sizes_)) {
+        allocator_traits::deallocate(this->allocator_, p, rss * SG * n);
     }
 
     this->segments_.clear();
-    this->outer_size_ = 0;
+    this->segment_allocation_sizes_.clear();
+    this->number_of_segments_ = 0;
+    this->outer_size_         = 0;
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -259,33 +296,54 @@ mdsegments<T, SG, E, LP, A>::size() const {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr void
 mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
-    const auto required_segments  = (outer_size > 0uz) ? (outer_size - 1uz) / SG + 1uz : 0uz;
-    const auto need_more_segments = required_segments > this->segments_.size();
-    if (need_more_segments) {
-        if (not this->segments_.empty()) {
+    this->outer_size_ = outer_size;
+
+    const auto required_segments       = (outer_size > 0uz) ? (outer_size - 1uz) / SG + 1uz : 0uz;
+    const auto prev_number_of_segments = this->number_of_segments_;
+    this->number_of_segments_          = required_segments;
+    this->calculate_segment_allocation_sizes();
+
+    const auto need_more_allocations =
+        this->segment_allocation_sizes_.size() > this->segments_.size();
+
+    if (need_more_allocations) {
+        for (const auto N :
+             this->segment_allocation_sizes_ | std::views::drop(this->segments_.size())) {
+            this->segments_.push_back(allocator_traits::allocate(this->allocator_, SG * rss * N));
+        }
+    }
+
+    const auto recompute_ptrs = prev_number_of_segments != this->number_of_segments_;
+    if (recompute_ptrs) {
+        if (prev_number_of_segments > 0uz) {
             // These will be recomputed...
             segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
                                                      this->segment_ptrs_,
-                                                     this->segments_.size());
-        }
-
-        const auto how_many_more = required_segments - this->segments_.size();
-        for (auto _ : std::views::iota(0uz, how_many_more)) {
-            this->segments_.push_back(allocator_traits::allocate(this->allocator_, SG * rss));
+                                                     prev_number_of_segments);
         }
 
         this->segment_ptrs_ = segment_ptr_allocator_traits::allocate(this->segment_ptr_allocator_,
-                                                                     this->segments_.size());
+                                                                     this->number_of_segments_);
 
-        for (auto i = 0uz; i < this->segments_.size(); ++i) {
+        auto next_allocation           = 0uz;
+        auto offset_to_next_allocation = 0uz;
+
+        for (auto i = 0uz; i < this->number_of_segments_; ++i) {
             // ...here.
             segment_ptr_allocator_traits::construct(
                 this->segment_ptr_allocator_,
                 std::ranges::next(this->segment_ptrs_, static_cast<std::ptrdiff_t>(i)),
-                this->segments_[i]);
+                std::ranges::next(
+                    this->segments_.at(next_allocation),
+                    static_cast<std::ptrdiff_t>(SG * rss * offset_to_next_allocation)));
+
+            if (++offset_to_next_allocation
+                >= this->segment_allocation_sizes_.at(next_allocation)) {
+                next_allocation += 1uz;
+                offset_to_next_allocation = 0uz;
+            }
         }
     }
-    this->outer_size_ = outer_size;
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -428,7 +486,7 @@ mdsegments<T, SG, E, LP, A>::raw_view() -> raw_view_type<T> {
     return raw_view_type<T>{
         .begin_ = typename raw_view_type<T>::iterator(this->segment_ptrs_, 0uz),
         .end_   = typename raw_view_type<T>::iterator(this->segment_ptrs_,
-                                                    SG * rss * this->segments_.size())
+                                                    SG * rss * this->number_of_segments_)
     };
 }
 
@@ -438,7 +496,7 @@ mdsegments<T, SG, E, LP, A>::raw_cview() const -> raw_view_type<const T> {
     return raw_view_type<const T>{
         .begin_ = typename raw_view_type<const T>::iterator(this->segment_ptrs_, 0uz),
         .end_   = typename raw_view_type<const T>::iterator(this->segment_ptrs_,
-                                                          SG * rss * this->segments_.size())
+                                                          SG * rss * this->number_of_segments_)
     };
 }
 
@@ -606,13 +664,17 @@ constexpr auto
 mdsegments<T, SG, E, LP, A>::operator=(mdsegments&& other) noexcept -> mdsegments& {
     if (not this->segments_.empty()) { this->free_memory(); }
 
-    this->segments_              = std::move(other.segments_);
-    this->segment_ptrs_          = std::move(other.segment_ptrs_);
+    this->segments_ = std::move(other.segments_);
+    other.segments_.clear();
+    this->segment_ptrs_             = std::move(other.segment_ptrs_);
+    this->number_of_segments_       = other.number_of_segments_;
+    other.number_of_segments_       = 0;
+    this->segment_allocation_sizes_ = std::move(other.segment_allocation_sizes_);
+    other.segment_allocation_sizes_.clear();
     this->outer_size_            = other.outer_size_;
+    other.outer_size_            = 0;
     this->allocator_             = std::move(other.allocator_);
     this->segment_ptr_allocator_ = std::move(other.segment_ptr_allocator_);
-
-    other.outer_size_ = 0;
 
     return *this;
 }

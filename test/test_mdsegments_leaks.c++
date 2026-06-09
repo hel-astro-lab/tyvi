@@ -5,8 +5,8 @@
 
 #include <bit>
 #include <cstddef>
+#include <format>
 #include <memory>
-#include <print>
 #include <ranges>
 #include <unordered_map>
 #include <utility>
@@ -24,7 +24,9 @@ std::unordered_map<std::size_t, std::size_t> track_data;
 
 void
 check() {
-    for (const auto& [p, n] : track_data) { expect(n == 0) << p; }
+    for (const auto& [p, n] : track_data) {
+        expect(n == 0) << std::format("{} unallocated bytes at {}", n, p);
+    }
     track_data = std::unordered_map<std::size_t, std::size_t>{};
 }
 
@@ -38,13 +40,15 @@ struct [[nodiscard]] tracked_allocator {
     explicit tracked_allocator(const tracked_allocator<U>&) {}
 
     T* allocate(const std::size_t n) {
-        auto* const p                             = std::allocator<T>{}.allocate(n);
+        auto* const p = std::allocator<T>{}.allocate(n);
+        expect(track_data[std::bit_cast<std::size_t>(p)] == 0uz);
         track_data[std::bit_cast<std::size_t>(p)] = n * sizeof(T);
         return p;
     }
 
     void deallocate(T* const p, const std::size_t n) {
         expect(p != nullptr);
+        expect(track_data[std::bit_cast<std::size_t>(p)] == sizeof(T) * n);
         track_data[std::bit_cast<std::size_t>(p)] -= sizeof(T) * n;
         std::allocator<T>{}.deallocate(p, n);
     }
