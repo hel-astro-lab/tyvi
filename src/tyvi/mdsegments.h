@@ -154,10 +154,10 @@ mdsegments {
     using segment_ptr_allocator_traits =
         allocator_traits::template rebind_traits<allocator_pointer>;
 
-    std::vector<allocator_pointer> segments_{};
-    segment_ptr_allocator_traits::pointer segment_ptrs_{ nullptr };
+    std::vector<allocator_pointer> segments_;
+    segment_ptr_allocator_traits::pointer segment_ptrs_{};
     std::size_t number_of_segments_{};
-    std::vector<std::size_t> segment_allocation_sizes_{};
+    std::vector<std::size_t> segment_allocation_sizes_;
     constexpr void calculate_segment_allocation_sizes();
     std::size_t outer_size_{};
 
