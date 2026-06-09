@@ -19,6 +19,7 @@ set(TESTS_TO_RUN
     mdgrid_buffer_component_spans
     mdsegments
     mdsegments_leaks
+    mdsegments_component_views
 )
 
 foreach(test ${TESTS_TO_RUN})
