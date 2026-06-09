@@ -68,6 +68,9 @@ mdsegments {
     [[nodiscard]]
     constexpr outer_mds<const T> mds() const;
 
+    [[nodiscard]]
+    constexpr outer_mds<const T> cmds() const;
+
     // Making views conform to this complicates them unneccessearly.
     // NOLINTBEGIN{misc-non-private-member-variables-in-classes}
 
@@ -115,6 +118,7 @@ mdsegments {
     // Somehow this is triggered even if there is the attribute on the type itself.
     // NOLINTBEGIN{modernize-use-nodiscard}
     constexpr raw_view_type<const T> raw_view() const;
+    constexpr raw_view_type<const T> raw_cview() const;
     // NOLINTEND{modernize-use-nodiscard}
 
     template<E::index_type... idx>
@@ -124,10 +128,10 @@ mdsegments {
     constexpr auto component_view(); // using just auto for simplicity
 
     template<E::index_type... idx>
-    constexpr component_view_type<const T, idx...> component_cview();
+    constexpr component_view_type<const T, idx...> component_cview() const;
 
     template<std::array<typename E::index_type, E::rank()> idx>
-    constexpr auto component_cview(); // using just auto for simplicity
+    constexpr auto component_cview() const; // using just auto for simplicity
 
     template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
     friend constexpr void h2d_copy(const mdsegments<t, sg, e, lp, a>&,
@@ -230,8 +234,14 @@ mdsegments<T, SG, E, LP, A>::mds() -> outer_mds<T> {
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::mds() const -> outer_mds<const T> {
+mdsegments<T, SG, E, LP, A>::cmds() const -> outer_mds<const T> {
     return mdsegments::outer_mds<const T>({ this->raw_view().begin(), 0uz }, this->size());
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr auto
+mdsegments<T, SG, E, LP, A>::mds() const -> outer_mds<const T> {
+    return this->cmds();
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -430,7 +440,7 @@ mdsegments<T, SG, E, LP, A>::raw_view() -> raw_view_type<T> {
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
+mdsegments<T, SG, E, LP, A>::raw_cview() const -> raw_view_type<const T> {
     const auto m   = typename LP::template mapping<E>{};
     const auto rss = m.required_span_size();
     return raw_view_type<const T>{
@@ -438,6 +448,12 @@ mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
         .end_   = typename raw_view_type<const T>::iterator(this->segment_ptrs_,
                                                           SG * rss * this->segments_.size())
     };
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A>
+constexpr auto
+mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
+    return this->raw_cview();
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -567,7 +583,7 @@ mdsegments<T, SG, E, LP, A>::component_view() {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<E::index_type... idx>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::component_cview() -> component_view_type<const T, idx...> {
+mdsegments<T, SG, E, LP, A>::component_cview() const -> component_view_type<const T, idx...> {
     return component_view_type<const T, idx...>{
         .begin_ = typename component_view_type<const T, idx...>::iterator(this->segment_ptrs_, 0uz),
         .end_   = typename component_view_type<const T, idx...>::iterator(this->segment_ptrs_,
@@ -578,7 +594,7 @@ mdsegments<T, SG, E, LP, A>::component_cview() -> component_view_type<const T, i
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<std::array<typename E::index_type, E::rank()> idx>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::component_cview() {
+mdsegments<T, SG, E, LP, A>::component_cview() const {
     return [&]<std::size_t... I>(std::index_sequence<I...>) {
         return this->component_cview<idx[I]...>();
     }(std::make_index_sequence<E::rank()>());

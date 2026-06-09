@@ -165,8 +165,7 @@ const suite<"mdsegments"> _ = [] {
             }
         }
 
-        const auto& cs  = static_cast<const segments&>(s);
-        const auto cmds = cs.mds();
+        const auto cmds = s.cmds();
 
         expect(std::is_const_v<
                std::remove_reference_t<typename decltype(cmds)::element_type::reference>>);
