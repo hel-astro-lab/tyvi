@@ -379,11 +379,10 @@ class mdsegments<T, SG, E, LP, A>::raw_view_type<U>::iterator_type :
 
     [[nodiscard]]
     constexpr base::reference offset_dereference(const base::difference_type offset) const {
-        const auto uoffset   = static_cast<std::size_t>(offset);
-        const auto segment   = uoffset / (rss * SG);
-        const auto left_over = uoffset % (rss * SG);
+        const auto segment   = offset / static_cast<base::difference_type>(rss * SG);
+        const auto left_over = offset % static_cast<base::difference_type>(rss * SG);
 
-        return this->ptr_[segment][left_over];
+        return *std::ranges::next(*std::ranges::next(this->ptr_, segment), left_over);
     }
 
     [[nodiscard]]
@@ -434,13 +433,14 @@ class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type
 
     [[nodiscard]]
     constexpr base::reference offset_dereference(const base::difference_type offset) const {
-        const auto uoffset   = static_cast<std::size_t>(offset);
-        const auto segment   = uoffset / SG;
-        const auto left_over = uoffset % SG;
+        const auto segment   = offset / static_cast<base::difference_type>(SG);
+        const auto left_over = offset % static_cast<base::difference_type>(SG);
 
-        const auto component_offset_in_segment = rss * mapping(idx...);
+        const auto component_offset_in_segment =
+            static_cast<base::difference_type>(rss * mapping(idx...));
 
-        return this->ptr_[segment][component_offset_in_segment + left_over];
+        return *std::ranges::next(*std::ranges::next(this->ptr_, segment),
+                                  component_offset_in_segment + left_over);
     }
 
     [[nodiscard]]

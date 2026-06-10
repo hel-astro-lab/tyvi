@@ -45,8 +45,8 @@ const suite<"sstd::offset_iterator<T>"> _ = [] {
         auto b = test_iterator(vec.data(), 0);
         auto e = test_iterator(vec.data(), 24);
 
-        auto test = [](const auto x, const auto e) {
-            expect(x == e) << std::format("{} != {}", x, e);
+        auto test = [](const auto x, const auto y) {
+            expect(x == y) << std::format("{} != {}", x, y);
         };
 
         test(*b++, 0);
@@ -119,8 +119,8 @@ const suite<"sstd::offset_iterator<T>"> _ = [] {
         auto b = test_iterator{};
         auto e = test_iterator{ 24 };
 
-        auto test = [](const auto x, const auto e) {
-            expect(x == e) << std::format("{} != {}", x, e);
+        auto test = [](const auto x, const auto y) {
+            expect(x == y) << std::format("{} != {}", x, y);
         };
 
         test(*b++, 0);
