@@ -12,6 +12,7 @@ set(TESTS_TO_RUN
     unit_testing
     tyvi_compilation
     sstd
+    sstd_offset_iterator
     mdgrid
     mdgrid_work
     mdgrid_buffer
