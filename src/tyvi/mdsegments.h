@@ -94,20 +94,13 @@ mdsegments {
     template<typename U, E::index_type... idx>
     struct [[nodiscard]] component_view_type :
         std::ranges::view_interface<component_view_type<U, idx...>> {
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type        = U;
-        using size_type         = std::size_t;
-        using difference_type   = std::ptrdiff_t;
-        using reference         = value_type&;
-
         class [[nodiscard]] iterator_type;
-        using iterator = iterator_type;
 
-        constexpr iterator begin() const;
-        constexpr iterator end() const;
+        constexpr iterator_type begin() const;
+        constexpr iterator_type end() const;
 
-        iterator begin_;
-        iterator end_;
+        iterator_type begin_;
+        iterator_type end_;
     };
 
     // NOLINTEND{misc-non-private-member-variables-in-classes}
@@ -356,14 +349,14 @@ mdsegments<T, SG, E, LP, A>::raw_view_type<U>::end() const -> iterator_type {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U, E::index_type... idx>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::begin() const -> iterator {
+mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::begin() const -> iterator_type {
     return this->begin_;
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U, E::index_type... idx>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::end() const -> iterator {
+mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::end() const -> iterator_type {
     return this->end_;
 }
 
@@ -429,53 +422,21 @@ mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U, E::index_type... idx>
-class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type {
+class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type :
+    public tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type> {
   public:
-    using iterator_category = std::random_access_iterator_tag;
-    using difference_type =
-        std::ranges::range_difference_t<mdsegments<T, SG, E, LP, A>::raw_view_type<U>>;
-    using value_type = mdsegments::allocator_value_type;
-    using reference  = mdsegments::allocator_value_type&;
-    using pointer    = mdsegments::allocator_pointer;
-
+    using base = tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type>;
     constexpr iterator_type() = default;
     constexpr iterator_type(mdsegments::segment_ptr_allocator_traits::pointer const ptr,
                             const std::size_t n)
-        : ptr_{ ptr },
-          offset_{ n } {}
-
-    /// prefix increment
-    constexpr iterator_type& operator++() {
-        ++offset_;
-        return *this;
-    }
-
-    /// postfix increment
-    [[nodiscard]]
-    constexpr iterator_type operator++(int) {
-        iterator_type old = *this;
-        ++(*this);
-        return old;
-    }
-
-    /// prefix decrement
-    constexpr iterator_type& operator--() {
-        --offset_;
-        return *this;
-    }
-
-    /// postfix decrement
-    [[nodiscard]]
-    constexpr iterator_type operator--(int) {
-        iterator_type old = *this;
-        --(*this);
-        return old;
-    }
+        : base(static_cast<std::ptrdiff_t>(n)),
+          ptr_{ ptr } {}
 
     [[nodiscard]]
-    constexpr reference operator*() const {
-        const auto segment   = this->offset_ / SG;
-        const auto left_over = this->offset_ % SG;
+    constexpr base::reference offset_dereference(const base::difference_type offset) const {
+        const auto uoffset   = static_cast<std::size_t>(offset);
+        const auto segment   = uoffset / SG;
+        const auto left_over = uoffset % SG;
 
         const auto component_offset_in_segment = rss * mapping(idx...);
 
@@ -483,52 +444,10 @@ class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type
     }
 
     [[nodiscard]]
-    constexpr auto operator<=>(const iterator_type& rhs) const {
-        return this->offset_ <=> rhs.offset_;
-    }
-
-    [[nodiscard]]
-    constexpr bool operator==(const iterator_type& rhs) const {
-        return (this->ptr_ == rhs.ptr_) and (this->offset_ == rhs.offset_);
-    }
-
-    [[nodiscard]]
-    friend constexpr difference_type operator-(const iterator_type& lhs, const iterator_type& rhs) {
-        if (lhs.offset_ >= rhs.offset_) {
-            return static_cast<difference_type>(lhs.offset_ - rhs.offset_);
-        }
-        return -static_cast<difference_type>(rhs.offset_ - lhs.offset_);
-    }
-
-    [[nodiscard]]
-    friend constexpr iterator_type operator+(const iterator_type& lhs, const difference_type rhs) {
-        auto result    = lhs;
-        result.offset_ = static_cast<std::size_t>(static_cast<difference_type>(lhs.offset_) + rhs);
-        return result;
-    }
-
-    [[nodiscard]]
-    friend constexpr iterator_type operator+(const difference_type lhs, const iterator_type& rhs) {
-        return rhs + lhs;
-    }
-
-    [[nodiscard]]
-    friend constexpr iterator_type operator-(const iterator_type& lhs, const difference_type rhs) {
-        return lhs + (-rhs);
-    }
-
-    constexpr iterator_type& operator+=(const difference_type rhs) { return *this = *this + rhs; }
-
-    constexpr iterator_type& operator-=(const difference_type rhs) { return *this = *this - rhs; }
-
-    [[nodiscard]]
-    constexpr reference operator[](const difference_type rhs) const {
-        return *(*this + rhs);
-    }
+    constexpr bool operator==(const iterator_type& rhs) const = default;
 
   private:
     mdsegments::segment_ptr_allocator_traits::pointer ptr_{ nullptr };
-    std::size_t offset_{ 0 };
 };
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
@@ -536,8 +455,9 @@ template<E::index_type... idx>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::component_view() -> component_view_type<T, idx...> {
     return component_view_type<T, idx...>{
-        .begin_ = typename component_view_type<T, idx...>::iterator(this->segment_ptrs_, 0uz),
-        .end_ = typename component_view_type<T, idx...>::iterator(this->segment_ptrs_, this->size())
+        .begin_ = std::ranges::iterator_t<component_view_type<T, idx...>>(this->segment_ptrs_, 0uz),
+        .end_   = std::ranges::iterator_t<component_view_type<T, idx...>>(this->segment_ptrs_,
+                                                                        this->size())
     };
 }
 
@@ -555,9 +475,10 @@ template<E::index_type... idx>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::component_cview() const -> component_view_type<const T, idx...> {
     return component_view_type<const T, idx...>{
-        .begin_ = typename component_view_type<const T, idx...>::iterator(this->segment_ptrs_, 0uz),
-        .end_   = typename component_view_type<const T, idx...>::iterator(this->segment_ptrs_,
-                                                                        this->size())
+        .begin_ =
+            std::ranges::iterator_t<component_view_type<const T, idx...>>(this->segment_ptrs_, 0uz),
+        .end_ = std::ranges::iterator_t<component_view_type<const T, idx...>>(this->segment_ptrs_,
+                                                                              this->size())
     };
 }
 
