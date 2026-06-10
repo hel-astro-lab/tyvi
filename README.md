@@ -37,3 +37,8 @@ Before commiting, please install `pre-commit` hooks with:
 ```
 
 See `docs/pre-commit-hooks.md` for more details.
+
+# Acknowledgments
+
+Development of tyvi is supported by an ERC grant (ILLUMINATOR, 101114623).
+<img align="center" src="https://cdn.jsdelivr.net/gh/natj/natj.github.io@master/images/erc_logo.png">
