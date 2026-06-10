@@ -16,6 +16,8 @@
 
 #include <experimental/mdspan>
 
+#include "tyvi/sstd.h"
+
 namespace tyvi::sstd {
 
 /* geometric_extents is split into two, because geometric_extents_value
@@ -132,19 +134,11 @@ template<typename M>
 concept mapping_of_nonzero_rank = layout_mapping<M> and (M::extents_type::rank() > 0uz);
 
 template<std::size_t rank, typename IndexType>
-class index_space_iterator {
-  public:
-    using iterator_category = std::random_access_iterator_tag;
-    using difference_type   = std::ptrdiff_t;
-    using value_type        = std::array<IndexType, rank>;
-    /// This iterator produces values, so our reference is also a value.
-    using reference = value_type;
-    /// Iterator does not point anything, so pointer doesn't make sense.
-    using pointer = void;
-
-  private:
-    std::size_t offset_{ std::dynamic_extent };
-
+class index_space_iterator :
+    public tyvi::sstd::offset_iterator<index_space_iterator<rank, IndexType>,
+                                       std::array<IndexType, rank>,
+                                       std::ptrdiff_t,
+                                       std::array<IndexType, rank>> {
     // Ideally there could just be a pointer to the index_space_view,
     // but it is possible to have the view live on host and
     // the pointers on device, which makes the scheme impossible.
@@ -154,19 +148,24 @@ class index_space_iterator {
     std::array<IndexType, rank> extents_;
 
   public:
+    using base = tyvi::sstd::offset_iterator<index_space_iterator,
+                                             std::array<IndexType, rank>,
+                                             std::ptrdiff_t,
+                                             std::array<IndexType, rank>>;
+
     template<mapping_of_rank<rank> M>
         requires(rank == 0uz)
     explicit constexpr index_space_iterator(const std::size_t offset,
                                             [[maybe_unused]]
                                             const M&)
-        : offset_{ offset },
+        : base{ static_cast<base::difference_type>(offset) },
           dividers_{},
           extents_{} {}
 
     template<mapping_of_rank<rank> M>
         requires exhaustive_invertable_strided_mapping<M> and mapping_of_nonzero_rank<M>
     explicit constexpr index_space_iterator(const std::size_t offset, const M& m)
-        : offset_{ offset },
+        : base{ static_cast<base::difference_type>(offset) },
           dividers_{ [&]<std::size_t... I>(std::index_sequence<I...>) {
               return std::array{ m.stride(I)... };
           }(std::make_index_sequence<rank>()) },
@@ -175,7 +174,7 @@ class index_space_iterator {
     template<mapping_of_rank<rank> M>
         requires invertable_strided_mapping<M> and mapping_of_nonzero_rank<M>
     explicit constexpr index_space_iterator(const std::size_t offset, const M& m)
-        : offset_{ offset },
+        : base{ static_cast<base::difference_type>(offset) },
           extents_{ as_array(m.extents()) } {
         const auto sorted_rank_ordinals = [&] {
             auto rank_ordinals = []<std::size_t... I>(std::index_sequence<I...>) {
@@ -210,43 +209,15 @@ class index_space_iterator {
 
     explicit constexpr index_space_iterator() = default;
 
-    /// prefix increment
-    constexpr index_space_iterator& operator++() {
-        ++offset_;
-        return *this;
-    }
-
-    /// postfix increment
     [[nodiscard]]
-    constexpr index_space_iterator operator++(int) {
-        index_space_iterator old = *this;
-        ++(*this);
-        return old;
-    }
-
-    /// prefix decrement
-    constexpr index_space_iterator& operator--() {
-        --offset_;
-        return *this;
-    }
-
-    /// postfix decrement
-    [[nodiscard]]
-    constexpr index_space_iterator operator--(int) {
-        index_space_iterator old = *this;
-        --(*this);
-        return old;
-    }
-
-    [[nodiscard]]
-    constexpr reference operator*() const {
+    constexpr base::reference offset_dereference(const base::difference_type offset) const {
         if constexpr (rank == 0) {
-            return value_type{};
+            return typename base::value_type{};
         } else {
             // Strided implementation (currently only one supported).
             return [&]<std::size_t... I>(std::index_sequence<I...>) {
-                return reference{ (static_cast<IndexType>(offset_) / dividers_[I])
-                                  % extents_[I]... };
+                return typename base::reference{ (static_cast<IndexType>(offset) / dividers_[I])
+                                                 % extents_[I]... };
             }(std::make_index_sequence<rank>());
         }
     }
@@ -258,49 +229,7 @@ class index_space_iterator {
 
     [[nodiscard]]
     constexpr bool operator==(const index_space_iterator& rhs) const {
-        return this->offset_ == rhs.offset_;
-    }
-
-    [[nodiscard]]
-    friend constexpr difference_type operator-(const index_space_iterator& lhs,
-                                               const index_space_iterator& rhs) {
-        if (lhs.offset_ >= rhs.offset_) {
-            return static_cast<difference_type>(lhs.offset_ - rhs.offset_);
-        }
-        return -static_cast<difference_type>(rhs.offset_ - lhs.offset_);
-    }
-
-    [[nodiscard]]
-    friend constexpr index_space_iterator operator+(const index_space_iterator& lhs,
-                                                    const difference_type rhs) {
-        auto result    = lhs;
-        result.offset_ = static_cast<std::size_t>(static_cast<difference_type>(lhs.offset_) + rhs);
-        return result;
-    }
-
-    [[nodiscard]]
-    friend constexpr index_space_iterator operator+(const difference_type lhs,
-                                                    const index_space_iterator& rhs) {
-        return rhs + lhs;
-    }
-
-    [[nodiscard]]
-    friend constexpr index_space_iterator operator-(const index_space_iterator& lhs,
-                                                    const difference_type rhs) {
-        return lhs + (-rhs);
-    }
-
-    constexpr index_space_iterator& operator+=(const difference_type rhs) {
-        return *this = *this + rhs;
-    }
-
-    constexpr index_space_iterator& operator-=(const difference_type rhs) {
-        return *this = *this - rhs;
-    }
-
-    [[nodiscard]]
-    constexpr reference operator[](const difference_type rhs) const {
-        return *(*this + rhs);
+        return static_cast<const base&>(*this) == static_cast<const base&>(rhs);
     }
 };
 
