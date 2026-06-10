@@ -14,6 +14,7 @@
 #include "thrust/device_ptr.h"
 
 #include "tyvi/mdspan.h"
+#include "tyvi/sstd.h"
 
 namespace tyvi {
 
@@ -81,20 +82,13 @@ mdsegments {
 
     template<typename U>
     struct [[nodiscard]] raw_view_type : std::ranges::view_interface<raw_view_type<U>> {
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type        = U;
-        using size_type         = std::size_t;
-        using difference_type   = std::ptrdiff_t;
-        using reference         = value_type&;
-
         class [[nodiscard]] iterator_type;
-        using iterator = iterator_type;
 
         constexpr iterator_type begin() const;
         constexpr iterator_type end() const;
 
-        iterator begin_;
-        iterator end_;
+        iterator_type begin_;
+        iterator_type end_;
     };
 
     template<typename U, E::index_type... idx>
@@ -204,7 +198,7 @@ template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
 struct mdsegments<T, SG, E, LP, A>::inner_accessor_policy {
     using element_type     = U;
-    using data_handle_type = mdsegments::raw_view_type<U>::iterator;
+    using data_handle_type = std::ranges::iterator_t<raw_view_type<U>>;
     using reference        = U&;
     using offset_policy    = mdsegments::inner_accessor_policy<U>;
 
@@ -223,11 +217,10 @@ struct mdsegments<T, SG, E, LP, A>::inner_accessor_policy {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
 struct mdsegments<T, SG, E, LP, A>::outer_accessor_policy {
-    using element_type = mdsegments::inner_mds<U>;
-    using data_handle_type =
-        std::tuple<typename mdsegments::raw_view_type<U>::iterator, std::size_t>;
-    using reference     = element_type;
-    using offset_policy = mdsegments::outer_accessor_policy<U>;
+    using element_type     = mdsegments::inner_mds<U>;
+    using data_handle_type = std::tuple<std::ranges::iterator_t<raw_view_type<U>>, std::size_t>;
+    using reference        = element_type;
+    using offset_policy    = mdsegments::outer_accessor_policy<U>;
 
     [[nodiscard]]
     constexpr reference access(data_handle_type const h, const std::size_t offset) const {
@@ -349,14 +342,14 @@ mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::raw_view_type<U>::begin() const -> iterator {
+mdsegments<T, SG, E, LP, A>::raw_view_type<U>::begin() const -> iterator_type {
     return this->begin_;
 }
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
 constexpr auto
-mdsegments<T, SG, E, LP, A>::raw_view_type<U>::end() const -> iterator {
+mdsegments<T, SG, E, LP, A>::raw_view_type<U>::end() const -> iterator_type {
     return this->end_;
 }
 
@@ -381,112 +374,39 @@ constexpr mdsegments<T, SG, E, LP, A>::mdsegments(const std::size_t n) : mdsegme
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
-class mdsegments<T, SG, E, LP, A>::raw_view_type<U>::iterator_type {
+class mdsegments<T, SG, E, LP, A>::raw_view_type<U>::iterator_type :
+    public tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type> {
   public:
-    using iterator_category = std::random_access_iterator_tag;
-    using difference_type   = mdsegments<T, SG, E, LP, A>::raw_view_type<U>::difference_type;
-    using value_type        = mdsegments::allocator_value_type;
-    using reference         = mdsegments::allocator_value_type&;
-    using pointer           = mdsegments::allocator_pointer;
-
+    using base = tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type>;
     constexpr iterator_type() = default;
     constexpr iterator_type(mdsegments::segment_ptr_allocator_traits::pointer const ptr,
                             const std::size_t n)
-        : ptr_{ ptr },
-          offset_{ n } {}
-
-    /// prefix increment
-    constexpr iterator_type& operator++() {
-        ++offset_;
-        return *this;
-    }
-
-    /// postfix increment
-    [[nodiscard]]
-    constexpr iterator_type operator++(int) {
-        iterator_type old = *this;
-        ++(*this);
-        return old;
-    }
-
-    /// prefix decrement
-    constexpr iterator_type& operator--() {
-        --offset_;
-        return *this;
-    }
-
-    /// postfix decrement
-    [[nodiscard]]
-    constexpr iterator_type operator--(int) {
-        iterator_type old = *this;
-        --(*this);
-        return old;
-    }
+        : base(static_cast<std::ptrdiff_t>(n)),
+          ptr_{ ptr } {}
 
     [[nodiscard]]
-    constexpr reference operator*() const {
-        const auto segment   = this->offset_ / (rss * SG);
-        const auto left_over = this->offset_ % (rss * SG);
+    constexpr base::reference offset_dereference(const base::difference_type offset) const {
+        const auto uoffset   = static_cast<std::size_t>(offset);
+        const auto segment   = uoffset / (rss * SG);
+        const auto left_over = uoffset % (rss * SG);
 
         return this->ptr_[segment][left_over];
     }
 
     [[nodiscard]]
-    constexpr auto operator<=>(const iterator_type& rhs) const {
-        return this->offset_ <=> rhs.offset_;
-    }
-
-    [[nodiscard]]
-    constexpr bool operator==(const iterator_type& rhs) const {
-        return (this->ptr_ == rhs.ptr_) and (this->offset_ == rhs.offset_);
-    }
-
-    [[nodiscard]]
-    friend constexpr difference_type operator-(const iterator_type& lhs, const iterator_type& rhs) {
-        if (lhs.offset_ >= rhs.offset_) {
-            return static_cast<difference_type>(lhs.offset_ - rhs.offset_);
-        }
-        return -static_cast<difference_type>(rhs.offset_ - lhs.offset_);
-    }
-
-    [[nodiscard]]
-    friend constexpr iterator_type operator+(const iterator_type& lhs, const difference_type rhs) {
-        auto result    = lhs;
-        result.offset_ = static_cast<std::size_t>(static_cast<difference_type>(lhs.offset_) + rhs);
-        return result;
-    }
-
-    [[nodiscard]]
-    friend constexpr iterator_type operator+(const difference_type lhs, const iterator_type& rhs) {
-        return rhs + lhs;
-    }
-
-    [[nodiscard]]
-    friend constexpr iterator_type operator-(const iterator_type& lhs, const difference_type rhs) {
-        return lhs + (-rhs);
-    }
-
-    constexpr iterator_type& operator+=(const difference_type rhs) { return *this = *this + rhs; }
-
-    constexpr iterator_type& operator-=(const difference_type rhs) { return *this = *this - rhs; }
-
-    [[nodiscard]]
-    constexpr reference operator[](const difference_type rhs) const {
-        return *(*this + rhs);
-    }
+    constexpr bool operator==(const iterator_type& rhs) const = default;
 
   private:
     mdsegments::segment_ptr_allocator_traits::pointer ptr_{ nullptr };
-    std::size_t offset_{ 0 };
 };
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::raw_view() -> raw_view_type<T> {
     return raw_view_type<T>{
-        .begin_ = typename raw_view_type<T>::iterator(this->segment_ptrs_, 0uz),
-        .end_   = typename raw_view_type<T>::iterator(this->segment_ptrs_,
-                                                    SG * rss * this->number_of_segments_)
+        .begin_ = std::ranges::iterator_t<raw_view_type<T>>(this->segment_ptrs_, 0uz),
+        .end_   = std::ranges::iterator_t<raw_view_type<T>>(this->segment_ptrs_,
+                                                          SG * rss * this->number_of_segments_)
     };
 }
 
@@ -494,9 +414,10 @@ template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr auto
 mdsegments<T, SG, E, LP, A>::raw_cview() const -> raw_view_type<const T> {
     return raw_view_type<const T>{
-        .begin_ = typename raw_view_type<const T>::iterator(this->segment_ptrs_, 0uz),
-        .end_   = typename raw_view_type<const T>::iterator(this->segment_ptrs_,
-                                                          SG * rss * this->number_of_segments_)
+        .begin_ = std::ranges::iterator_t<raw_view_type<const T>>(this->segment_ptrs_, 0uz),
+        .end_ =
+            std::ranges::iterator_t<raw_view_type<const T>>(this->segment_ptrs_,
+                                                            SG * rss * this->number_of_segments_)
     };
 }
 
@@ -511,10 +432,11 @@ template<typename U, E::index_type... idx>
 class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type {
   public:
     using iterator_category = std::random_access_iterator_tag;
-    using difference_type   = mdsegments<T, SG, E, LP, A>::raw_view_type<U>::difference_type;
-    using value_type        = mdsegments::allocator_value_type;
-    using reference         = mdsegments::allocator_value_type&;
-    using pointer           = mdsegments::allocator_pointer;
+    using difference_type =
+        std::ranges::range_difference_t<mdsegments<T, SG, E, LP, A>::raw_view_type<U>>;
+    using value_type = mdsegments::allocator_value_type;
+    using reference  = mdsegments::allocator_value_type&;
+    using pointer    = mdsegments::allocator_pointer;
 
     constexpr iterator_type() = default;
     constexpr iterator_type(mdsegments::segment_ptr_allocator_traits::pointer const ptr,
