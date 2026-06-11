@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <print>
@@ -130,6 +131,43 @@ const suite<"mdsegments"> _ = [] {
         for (const auto idx : tyvi::sstd::index_space(hmds)) {
             for (const auto tidx : tyvi::sstd::index_space(hmds[idx])) {
                 expect(hmds[idx][tidx] == 42) << hmds[idx][tidx];
+            }
+        }
+    };
+
+    "submdspans"_test = [] {
+        auto s   = segments(10);
+        auto mds = s.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mds)) {
+            for (const auto tidx : tyvi::sstd::index_space(mds[idx])) { mds[idx][tidx] = 21; }
+        }
+
+        const auto submds =
+            std::submdspan(mds, std::strided_slice{ .offset = 2uz, .extent = 6uz, .stride = 3uz });
+
+        for (const auto idx : tyvi::sstd::index_space(submds)) {
+            const auto innersubmds =
+                std::submdspan(submds[idx], std::tuple{ 1uz, 2uz }, std::tuple{ 1uz, 2uz });
+            for (const auto tidx : tyvi::sstd::index_space(innersubmds)) { innersubmds[tidx] = 42; }
+        }
+
+        for (const auto idx : tyvi::sstd::index_space(mds)) {
+            for (const auto tidx : tyvi::sstd::index_space(mds[idx])) {
+                const auto n = idx[0];
+                const auto i = tidx[0];
+                const auto j = tidx[1];
+
+                const auto idx_ok  = n == 2uz or n == 5uz;
+                const auto tidx_ok = i == 1uz and j == 1uz;
+
+                const auto debug_str = std::format("[{}][{}, {}] = {}", n, i, j, mds[idx][tidx]);
+
+                if (idx_ok and tidx_ok) {
+                    expect(mds[idx][tidx] == 42) << debug_str;
+                } else {
+                    expect(mds[idx][tidx] == 21) << debug_str;
+                }
             }
         }
     };

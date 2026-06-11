@@ -194,8 +194,8 @@ struct mdsegments<T, SG, E, LP, A>::inner_accessor_policy {
     }
 
     [[nodiscard]]
-    constexpr offset_policy::data_handle_type offsest(data_handle_type const h,
-                                                      const std::size_t offset) const {
+    constexpr offset_policy::data_handle_type offset(data_handle_type const h,
+                                                     const std::size_t offset) const {
         return std::ranges::next(h, static_cast<std::ptrdiff_t>(offset * SG));
     }
 };
@@ -219,8 +219,8 @@ struct mdsegments<T, SG, E, LP, A>::outer_accessor_policy {
     }
 
     [[nodiscard]]
-    constexpr offset_policy::data_handle_type offsest(data_handle_type const h,
-                                                      const std::size_t offset) const {
+    constexpr offset_policy::data_handle_type offset(data_handle_type const h,
+                                                     const std::size_t offset) const {
         return { std::get<0>(h), std::get<1>(h) + offset };
     }
 };
