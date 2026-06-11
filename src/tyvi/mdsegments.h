@@ -230,7 +230,8 @@ constexpr void
 mdsegments<T, SG, E, LP, A>::free_memory() {
     segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
                                              this->segment_ptrs_,
-                                             this->number_of_segments_);
+                                             std::reduce(this->segment_allocation_sizes_.begin(),
+                                                         this->segment_allocation_sizes_.end()));
 
     for (const auto& [p, n] : std::views::zip(this->segments_, this->segment_allocation_sizes_)) {
         allocator_traits::deallocate(this->allocator_, p, rss * SG * n);
@@ -275,11 +276,11 @@ mdsegments<T, SG, E, LP, A>::size() const {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr void
 mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
-    this->outer_size_ = outer_size;
-
-    const auto required_segments       = (outer_size > 0uz) ? (outer_size - 1uz) / SG + 1uz : 0uz;
-    const auto prev_number_of_segments = this->number_of_segments_;
-    this->number_of_segments_          = required_segments;
+    this->outer_size_            = outer_size;
+    const auto required_segments = (outer_size > 0uz) ? (outer_size - 1uz) / SG + 1uz : 0uz;
+    const auto prev_number_of_allocated_segments =
+        std::reduce(this->segment_allocation_sizes_.begin(), this->segment_allocation_sizes_.end());
+    this->number_of_segments_ = required_segments;
     this->calculate_segment_allocation_sizes();
 
     const auto need_more_allocations =
@@ -290,24 +291,23 @@ mdsegments<T, SG, E, LP, A>::resize(const std::size_t outer_size) {
              this->segment_allocation_sizes_ | std::views::drop(this->segments_.size())) {
             this->segments_.push_back(allocator_traits::allocate(this->allocator_, SG * rss * N));
         }
-    }
 
-    const auto recompute_ptrs = prev_number_of_segments != this->number_of_segments_;
-    if (recompute_ptrs) {
-        if (prev_number_of_segments > 0uz) {
+        if (prev_number_of_allocated_segments > 0uz) {
             // These will be recomputed...
             segment_ptr_allocator_traits::deallocate(this->segment_ptr_allocator_,
                                                      this->segment_ptrs_,
-                                                     prev_number_of_segments);
+                                                     prev_number_of_allocated_segments);
         }
 
+        const auto allocated_segments = std::reduce(this->segment_allocation_sizes_.begin(),
+                                                    this->segment_allocation_sizes_.end());
         this->segment_ptrs_ = segment_ptr_allocator_traits::allocate(this->segment_ptr_allocator_,
-                                                                     this->number_of_segments_);
+                                                                     allocated_segments);
 
         auto next_allocation           = 0uz;
         auto offset_to_next_allocation = 0uz;
 
-        for (auto i = 0uz; i < this->number_of_segments_; ++i) {
+        for (auto i = 0uz; i < allocated_segments; ++i) {
             // ...here.
             segment_ptr_allocator_traits::construct(
                 this->segment_ptr_allocator_,
@@ -547,7 +547,8 @@ d2h_copy(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
 
 [[nodiscard]]
 constexpr std::size_t
-mdsegments_alloc_size_in_segments(const std::size_t n, const std::size_t segment_size_in_bytes) {
+mdsegments_alloc_size_in_segments(const std::size_t nth_allocation,
+                                  const std::size_t segment_size_in_bytes) {
     static constexpr auto fibs = std::array<std::size_t, 93>{ 1uz,
                                                               1uz,
                                                               2uz,
@@ -644,8 +645,10 @@ mdsegments_alloc_size_in_segments(const std::size_t n, const std::size_t segment
 
     static constexpr auto max_allocated_bytes = 1uz << 30uz; // ~ 1GB
 
-    if (n < fibs.size()) {
-        if (fibs[n] * segment_size_in_bytes < max_allocated_bytes) { return fibs[n]; }
+    if (nth_allocation < fibs.size()) {
+        if (fibs.at(nth_allocation) * segment_size_in_bytes < max_allocated_bytes) {
+            return fibs.at(nth_allocation);
+        }
     }
     return max_allocated_bytes / segment_size_in_bytes + 1uz;
 }
