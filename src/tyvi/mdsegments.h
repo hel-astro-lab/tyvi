@@ -137,6 +137,14 @@ mdsegments {
     friend constexpr void copy_d2h(const mdsegments<t, sg, e, lp, a>&,
                                    mdsegments<t, sg, e, lp, b>&);
 
+    template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
+    friend constexpr void copy_h2h(const mdsegments<t, sg, e, lp, a>&,
+                                   mdsegments<t, sg, e, lp, b>&);
+
+    template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
+    friend constexpr void copy_d2d(const mdsegments<t, sg, e, lp, a>&,
+                                   mdsegments<t, sg, e, lp, b>&);
+
   private:
     using allocator_value_type = typename allocator_traits::value_type;
     using allocator_pointer    = typename allocator_traits::pointer;
@@ -545,6 +553,35 @@ copy_d2h(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
     }
 }
 
+template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
+constexpr void
+copy_h2h(const mdsegments<T, SG, E, LP, A>& h1, mdsegments<T, SG, E, LP, B>& h2) {
+    if (h1.size() != h2.size()) { h2.resize(h1.size()); }
+
+    static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
+
+    for (const auto [h1_ptr, h2_ptr] : std::views::zip(h1.segments_, h2.segments_)) {
+        const auto b    = h1_ptr;
+        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+        const auto dest = h2_ptr;
+        std::ignore     = thrust::copy(b, e, dest);
+    }
+}
+
+template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
+constexpr void
+copy_d2d(const mdsegments<T, SG, E, LP, A>& d1, mdsegments<T, SG, E, LP, B>& d2) {
+    if (d1.size() != d2.size()) { d2.resize(d1.size()); }
+
+    static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
+
+    for (const auto [d1_ptr, d2_ptr] : std::views::zip(d1.segments_, d2.segments_)) {
+        const auto b    = thrust::device_pointer_cast(d1_ptr);
+        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+        const auto dest = thrust::device_pointer_cast(d2_ptr);
+        std::ignore     = thrust::copy(b, e, dest);
+    }
+}
 [[nodiscard]]
 constexpr std::size_t
 mdsegments_alloc_size_in_segments(const std::size_t nth_allocation,
