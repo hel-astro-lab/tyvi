@@ -117,7 +117,7 @@ const suite<"mdsegments"> _ = [] {
             for (const auto tidx : tyvi::sstd::index_space(hmds[idx])) { hmds[idx][tidx] = 21; }
         }
 
-        tyvi::h2d_copy(host, device);
+        tyvi::copy_h2d(host, device);
 
         const auto dmds = device.mds();
         tyvi::mdgrid_work()
@@ -126,7 +126,7 @@ const suite<"mdsegments"> _ = [] {
                 [=](const auto idx, const auto tidx) { dmds[idx][tidx] = 2 * dmds[idx][tidx]; })
             .wait();
 
-        tyvi::d2h_copy(device, host);
+        tyvi::copy_d2h(device, host);
 
         for (const auto idx : tyvi::sstd::index_space(hmds)) {
             for (const auto tidx : tyvi::sstd::index_space(hmds[idx])) {

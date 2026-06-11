@@ -130,11 +130,11 @@ mdsegments {
     constexpr auto component_cview() const; // using just auto for simplicity
 
     template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
-    friend constexpr void h2d_copy(const mdsegments<t, sg, e, lp, a>&,
+    friend constexpr void copy_h2d(const mdsegments<t, sg, e, lp, a>&,
                                    mdsegments<t, sg, e, lp, b>&);
 
     template<typename t, std::size_t sg, typename e, typename lp, typename a, typename b>
-    friend constexpr void d2h_copy(const mdsegments<t, sg, e, lp, a>&,
+    friend constexpr void copy_d2h(const mdsegments<t, sg, e, lp, a>&,
                                    mdsegments<t, sg, e, lp, b>&);
 
   private:
@@ -517,7 +517,7 @@ mdsegments<T, SG, E, LP, A>::operator=(mdsegments&& other) noexcept -> mdsegment
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
 constexpr void
-h2d_copy(const mdsegments<T, SG, E, LP, A>& h, mdsegments<T, SG, E, LP, B>& d) {
+copy_h2d(const mdsegments<T, SG, E, LP, A>& h, mdsegments<T, SG, E, LP, B>& d) {
     if (h.size() != d.size()) { d.resize(h.size()); }
 
     static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
@@ -532,7 +532,7 @@ h2d_copy(const mdsegments<T, SG, E, LP, A>& h, mdsegments<T, SG, E, LP, B>& d) {
 
 template<typename T, std::size_t SG, typename E, typename LP, typename A, typename B>
 constexpr void
-d2h_copy(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
+copy_d2h(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
     if (d.size() != h.size()) { h.resize(d.size()); }
 
     static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
