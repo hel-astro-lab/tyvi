@@ -18,6 +18,10 @@
 
 namespace tyvi {
 
+[[nodiscard]]
+constexpr std::size_t
+mdsegments_alloc_size_in_segments(std::size_t nth_allocation, std::size_t segment_size_in_bytes);
+
 template<typename T,
          std::size_t SegmentSize,
          typename E,
@@ -159,31 +163,20 @@ mdsegments {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 constexpr void
 mdsegments<T, SG, E, LP, A>::calculate_segment_allocation_sizes() {
-    const auto n = std::ranges::max(this->number_of_segments_,
-                                    std::reduce(this->segment_allocation_sizes_.begin(),
-                                                this->segment_allocation_sizes_.end()));
-    if (n == 0uz) {
-        this->segment_allocation_sizes_.clear();
-        return;
-    }
-    if (n >= 1uz) {
-        this->segment_allocation_sizes_.resize(1uz);
-        this->segment_allocation_sizes_.at(0uz) = 1uz;
-    }
-    if (n >= 2uz) {
-        this->segment_allocation_sizes_.resize(2uz);
-        this->segment_allocation_sizes_.at(1uz) = 1uz;
-    }
+    const auto current_allocations_are_enough =
+        std::reduce(this->segment_allocation_sizes_.begin(), this->segment_allocation_sizes_.end())
+        >= this->number_of_segments_;
+    if (current_allocations_are_enough) { return; }
 
-    auto sum =
-        std::reduce(this->segment_allocation_sizes_.begin(), this->segment_allocation_sizes_.end());
+    this->segment_allocation_sizes_.clear();
 
-    for (auto i = 2uz; sum < n; ++i) {
-        const auto a = this->segment_allocation_sizes_.at(i - 2uz);
-        const auto b = this->segment_allocation_sizes_.at(i - 1uz);
-        const auto c = a + b;
-        this->segment_allocation_sizes_.push_back(c);
-        sum += c;
+    auto so_far = 0uz;
+    auto n      = 0uz;
+
+    while (so_far < this->number_of_segments_) {
+        this->segment_allocation_sizes_.push_back(
+            tyvi::mdsegments_alloc_size_in_segments(n++, rss * SG * sizeof(T)));
+        so_far += this->segment_allocation_sizes_.back();
     }
 }
 
@@ -550,5 +543,110 @@ d2h_copy(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
         const auto dest = h_ptr;
         std::ignore     = thrust::copy(b, e, dest);
     }
+}
+
+[[nodiscard]]
+constexpr std::size_t
+mdsegments_alloc_size_in_segments(const std::size_t n, const std::size_t segment_size_in_bytes) {
+    static constexpr auto fibs = std::array<std::size_t, 93>{ 1uz,
+                                                              1uz,
+                                                              2uz,
+                                                              3uz,
+                                                              5uz,
+                                                              8uz,
+                                                              13uz,
+                                                              21uz,
+                                                              34uz,
+                                                              55uz,
+                                                              89uz,
+                                                              144uz,
+                                                              233uz,
+                                                              377uz,
+                                                              610uz,
+                                                              987uz,
+                                                              1597uz,
+                                                              2584uz,
+                                                              4181uz,
+                                                              6765uz,
+                                                              10946uz,
+                                                              17711uz,
+                                                              28657uz,
+                                                              46368uz,
+                                                              75025uz,
+                                                              121393uz,
+                                                              196418uz,
+                                                              317811uz,
+                                                              514229uz,
+                                                              832040uz,
+                                                              1346269uz,
+                                                              2178309uz,
+                                                              3524578uz,
+                                                              5702887uz,
+                                                              9227465uz,
+                                                              14930352uz,
+                                                              24157817uz,
+                                                              39088169uz,
+                                                              63245986uz,
+                                                              102334155uz,
+                                                              165580141uz,
+                                                              267914296uz,
+                                                              433494437uz,
+                                                              701408733uz,
+                                                              1134903170uz,
+                                                              1836311903uz,
+                                                              2971215073uz,
+                                                              4807526976uz,
+                                                              7778742049uz,
+                                                              12586269025uz,
+                                                              20365011074uz,
+                                                              32951280099uz,
+                                                              53316291173uz,
+                                                              86267571272uz,
+                                                              139583862445uz,
+                                                              225851433717uz,
+                                                              365435296162uz,
+                                                              591286729879uz,
+                                                              956722026041uz,
+                                                              1548008755920uz,
+                                                              2504730781961uz,
+                                                              4052739537881uz,
+                                                              6557470319842uz,
+                                                              10610209857723uz,
+                                                              17167680177565uz,
+                                                              27777890035288uz,
+                                                              44945570212853uz,
+                                                              72723460248141uz,
+                                                              117669030460994uz,
+                                                              190392490709135uz,
+                                                              308061521170129uz,
+                                                              498454011879264uz,
+                                                              806515533049393uz,
+                                                              1304969544928657uz,
+                                                              2111485077978050uz,
+                                                              3416454622906707uz,
+                                                              5527939700884757uz,
+                                                              8944394323791464uz,
+                                                              14472334024676221uz,
+                                                              23416728348467685uz,
+                                                              37889062373143906uz,
+                                                              61305790721611591uz,
+                                                              99194853094755497uz,
+                                                              160500643816367088uz,
+                                                              259695496911122585uz,
+                                                              420196140727489673uz,
+                                                              679891637638612258uz,
+                                                              1100087778366101931uz,
+                                                              1779979416004714189uz,
+                                                              2880067194370816120uz,
+                                                              4660046610375530309uz,
+                                                              7540113804746346429uz,
+                                                              12200160415121876738uz };
+
+    static constexpr auto max_allocated_bytes = 1uz << 30uz; // ~ 1GB
+
+    if (n < fibs.size()) {
+        if (fibs[n] * segment_size_in_bytes < max_allocated_bytes) { return fibs[n]; }
+    }
+    return max_allocated_bytes / segment_size_in_bytes + 1uz;
 }
 } // namespace tyvi
