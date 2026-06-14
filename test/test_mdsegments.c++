@@ -11,6 +11,7 @@
 #include <print>
 #include <ranges>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "tyvi/device_allocator.h"
@@ -108,8 +109,8 @@ const suite<"mdsegments"> _ = [] {
     };
 
     "copyinig"_test = [] {
-        auto host1   = segments(3);
-        auto host2   = segments(3);
+        auto host1   = segments(100);
+        auto host2   = segments(100);
         auto device1 = device_segments(0);
         auto device2 = device_segments(0);
 
@@ -175,8 +176,77 @@ const suite<"mdsegments"> _ = [] {
             }
         }
     };
-};
 
+    "resize does not change values for scalars"_test = [] {
+        using scalar_segments = tyvi::mdsegments<std::size_t,
+                                                 1024uz,
+                                                 std::extents<std::size_t>,
+                                                 std::layout_right,
+                                                 std::allocator<std::size_t>>;
+        const auto M          = 10uz * 11uz * 13uz;
+        auto s                = scalar_segments(M);
+
+        auto check = [&] {
+            const auto mds = s.mds();
+            for (const auto idx : tyvi::sstd::index_space(mds)) {
+                expect(std::cmp_equal(mds[idx][], idx[0]));
+            }
+        };
+
+        auto mds = s.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mds)) {
+            mds[idx][] = static_cast<std::size_t>(idx[0]);
+        }
+
+        check();
+
+        s.resize(2uz * M);
+        s.resize(3uz * M);
+        mds = s.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mds) | std::views::drop(M)) {
+            mds[idx][] = static_cast<std::size_t>(idx[0]);
+        }
+        check();
+    };
+
+    "resize does not change values"_test = [] {
+        using segments_large = tyvi::mdsegments<T, 3, E, LP, allocator>;
+        const auto M         = 25uz;
+        auto s               = segments_large(M);
+
+        auto check = [&] {
+            const auto mds = s.mds();
+            for (const auto idx : tyvi::sstd::index_space(mds)) {
+                for (const auto tidx : tyvi::sstd::index_space(mds[idx])) {
+                    expect(std::cmp_equal(mds[idx][tidx], idx[0]));
+                }
+            }
+        };
+
+        auto mds = s.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mds)) {
+            for (const auto tidx : tyvi::sstd::index_space(mds[idx])) {
+                mds[idx][tidx] = static_cast<int>(idx[0]);
+            }
+        }
+
+        check();
+
+        s.resize(2uz * M);
+        s.resize(3uz * M);
+        mds = s.mds();
+
+        for (const auto idx : tyvi::sstd::index_space(mds) | std::views::drop(M)) {
+            for (const auto tidx : tyvi::sstd::index_space(mds[idx])) {
+                mds[idx][tidx] = static_cast<int>(idx[0]);
+            }
+        }
+        check();
+    };
+};
 } // namespace
 
 int

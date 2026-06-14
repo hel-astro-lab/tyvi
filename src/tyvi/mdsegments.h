@@ -530,9 +530,12 @@ copy_h2d(const mdsegments<T, SG, E, LP, A>& h, mdsegments<T, SG, E, LP, B>& d) {
 
     static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
 
-    for (const auto [h_ptr, d_ptr] : std::views::zip(h.segments_, d.segments_)) {
-        const auto b    = h_ptr;
-        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+    for (const auto [h_ptr, d_ptr, allocation_size_in_segments] :
+         std::views::zip(h.segments_, d.segments_, h.segment_allocation_sizes_)) {
+        const auto b = h_ptr;
+        const auto e =
+            std::ranges::next(b,
+                              static_cast<std::ptrdiff_t>(allocation_size_in_segments * SG * rss));
         const auto dest = thrust::device_pointer_cast(d_ptr);
         std::ignore     = thrust::copy(b, e, dest);
     }
@@ -545,9 +548,12 @@ copy_d2h(const mdsegments<T, SG, E, LP, A>& d, mdsegments<T, SG, E, LP, B>& h) {
 
     static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
 
-    for (const auto [h_ptr, d_ptr] : std::views::zip(h.segments_, d.segments_)) {
-        const auto b    = thrust::device_pointer_cast(d_ptr);
-        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+    for (const auto [h_ptr, d_ptr, allocation_size_in_segments] :
+         std::views::zip(h.segments_, d.segments_, d.segment_allocation_sizes_)) {
+        const auto b = thrust::device_pointer_cast(d_ptr);
+        const auto e =
+            std::ranges::next(b,
+                              static_cast<std::ptrdiff_t>(allocation_size_in_segments * SG * rss));
         const auto dest = h_ptr;
         std::ignore     = thrust::copy(b, e, dest);
     }
@@ -560,9 +566,12 @@ copy_h2h(const mdsegments<T, SG, E, LP, A>& h1, mdsegments<T, SG, E, LP, B>& h2)
 
     static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
 
-    for (const auto [h1_ptr, h2_ptr] : std::views::zip(h1.segments_, h2.segments_)) {
-        const auto b    = h1_ptr;
-        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+    for (const auto [h1_ptr, h2_ptr, allocation_size_in_segments] :
+         std::views::zip(h1.segments_, h2.segments_, h1.segment_allocation_sizes_)) {
+        const auto b = h1_ptr;
+        const auto e =
+            std::ranges::next(b,
+                              static_cast<std::ptrdiff_t>(allocation_size_in_segments * SG * rss));
         const auto dest = h2_ptr;
         std::ignore     = thrust::copy(b, e, dest);
     }
@@ -575,9 +584,12 @@ copy_d2d(const mdsegments<T, SG, E, LP, A>& d1, mdsegments<T, SG, E, LP, B>& d2)
 
     static constexpr auto rss = mdsegments<T, SG, E, LP, A>::rss;
 
-    for (const auto [d1_ptr, d2_ptr] : std::views::zip(d1.segments_, d2.segments_)) {
-        const auto b    = thrust::device_pointer_cast(d1_ptr);
-        const auto e    = std::ranges::next(b, static_cast<std::ptrdiff_t>(SG * rss));
+    for (const auto [d1_ptr, d2_ptr, allocation_size_in_segments] :
+         std::views::zip(d1.segments_, d2.segments_, d1.segment_allocation_sizes_)) {
+        const auto b = thrust::device_pointer_cast(d1_ptr);
+        const auto e =
+            std::ranges::next(b,
+                              static_cast<std::ptrdiff_t>(SG * rss * allocation_size_in_segments));
         const auto dest = thrust::device_pointer_cast(d2_ptr);
         std::ignore     = thrust::copy(b, e, dest);
     }
