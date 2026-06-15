@@ -38,8 +38,8 @@ const suite<"mdsegments component views"> _ = [] {
         auto s = segments(98uz);
 
         const auto view00 = s.component_view<0, 0>();
-        const auto view10 = s.component_cview<1, 0>();
-        const auto view01 = s.component_cview<{ 0, 1 }>();
+        const auto view10 = s.component_view<1, 0>();
+        const auto view01 = s.component_view<{ 0, 1 }>();
         const auto view11 = s.component_view<{ 1, 1 }>();
 
         for (auto i = 0; i < 98; ++i) {
@@ -84,9 +84,9 @@ const suite<"mdsegments component views"> _ = [] {
         expect(not ascending());
         std::ranges::sort(s.component_view<0, 0>());
         expect(not ascending());
-        std::ranges::sort(s.component_cview<1, 0>());
+        std::ranges::sort(s.component_view<1, 0>());
         expect(not ascending());
-        std::ranges::sort(s.component_cview<{ 0, 1 }>());
+        std::ranges::sort(s.component_view<{ 0, 1 }>());
         expect(not ascending());
         std::ranges::sort(s.component_view<{ 1, 1 }>());
         expect(ascending());

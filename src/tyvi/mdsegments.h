@@ -369,9 +369,9 @@ constexpr mdsegments<T, SG, E, LP, A>::mdsegments(const std::size_t n) : mdsegme
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U>
 class mdsegments<T, SG, E, LP, A>::raw_view_type<U>::iterator_type :
-    public tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type> {
+    public tyvi::sstd::offset_iterator<iterator_type, U> {
   public:
-    using base = tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type>;
+    using base                = tyvi::sstd::offset_iterator<iterator_type, U>;
     constexpr iterator_type() = default;
     constexpr iterator_type(mdsegments::segment_ptr_allocator_traits::pointer const ptr,
                             const std::size_t n)
@@ -423,9 +423,9 @@ mdsegments<T, SG, E, LP, A>::raw_view() const -> raw_view_type<const T> {
 template<typename T, std::size_t SG, typename E, typename LP, typename A>
 template<typename U, E::index_type... idx>
 class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type :
-    public tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type> {
+    public tyvi::sstd::offset_iterator<iterator_type, U> {
   public:
-    using base = tyvi::sstd::offset_iterator<iterator_type, mdsegments::allocator_value_type>;
+    using base                = tyvi::sstd::offset_iterator<iterator_type, U>;
     constexpr iterator_type() = default;
     constexpr iterator_type(mdsegments::segment_ptr_allocator_traits::pointer const ptr,
                             const std::size_t n)

@@ -55,13 +55,14 @@ const suite<"mdsegments"> _ = [] {
         for (const auto& x : static_cast<const segments&>(s).raw_view()) { expect(x == 42); }
 
         expect(std::ranges::view<decltype(s.raw_view())>);
+        expect(std::ranges::view<decltype(s.raw_cview())>);
     };
 
     "resize does not invalidate references"_test = [] {
         auto s                 = segments(10);
         const auto to_pointers = std::views::transform([](const auto& x) { return &x; });
 
-        const auto a = s.raw_view() | to_pointers | std::ranges::to<std::vector>();
+        const auto a = s.raw_cview() | to_pointers | std::ranges::to<std::vector>();
         s.resize(10000);
         const auto b = s.raw_view() | to_pointers | std::views::take(std::ranges::size(a))
                        | std::ranges::to<std::vector>();
