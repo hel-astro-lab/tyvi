@@ -438,7 +438,7 @@ class mdsegments<T, SG, E, LP, A>::component_view_type<U, idx...>::iterator_type
         const auto left_over = offset % static_cast<base::difference_type>(SG);
 
         const auto component_offset_in_segment =
-            static_cast<base::difference_type>(rss * mapping(idx...));
+            static_cast<base::difference_type>(SG * mapping(idx...));
 
         return *std::ranges::next(*std::ranges::next(this->ptr_, segment),
                                   component_offset_in_segment + left_over);
