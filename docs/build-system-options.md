@@ -84,6 +84,8 @@ Some sanitizers are incompatible with each other.
 
 ## Static analysis
 
+Currently these only work when using the cpu backend.
+
 ```
 tyvi_ENABLE_CLANG_TIDY:BOOL=OFF
 tyvi_ENABLE_CPPCHECK:BOOL=OFF

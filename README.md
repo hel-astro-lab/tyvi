@@ -15,12 +15,12 @@ In addition to HIP, tyvi also supports CPU backend based on the rocThrust OpenMP
 
 ## Quick start
 
-Build using hip backend in debug mode with hipcc and run tests:
+Build using hip backend in debug mode and run tests:
 
 ```shell
-> cmake --preset unixlike-hipcc-debug
-> cd out/build/unixlike-hipcc-debug
-> make -j && ctest
+> cmake --preset hip-debug
+> cd out/build/hip-debug
+> make -j 8 && ctest
 ```
 
 Use `cmake --preset list` to see all available configuration presets.
