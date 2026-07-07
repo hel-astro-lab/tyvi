@@ -28,12 +28,11 @@
             }
         },
         {
-            "name": "unixlike-hipcc-debug",
-            "displayName": "hipcc Debug",
-            "description": "Target Unix-like OS with hipcc, debug build type.",
+            "name": "hip-debug",
+            "displayName": "HIP debug build.",
+            "description": "For local development with hip.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
@@ -41,36 +40,23 @@
             }
         },
         {
-            "name": "unixlike-hipcc-debug-static-analysis",
-            "displayName": "hipcc Debug [static-analysis]",
-            "description": "Target Unix-like OS with hipcc, debug build type with static analysis.",
+            "name": "hip-release",
+            "displayName": "HIP release build.",
+            "description": "For local development with hip.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "hipcc",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "tyvi_ENABLE_CLANG_TIDY": "ON",
-                "tyvi_ENABLE_CPPCHECK": "ON",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
                 "tyvi_BACKEND": "hip"
             }
         },
         {
-            "name": "unixlike-hipcc-release",
-            "displayName": "hipcc Release",
-            "description": "Target Unix-like OS with hipcc, release build type.",
+            "name": "cpu-debug",
+            "displayName": "CPU debug build.",
+            "description": "For local development.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "hipcc",
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "tyvi_BACKEND": "hip"
-            }
-        },
-        {
-            "name": "unixlike-g++-debug",
-            "displayName": "hipcc Debug",
-            "description": "Target Unix-like OS with g++, debug build type.",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
@@ -78,12 +64,11 @@
             }
         },
         {
-            "name": "unixlike-g++-debug-static-analysis",
-            "displayName": "g++ Debug [static-analysis]",
-            "description": "Target Unix-like OS with g++, debug build type with static analysis.",
+            "name": "cpu-debug-static-analysis",
+            "displayName": "CPU debug build.",
+            "description": "For local development.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "ON",
                 "tyvi_ENABLE_CPPCHECK": "ON",
@@ -91,102 +76,16 @@
             }
         },
         {
-            "name": "unixlike-g++-release",
-            "displayName": "g++ Release",
-            "description": "Target Unix-like OS with g++, release build type.",
+            "name": "cpu-release",
+            "displayName": "CPU release build.",
+            "description": "For local development.",
             "inherits": "conf-unixlike-common",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "tyvi_BACKEND": "cpu"
-            }
-        },
-        {
-            "name": "unixlike-clang++-debug",
-            "displayName": "hipcc Debug",
-            "description": "Target Unix-like OS with clang++, debug build type.",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_BUILD_TYPE": "Debug",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "tyvi_BACKEND": "cpu"
             }
-        },
-        {
-            "name": "unixlike-clang++-debug-static-analysis",
-            "displayName": "clang++ Debug [static-analysis]",
-            "description": "Target Unix-like OS with clang++, debug build type with static analysis.",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "tyvi_ENABLE_CLANG_TIDY": "ON",
-                "tyvi_ENABLE_CPPCHECK": "ON",
-                "tyvi_BACKEND": "cpu"
-            }
-        },
-        {
-            "name": "unixlike-clang++-release",
-            "displayName": "clang++ Release",
-            "description": "Target Unix-like OS with clang++, release build type.",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "tyvi_BACKEND": "cpu"
-            }
-        },
-        {
-            "name": "macos-mpic++-debug",
-            "displayName": "mpic++ Debug (macOS)",
-            "description": "Target macOS with mpic++ (Homebrew clang++), cpu backend, debug build type.",
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "mpic++",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "tyvi_ENABLE_IPO": "OFF",
-                "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF",
-                "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
-            }
-        }
-    ],
-    "testPresets": [
-        {
-            "name": "test-common",
-            "description": "Test CMake settings that apply to all configurations",
-            "hidden": true,
-            "output": {
-                "outputOnFailure": true
-            },
-            "execution": {
-                "noTestsAction": "error",
-                "stopOnFailure": true
-            }
-        },
-        {
-            "name": "test-unixlike-hipcc-debug",
-            "displayName": "hipcc Debug",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "unixlike-hipcc-debug"
-        },
-        {
-            "name": "test-unixlike-hipcc-debug-static-analysis",
-            "displayName": "hipcc Debug [static-analysis]",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "unixlike-hipcc-debug-static-analysis"
-        },
-        {
-            "name": "test-unixlike-hipcc-release",
-            "displayName": "hiphcc Release",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "unixlike-hipcc-release"
         }
     ]
 }
