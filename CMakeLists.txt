@@ -33,6 +33,10 @@ tyvi_declare_options()
 tyvi_setup_global_options()
 tyvi_setup_local_options()
 
+if(${tyvi_BACKEND} STREQUAL "hip")
+    enable_language(HIP)
+endif()
+
 if(PROJECT_IS_TOP_LEVEL)
     # Declares ENABLE_TESTING option (default: ON).
     # Needs to happen before dependencies, because we fetch boost-ext/ut based on it.
