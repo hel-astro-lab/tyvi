@@ -70,15 +70,14 @@ const suite<"mdsegments component views"> _ = [] {
 
         auto ascending = [&] {
             const auto mds = s.mds();
-
-            for (const auto i : std::views::iota(1, static_cast<int>(s.size()))) {
-                if (mds[i][0, 0] <= mds[i - 1][0, 0]) { return false; }
-                if (mds[i][1, 0] <= mds[i - 1][1, 0]) { return false; }
-                if (mds[i][0, 1] <= mds[i - 1][0, 1]) { return false; }
-                if (mds[i][1, 1] <= mds[i - 1][1, 1]) { return false; }
-            }
-
-            return true;
+            return std::ranges::all_of(std::views::iota(1, static_cast<int>(s.size())),
+                                       [&](const auto i) {
+                                           if (mds[i][0, 0] <= mds[i - 1][0, 0]) { return false; }
+                                           if (mds[i][1, 0] <= mds[i - 1][1, 0]) { return false; }
+                                           if (mds[i][0, 1] <= mds[i - 1][0, 1]) { return false; }
+                                           if (mds[i][1, 1] <= mds[i - 1][1, 1]) { return false; }
+                                           return true;
+                                       });
         };
 
         expect(not ascending());
