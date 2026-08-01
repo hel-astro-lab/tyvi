@@ -12,6 +12,16 @@ In addition to HIP, tyvi also supports CPU backend based on the rocThrust OpenMP
 - rocThrust (tested with rocThrust v3.1.0 from rocm v6.2.0)
   - See `tyvi_BACKEND` in `docs/build-system-options.md` for instructions
     on how to provide the CPU enabled rocThrust to tyvi.
+- pika runtime library and its transient dependencies:
+  - mpi (eg. openmpi)
+  - Boost >=1.77.0
+  - hwloc >=1.11.5
+  - fmt >=9.0.0
+  - spdlog
+
+These should be widely available on different package managers.
+In case of configuration errors, consult cmake documentation on
+how to specify the library locations.
 
 ## Quick start
 
