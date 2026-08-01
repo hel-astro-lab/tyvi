@@ -29,7 +29,6 @@ target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
 target_compile_features(tyvi PUBLIC cxx_std_23)
 
 set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(tyvi PROPERTIES LINKER_LANGUAGE CXX)
 
 # Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
