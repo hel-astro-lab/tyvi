@@ -52,8 +52,6 @@ function(tyvi_setup_dependencies)
                 rocthrust
                 REQUIRED
                 CONFIG
-                PATHS
-                "/opt/rocm/rocthrust"
             )
         else()
             message(FATAL_ERROR "Unregonized tyvi_BACKEND: ${tyvi_BACKEND}")
