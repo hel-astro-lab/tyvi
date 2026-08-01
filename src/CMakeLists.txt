@@ -32,10 +32,17 @@ set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 
 # Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
-tyvi_target_link_system_libraries(tyvi PUBLIC std::mdspan)
-tyvi_target_link_system_libraries(tyvi PUBLIC roc::rocthrust)
+tyvi_target_link_system_libraries(
+    tyvi
+    PUBLIC
+    std::mdspan
+    roc::rocthrust
+    pika::pika
+)
+
 if(${tyvi_BACKEND} STREQUAL "hip")
     set_source_files_properties(tyvi/mdgrid_work.cpp PROPERTIES LANGUAGE HIP)
+    set_property(TARGET tyvi PROPERTY HIP_STANDARD 26)
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_HIP)
 elseif(${tyvi_BACKEND} STREQUAL "cpu")
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_CPU)

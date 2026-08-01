@@ -12,6 +12,18 @@ In addition to HIP, tyvi also supports CPU backend based on the rocThrust OpenMP
 - rocThrust (tested with rocThrust v3.1.0 from rocm v6.2.0)
   - See `tyvi_BACKEND` in `docs/build-system-options.md` for instructions
     on how to provide the CPU enabled rocThrust to tyvi.
+- Dependencies for pika (*): hwloc, MPI and boost.
+
+These should be widely available on different package managers.
+In case of configuration errors, consult cmake documentation on
+how to specify the library locations.
+
+(*) Ideally all tyvi::actions functionality are implemented using standard C++
+and the users of tyvi choose their favorite scheduler implementation (e.g. pika).
+However, std::execution is not that widely supported and this separation is not possible.
+So as a pragmatic choise tyvi depends on pika and has the long term desire to remove it.
+Other option is to replace pika with NVIDIA/std::execution reference implementation,
+but from experience pika with std::execution lead to some unresolved compilation errors.
 
 ## Quick start
 
