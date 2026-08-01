@@ -5,6 +5,7 @@
 
 #include <concepts>
 #include <iterator>
+#include <numeric>
 #include <ranges>
 #include <vector>
 
