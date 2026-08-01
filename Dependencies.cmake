@@ -37,25 +37,7 @@ function(tyvi_setup_dependencies)
     endif()
 
     if(NOT TARGET roc::rocthrust)
-        if(${tyvi_BACKEND} STREQUAL "hip")
-            # "/opt/rocm" - default install prefix
-            find_package(
-                rocthrust
-                REQUIRED
-                CONFIG
-                PATHS
-                "/opt/rocm/rocthrust"
-            )
-        elseif(${tyvi_BACKEND} STREQUAL "cpu")
-            # "/opt/rocm" - default install prefix
-            find_package(
-                rocthrust
-                REQUIRED
-                CONFIG
-            )
-        else()
-            message(FATAL_ERROR "Unregonized tyvi_BACKEND: ${tyvi_BACKEND}")
-        endif()
+        find_package(rocthrust REQUIRED CONFIG)
     endif()
 
     if(NOT TARGET std::mdspan)
