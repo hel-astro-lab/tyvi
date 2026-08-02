@@ -101,7 +101,9 @@ function(tyvi_setup_dependencies)
             GITHUB_REPOSITORY
             "pika-org/pika"
             OPTIONS
-            "PIKA_WITH_MALLOC jemalloc" # FIXME: don't use system malloc.
+            # FIXME: don't use system malloc
+            # (jemalloc & gpu-aware-mpi -> crash).
+            "PIKA_WITH_MALLOC system"
             "PIKA_WITH_HIP ${tyvi_enable_pika_hip}"
             "PIKA_WITH_MPI ON"
             "PIKA_WITH_BOOST_CONTEXT ${tyvi_enable_pika_boost_context}"
