@@ -26,8 +26,7 @@
 namespace {
 using namespace boost::ut;
 
-[[maybe_unused]]
-const suite<"mdgrid_buffer"> _ = [] {
+const auto s = [] {
     using element_type          = int;
     using vec                   = std::vector<element_type>;
     using element_extents       = tyvi::sstd::geometric_extents<2, 2>;
@@ -69,8 +68,8 @@ const suite<"mdgrid_buffer"> _ = [] {
 
         const auto mds = buff.mds();
 
-        expect(not std::is_const_v<
-               std::remove_reference_t<typename decltype(mds)::element_type::reference>>);
+        expect(
+            not std::is_const_v<std::remove_reference_t<decltype(mds)::element_type::reference>>);
 
         namespace rv = std::views;
         auto i_space = rv::iota(0uz, 2uz);
@@ -97,8 +96,7 @@ const suite<"mdgrid_buffer"> _ = [] {
         const auto cbuff = buff;
         const auto cmds  = cbuff.mds();
 
-        expect(std::is_const_v<
-               std::remove_reference_t<typename decltype(cmds)::element_type::reference>>);
+        expect(std::is_const_v<std::remove_reference_t<decltype(cmds)::element_type::reference>>);
 
         // NOTE: see above re: std::views::cartesian_product
         for (const auto i : i_space) {
@@ -328,5 +326,7 @@ const suite<"mdgrid_buffer"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"mdgrid_buffer"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

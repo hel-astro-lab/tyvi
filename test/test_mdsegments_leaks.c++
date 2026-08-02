@@ -66,8 +66,7 @@ operator!=(const tracked_allocator<T>&, const tracked_allocator<U>&) {
     return false;
 }
 
-[[maybe_unused]]
-const suite<"mdsegments memory leaks"> _ = [] {
+const auto s = [] {
     using T                 = int;
     static constexpr auto N = 63;
     using segments          = tyvi::mdsegments<T,
@@ -148,5 +147,7 @@ const suite<"mdsegments memory leaks"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"mdsegments memory leaks"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

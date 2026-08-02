@@ -15,8 +15,7 @@
 namespace {
 using namespace boost::ut;
 
-[[maybe_unused]]
-const suite<"mdgrid"> _ = [] {
+const auto s = [] {
     "3D mdgrid is constructible"_test = [] {
         constexpr auto elem_desc = tyvi::mdgrid_element_descriptor<float>{ .rank = 2, .dim = 2 };
 
@@ -351,5 +350,7 @@ const suite<"mdgrid"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"mdgrid"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

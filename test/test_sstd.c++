@@ -22,8 +22,7 @@
 namespace {
 using namespace boost::ut;
 
-[[maybe_unused]]
-const suite<"sstd"> _ = [] {
+const auto s = [] {
     "constexpr integer pow"_test = [] {
         // Use consteval lambda to make sure integer_pow is usable during compilation.
         constexpr auto buff0 = []() consteval {
@@ -499,7 +498,7 @@ const suite<"sstd"> _ = [] {
         constexpr const auto Nx{ 7uz }, Ny{ 9uz }, Nz{ 2uz };
         const auto buff     = std::array<int, Nx * Ny * Nz>{};
         const auto mds_full = MDS(buff.data(), Nx, Ny, Nz);
-        const auto mds      = std::submdspan(mds_full,
+        const auto mds = std::submdspan(mds_full,
                                         std::tuple{ 3, 6 },
                                         std::strided_slice{ .offset = 2, .extent = 8, .stride = 2 },
                                         std::full_extent);
@@ -596,5 +595,7 @@ const suite<"sstd"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"sstd"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

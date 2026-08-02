@@ -28,8 +28,7 @@ mds_is_usable(const auto mds) {
     return all_good;
 }
 
-[[maybe_unused]]
-const suite<"mdgrid_buffer resize"> _ = [] {
+const auto s = [] {
     using element_type          = int;
     using vec                   = std::vector<element_type>;
     using element_extents       = tyvi::sstd::geometric_extents<2, 2>;
@@ -93,5 +92,7 @@ const suite<"mdgrid_buffer resize"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"mdgrid_buffer resize"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

@@ -10,39 +10,44 @@
 
 namespace tyvi::actions {
 
-static const auto intrinsic_env =
-    list(cons(intrinsic::car, procedure([](sexpr S) -> sexpr_sender {
-                  return exec::just(std::move(S)) | exec::then([](const sexpr& s) -> sexpr {
-                             if (not std::holds_alternative<cons>(s)) {
-                                 throw std::runtime_error{ "Car argument is not (one long) list!" };
-                             }
+[[nodiscard]]
+inline const auto&
+get_intrinsic_env() {
+    static const auto env = list(
+        cons(intrinsic::car, procedure([](sexpr S) -> sexpr_sender {
+                 return exec::just(std::move(S)) | exec::then([](const sexpr& s) -> sexpr {
+                            if (not std::holds_alternative<cons>(s)) {
+                                throw std::runtime_error{ "Car argument is not (one long) list!" };
+                            }
 
-                             const auto arg = std::get<cons>(s).car();
+                            const auto arg = std::get<cons>(s).car();
 
-                             if (not std::holds_alternative<cons>(arg)) {
-                                 throw std::runtime_error{
-                                     "Car argument is not of form: ((a, b), null)"
-                                 };
-                             }
-                             return std::get<cons>(arg).car();
-                         });
-              })),
-         cons(intrinsic::cdr, procedure([](sexpr S) -> sexpr_sender {
-                  return exec::just(std::move(S)) | exec::then([](const sexpr& s) -> sexpr {
-                             if (not std::holds_alternative<cons>(s)) {
-                                 throw std::runtime_error{ "Cdr argument is not (one long) list!" };
-                             }
+                            if (not std::holds_alternative<cons>(arg)) {
+                                throw std::runtime_error{
+                                    "Car argument is not of form: ((a, b), null)"
+                                };
+                            }
+                            return std::get<cons>(arg).car();
+                        });
+             })),
+        cons(intrinsic::cdr, procedure([](sexpr S) -> sexpr_sender {
+                 return exec::just(std::move(S)) | exec::then([](const sexpr& s) -> sexpr {
+                            if (not std::holds_alternative<cons>(s)) {
+                                throw std::runtime_error{ "Cdr argument is not (one long) list!" };
+                            }
 
-                             const auto arg = std::get<cons>(s).car();
+                            const auto arg = std::get<cons>(s).car();
 
-                             if (not std::holds_alternative<cons>(arg)) {
-                                 throw std::runtime_error{
-                                     "Cdr argument is not of form: ((a, b), null)"
-                                 };
-                             }
-                             return std::get<cons>(arg).cdr();
-                         });
-              })));
+                            if (not std::holds_alternative<cons>(arg)) {
+                                throw std::runtime_error{
+                                    "Cdr argument is not of form: ((a, b), null)"
+                                };
+                            }
+                            return std::get<cons>(arg).cdr();
+                        });
+             })));
+    return env;
+}
 
 template<typename... Symbols>
 auto
@@ -50,9 +55,10 @@ eval(const sexpr& body, const sexpr& env) -> sexpr_sender {
     auto op = tyvi::sstd::overloaded{
         [&](const atom& x) -> sexpr_sender {
             if (atom_is_of_type<intrinsic, Symbols...>(x)) {
-                return exec::just(std::visit(assoc(x), std::visit(list_append, intrinsic_env, env))
-                                      .value()
-                                      .cdr());
+                return exec::just(
+                    std::visit(assoc(x), std::visit(list_append, get_intrinsic_env(), env))
+                        .value()
+                        .cdr());
             }
             return exec::just(sexpr{ x }); // Not a symbol type, i.e. it is "built-in type".
         },
