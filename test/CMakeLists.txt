@@ -57,6 +57,7 @@ foreach(test ${TESTS_TO_RUN})
     if(${tyvi_BACKEND} STREQUAL "hip")
         tyvi_target_link_system_libraries("${test}.test" PRIVATE roc::rocthrust)
         set_source_files_properties("test_${test}.c++" PROPERTIES LANGUAGE HIP)
+        set_property(TARGET tyvi PROPERTY HIP_STANDARD 26)
     endif()
 
     add_test(NAME ${test} COMMAND "${test}.test")
