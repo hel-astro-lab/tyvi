@@ -13,8 +13,7 @@
 namespace {
 using namespace boost::ut;
 
-[[maybe_unused]]
-const suite<"unit testing"> _ = [] {
+const auto s = [] {
     "thrust is usable"_test = [] { expect(tyvi::thrust_test()); };
 
     "mdspan is usable"_test = [] {
@@ -37,5 +36,7 @@ const suite<"unit testing"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"unit testing"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

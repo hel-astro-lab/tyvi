@@ -182,7 +182,7 @@ mdgrid {
 
     // Deducing this would be really nice to reduce the duplication below.
 
-    template<typename element_extents_type::index_type... idx>
+    template<element_extents_type::index_type... idx>
     [[nodiscard]]
     constexpr auto device_component_span() {
         return device_buff_.template component_span<idx...>();
@@ -195,7 +195,7 @@ mdgrid {
         return device_buff_.template component_span<idx>();
     }
 
-    template<typename element_extents_type::index_type... idx>
+    template<element_extents_type::index_type... idx>
     [[nodiscard]]
     constexpr auto device_component_cspan() const {
         return device_buff_.template component_cspan<idx...>();
@@ -208,7 +208,7 @@ mdgrid {
         return device_buff_.template component_span<idx>();
     }
 
-    template<typename element_extents_type::index_type... idx>
+    template<element_extents_type::index_type... idx>
     [[nodiscard]]
     constexpr auto host_component_span() {
         return staging_buff_.template component_span<idx...>();
@@ -221,7 +221,7 @@ mdgrid {
         return staging_buff_.template component_span<idx>();
     }
 
-    template<typename element_extents_type::index_type... idx>
+    template<element_extents_type::index_type... idx>
     [[nodiscard]]
     constexpr auto host_component_cspan() const {
         return staging_buff_.template component_cspan<idx...>();
@@ -246,7 +246,7 @@ namespace detail {
 template<std::size_t Dim, std::size_t Rank, typename Extents, typename F>
 void
 nested_for(const Extents& ext, F& f, std::array<typename Extents::index_type, Rank>& idx) {
-    using index_type = typename Extents::index_type;
+    using index_type = Extents::index_type;
     if constexpr (Dim == Rank - 1) {
         const auto n = ext.extent(Dim);
 #    pragma omp simd

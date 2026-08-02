@@ -23,8 +23,7 @@
 namespace {
 using namespace boost::ut;
 
-[[maybe_unused]]
-const suite<"mdsegments"> _ = [] {
+const auto s = [] {
     using T                 = int;
     static constexpr auto N = 3;
     using E                 = tyvi::sstd::geometric_extents<2, 2>;
@@ -84,8 +83,8 @@ const suite<"mdsegments"> _ = [] {
         auto s         = segments(7);
         const auto mds = s.mds();
 
-        expect(not std::is_const_v<
-               std::remove_reference_t<typename decltype(mds)::element_type::reference>>);
+        expect(
+            not std::is_const_v<std::remove_reference_t<decltype(mds)::element_type::reference>>);
 
         auto bad_hash = [](const auto n, const auto i, const auto j) {
             return static_cast<int>(4 * n + 2 * i + j);
@@ -99,8 +98,7 @@ const suite<"mdsegments"> _ = [] {
 
         const auto cmds = s.cmds();
 
-        expect(std::is_const_v<
-               std::remove_reference_t<typename decltype(cmds)::element_type::reference>>);
+        expect(std::is_const_v<std::remove_reference_t<decltype(cmds)::element_type::reference>>);
 
         for (const auto idx : tyvi::sstd::index_space(cmds)) {
             for (const auto tidx : tyvi::sstd::index_space(cmds[idx])) {
@@ -252,5 +250,7 @@ const suite<"mdsegments"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"mdsegments"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

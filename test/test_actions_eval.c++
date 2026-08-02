@@ -15,8 +15,7 @@ namespace te = tyvi::exec;
 using namespace std::literals;
 using ti = ta::intrinsic;
 
-[[maybe_unused]]
-const suite<"actions_ast"> _ = [] {
+const auto s = [] {
     enum class action : std::uint8_t { append, foobar };
 
     static constexpr auto make_concatter = [](std::string& str) {
@@ -130,5 +129,7 @@ const suite<"actions_ast"> _ = [] {
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"actions_ast"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

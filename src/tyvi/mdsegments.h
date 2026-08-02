@@ -146,8 +146,8 @@ mdsegments {
                                    mdsegments<t, sg, e, lp, b>&);
 
   private:
-    using allocator_value_type = typename allocator_traits::value_type;
-    using allocator_pointer    = typename allocator_traits::pointer;
+    using allocator_value_type = allocator_traits::value_type;
+    using allocator_pointer    = allocator_traits::pointer;
 
     using segment_ptr_allocator = allocator_traits::template rebind_alloc<allocator_pointer>;
     using segment_ptr_allocator_traits =
@@ -399,7 +399,7 @@ mdsegments<T, SG, E, LP, A>::raw_view() -> raw_view_type<T> {
     return raw_view_type<T>{
         .begin_ = std::ranges::iterator_t<raw_view_type<T>>(this->segment_ptrs_, 0uz),
         .end_   = std::ranges::iterator_t<raw_view_type<T>>(this->segment_ptrs_,
-                                                          SG * rss * this->number_of_segments_)
+                                                            SG * rss * this->number_of_segments_)
     };
 }
 
@@ -458,7 +458,7 @@ mdsegments<T, SG, E, LP, A>::component_view() -> component_view_type<T, idx...> 
     return component_view_type<T, idx...>{
         .begin_ = std::ranges::iterator_t<component_view_type<T, idx...>>(this->segment_ptrs_, 0uz),
         .end_   = std::ranges::iterator_t<component_view_type<T, idx...>>(this->segment_ptrs_,
-                                                                        this->size())
+                                                                          this->size())
     };
 }
 

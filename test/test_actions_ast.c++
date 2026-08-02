@@ -15,8 +15,7 @@ using namespace boost::ut;
 namespace ta = tyvi::actions;
 using namespace std::literals;
 
-[[maybe_unused]]
-const suite<"actions_ast"> _ = [] {
+const auto s = [] {
     "int atom"_test = []() {
         tyvi::constant_testing([](auto& tester) static consteval {
             const auto x     = ta::atom{ 10 };
@@ -323,12 +322,13 @@ const suite<"actions_ast"> _ = [] {
         });
     };
 };
-
 } // namespace
 
 // NOLINTEND{misc-reduntant-expression}
 
 int
 main(int argc, const char** argv) {
+    [[maybe_unused]]
+    const suite<"actions_ast"> _ = s;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

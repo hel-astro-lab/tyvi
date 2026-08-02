@@ -13,8 +13,8 @@ namespace mpix = pika::mpi::experimental;
 
 namespace {
 using namespace boost::ut;
-[[maybe_unused]]
-const suite<"pika"> _ = [] {
+
+const auto s = [] {
     "mpi polling"_test = [] {
         int size{}, rank{};
         MPI_Comm comm = MPI_COMM_WORLD;
@@ -36,11 +36,13 @@ const suite<"pika"> _ = [] {
         expect(recv_data == (rank + size - 1) % size);
     };
 };
-
 } // namespace
 
 int
 main(int argc, char** argv) {
+    [[maybe_unused]]
+    const suite<"pika"> _ = s;
+
     int provided{}, preferred = mpix::get_preferred_thread_mode();
 
     MPI_Init_thread(&argc, &argv, preferred, &provided);
