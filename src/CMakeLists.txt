@@ -30,7 +30,7 @@ target_sources(
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
 
-target_compile_features(tyvi PUBLIC cxx_std_26)
+# target_compile_features(tyvi PUBLIC cxx_std_25)
 
 set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 
