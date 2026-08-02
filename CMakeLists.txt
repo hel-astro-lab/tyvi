@@ -49,7 +49,7 @@ tyvi_setup_dependencies()
 # Potentially useful, see: https://gcc.gnu.org/wiki/Visibility
 # set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-target_compile_features(tyvi_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+# target_compile_features(tyvi_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 add_library(tyvi::tyvi_options ALIAS tyvi_options)
 add_library(tyvi::tyvi_warnings ALIAS tyvi_warnings)
