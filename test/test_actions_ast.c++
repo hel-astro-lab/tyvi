@@ -1,3 +1,6 @@
+// Copyright 2026 - 2026, Miro Palmu and the tyvi contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "constant_testing.h"
 #include <boost/ut.hpp> // import boost.ut;
 
@@ -7,6 +10,9 @@
 #include <variant>
 
 #include "tyvi/actions_ast.h"
+
+// Copyright 2026 - 2026, Miro Palmu and the tyvi contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 // NOLINTBEGIN{misc-reduntant-expression}
 
