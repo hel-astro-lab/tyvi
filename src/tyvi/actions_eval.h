@@ -1,3 +1,6 @@
+// Copyright 2026 - 2026, Miro Palmu and the tyvi contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #pragma once
 
 #include <stdexcept>
