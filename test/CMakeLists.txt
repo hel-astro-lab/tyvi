@@ -24,6 +24,7 @@ set(TESTS_TO_RUN
     actions_ast
     actions_lists
     actions_eval
+    actions_format
 )
 
 add_library(tyvi_constant_testing)

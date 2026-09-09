@@ -6,6 +6,7 @@
 #include <optional>
 #include <print>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -54,6 +55,7 @@ class [[nodiscard]] atom {
     void (*value_deleter_)(void*){ nullptr };
     bool (*comparison_op_)(void const*, void const*){ nullptr };
     void* (*clone_op_)(void const*){ nullptr };
+    std::string (*format_op_)(void const*){ nullptr };
     std::type_info const* value_type_info_{ nullptr };
 
     [[nodiscard]]
@@ -81,6 +83,9 @@ class [[nodiscard]] atom {
 
     template<typename T, typename... U>
     friend constexpr auto atom_is_of_type(const atom&) -> bool;
+
+    [[nodiscard]]
+    constexpr std::string format() const;
 };
 
 class [[nodiscard]] cons {
@@ -148,6 +153,14 @@ constexpr atom::atom(T&& value)
           const auto& src = *static_cast<std::decay_t<T> const* const>(src_ptr);
           return static_cast<void*>(new std::decay_t<T>{ src });
       } },
+      format_op_{ [](void const* const src_ptr) -> std::string {
+          const auto& src = *static_cast<std::decay_t<T> const* const>(src_ptr);
+          if constexpr (std::formattable<decltype(src), char>) {
+              return std::format("{}", src);
+          } else {
+              return std::string{ "<atom>" };
+          }
+      } },
       value_type_info_{ &typeid(std::decay_t<T>) } {}
 
 constexpr auto
@@ -157,7 +170,8 @@ atom::no_null_members_() const -> bool {
                        this->value_deleter_,
                        this->comparison_op_,
                        this->clone_op_,
-                       this->value_type_info_);
+                       this->value_type_info_,
+                       this->format_op_);
 }
 
 constexpr void
@@ -167,6 +181,7 @@ atom::set_null_() {
     this->comparison_op_   = nullptr;
     this->clone_op_        = nullptr;
     this->value_type_info_ = nullptr;
+    this->format_op_       = nullptr;
 }
 
 constexpr atom::~atom() {
@@ -181,6 +196,7 @@ constexpr atom::atom(const atom& other)
       value_deleter_{ other.value_deleter_ },
       comparison_op_{ other.comparison_op_ },
       clone_op_{ other.clone_op_ },
+      format_op_{ other.format_op_ },
       value_type_info_{ other.value_type_info_ } {}
 
 constexpr atom::atom(atom&& other) noexcept { swap(*this, other); }
@@ -212,6 +228,7 @@ swap(atom& lhs, atom& rhs) noexcept {
     std::swap(lhs.value_deleter_, rhs.value_deleter_);
     std::swap(lhs.comparison_op_, rhs.comparison_op_);
     std::swap(lhs.clone_op_, rhs.clone_op_);
+    std::swap(lhs.format_op_, rhs.format_op_);
     std::swap(lhs.value_type_info_, rhs.value_type_info_);
 }
 
@@ -223,6 +240,12 @@ atom_is_of_type(const atom& x) -> bool {
         return *x.value_type_info_ == typeid(T) or ((*x.value_type_info_ == typeid(U)) or ...);
     }
     return false;
+}
+
+constexpr std::string
+atom::format() const {
+    if (this->no_null_members_()) { return (*this->format_op_)(this->value_ptr_); }
+    throw std::format_error{ "Trying to format empty" };
 }
 
 template<typename T, typename U>
