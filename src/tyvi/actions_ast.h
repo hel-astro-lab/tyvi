@@ -34,6 +34,9 @@ using sexpr        = std::variant<null_type, cons, atom>;
 using sexpr_sender = exec::unique_any_sender<sexpr>;
 using procedure    = std::function<exec::unique_any_sender<sexpr>(sexpr)>;
 
+// Special procedure types:
+using procedure_with_eval = std::function<exec::unique_any_sender<sexpr>(sexpr, procedure)>;
+
 enum class intrinsic : std::uint8_t { car, cdr, quote };
 
 static constexpr auto null = null_type{};

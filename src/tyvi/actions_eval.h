@@ -5,6 +5,7 @@
 #include <variant>
 
 #include "tyvi/actions_ast.h"
+#include "tyvi/actions_format.h"
 #include "tyvi/actions_list.h"
 #include "tyvi/execution.h"
 
@@ -100,13 +101,19 @@ eval(const sexpr& body, const sexpr& env) -> sexpr_sender {
                 c.cdr());
 
             return exec::when_all(std::move(proc), std::move(args))
-                   | exec::let_value([](const sexpr& p, const sexpr& a) -> sexpr_sender {
+                   | exec::let_value([env](const sexpr& p, const sexpr& a) -> sexpr_sender {
                          if (not std::holds_alternative<atom>(p)) {
                              throw std::runtime_error{ "Trying to invoke non-procedure!" };
                          }
 
                          if (const auto f = atom_cast<procedure>(std::get<atom>(p))) {
                              return std::invoke(f.value(), a);
+                         }
+
+                         if (const auto f = atom_cast<procedure_with_eval>(std::get<atom>(p))) {
+                             return std::invoke(f.value(),
+                                                a,
+                                                std::bind_back(&eval<Symbols...>, env));
                          }
                          throw std::runtime_error{ "Trying to invoke non-procedure!" };
                      });

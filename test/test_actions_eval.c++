@@ -16,7 +16,7 @@ using namespace std::literals;
 using ti = ta::intrinsic;
 
 const auto s = [] {
-    enum class action : std::uint8_t { append, foobar };
+    enum class action : std::uint8_t { append, foobar, invoke_twice };
 
     static constexpr auto make_concatter = [](std::string& str) {
         return [&](ta::sexpr args) -> ta::sexpr_sender {
@@ -35,6 +35,13 @@ const auto s = [] {
                        return ta::null;
                    });
         };
+    };
+
+    static constexpr auto invoke_twice = [](const ta::sexpr& args,
+                                            const ta::procedure& eval) -> ta::sexpr_sender {
+        auto prog = std::get<ta::cons>(args).car();
+        return te::when_all(eval(prog), eval(prog))
+               | te::then([](auto&&, auto&& x) { return std::forward<decltype(x)>(x); });
     };
 
     "symbol lookup"_test = [] {
@@ -122,6 +129,23 @@ const auto s = [] {
         expect(str == "bar");
         tyvi::this_thread::sync_wait(ta::eval<action>(src, env));
         expect(str == "barbar");
+    };
+
+    "procedure with eval argument"_test = [] {
+        auto str = std::string{};
+
+        const auto env =
+            ta::list(ta::cons(action::invoke_twice, ta::procedure_with_eval(invoke_twice)),
+                     ta::cons(action::append, ta::procedure(make_concatter(str))));
+        const auto src =
+            ta::list(action::invoke_twice, ta::list(ti::quote, ta::list(action::append, "foo"s)));
+
+        auto snd = ta::eval<action>(src, env);
+
+        tyvi::this_thread::sync_wait(std::move(snd));
+        expect(str == "foofoo");
+        tyvi::this_thread::sync_wait(ta::eval<action>(src, env));
+        expect(str == "foofoofoofoo");
     };
 };
 
