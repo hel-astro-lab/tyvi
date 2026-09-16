@@ -65,10 +65,10 @@ macro(TYVI_DECLARE_OPTIONS)
 
     # cmake-lint: disable=C0103
     set(tyvi_BACKEND
-        "Not given! Set with -Dtyvi_BACKEND=<cpu|hip>"
-        CACHE STRING "Backend to use: cpu|hip"
+        "Not given! Set with -Dtyvi_BACKEND=<cpu|hip|cuda>"
+        CACHE STRING "Backend to use: cpu|hip|cuda"
     )
-    set_property(CACHE tyvi_BACKEND PROPERTY STRINGS "cpu" "hip")
+    set_property(CACHE tyvi_BACKEND PROPERTY STRINGS "cpu" "hip" "cuda")
 
     get_property(
         tyvi_BACKEND_STRINGS

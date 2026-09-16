@@ -7,12 +7,14 @@
 
 namespace tyvi {
 
-enum class backend : std::uint8_t { cpu, hip };
+enum class backend : std::uint8_t { cpu, hip, cuda };
 
 #if defined(TYVI_BACKEND_CPU)
 static constexpr auto active_backend = backend::cpu;
 #elif defined(TYVI_BACKEND_HIP)
 static constexpr auto active_backend = backend::hip;
+#elif defined(TYVI_BACKEND_CUDA)
+static constexpr auto active_backend = backend::cuda;
 #else
 static_assert(false, "Unregonized backend!");
 #endif

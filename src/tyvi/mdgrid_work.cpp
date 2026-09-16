@@ -5,7 +5,7 @@
 
 #if defined(TYVI_BACKEND_CPU)
 tyvi::mdgrid_work::mdgrid_work() {}
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
 #    include <algorithm>
 #    include <chrono>
 #    include <stdexcept>
@@ -53,12 +53,6 @@ stream_t
 stream_handle::get() const {
     if (not active_) { throw std::runtime_error{ "Trying to access inactive stream." }; }
     return stream_;
-}
-
-thrust::hip_rocprim::execute_on_stream_nosync
-stream_handle::on_stream() const {
-    if (not active_) { throw std::runtime_error{ "Trying to use inactive stream." }; }
-    return thrust::hip_rocprim::execute_on_stream_nosync{ stream_ };
 }
 
 void

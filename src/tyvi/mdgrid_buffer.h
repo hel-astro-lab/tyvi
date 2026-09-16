@@ -6,7 +6,6 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
-#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -159,7 +158,7 @@ class [[nodiscard]] mdgrid_buffer {
 
         if (my_size != other_size) {
             throw std::invalid_argument{
-                std::format("Expected {} sized buffer, got: {}", my_size, other_size)
+                "TODO removed" //std::format("Expected {} sized buffer, got: {}", my_size, other_size)
             };
         }
 

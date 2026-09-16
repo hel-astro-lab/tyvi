@@ -26,17 +26,24 @@ target_sources(
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
 
-target_compile_features(tyvi PUBLIC cxx_std_26)
+target_compile_features(tyvi PUBLIC cxx_std_23)
 
 set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 
 # Use dependencies as system library to suppress warnings from it's header.
 include(../cmake/SystemLink.cmake)
+
 tyvi_target_link_system_libraries(tyvi PUBLIC std::mdspan)
-tyvi_target_link_system_libraries(tyvi PUBLIC roc::rocthrust)
+tyvi_target_link_system_libraries(tyvi PUBLIC Thrust)
+
 if(${tyvi_BACKEND} STREQUAL "hip")
     set_source_files_properties(tyvi/mdgrid_work.cpp PROPERTIES LANGUAGE HIP)
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_HIP)
+elseif(${tyvi_BACKEND} STREQUAL "cuda")
+    set_source_files_properties(tyvi/mdgrid_work.cpp PROPERTIES LANGUAGE CUDA)
+    target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_CUDA)
+    target_include_directories(tyvi PUBLIC "$ENV{HOP_ROOT}")
+    target_include_directories(tyvi PUBLIC "$ENV{HOP_ROOT}/source/hip")
 elseif(${tyvi_BACKEND} STREQUAL "cpu")
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_CPU)
     target_compile_options(tyvi PUBLIC -fopenmp-simd)

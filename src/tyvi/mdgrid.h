@@ -21,6 +21,8 @@
 #if defined(TYVI_BACKEND_CPU)
 #elif defined(TYVI_BACKEND_HIP)
 #    include "hip/hip_runtime.h"
+#elif defined(TYVI_BACKEND_CUDA)
+#    include "cuda.h"
 #else
 static_assert(false, "Unregonized backend!");
 #endif
@@ -263,7 +265,7 @@ nested_for(const Extents& ext, F& f, std::array<typename Extents::index_type, Ra
     }
 }
 } // namespace detail
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
 namespace detail {
 /// Manages streams in order to promote stream reuse.
 ///
@@ -301,7 +303,16 @@ class stream_factory : sstd::immovable {
         stream_t get() const;
 
         [[nodiscard]]
-        thrust::hip_rocprim::execute_on_stream_nosync on_stream() const;
+        auto
+        stream_handle::on_stream() const {
+            if (not active_) { throw std::runtime_error{ "Trying to use inactive stream." }; }
+#if defined(TYVI_BACKEND_CUDA)
+            return thrust::cuda::par_nosync.on(stream_);
+#elif defined(TYVI_BACKEND_HIP)
+            return thrust::hip_rocprim::execute_on_stream_nosync{ stream_ };
+#endif
+        }
+
 
         void wait() const;
     };
@@ -332,7 +343,7 @@ static_assert(false, "Unregonized backend!");
 class mdgrid_work {
 #if defined(TYVI_BACKEND_CPU)
     // MVP cpu backend is blocking, so there is no handle.
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
     using stream_handle = detail::stream_factory::stream_handle;
     stream_handle handle_;
 #else
@@ -374,7 +385,7 @@ class mdgrid_work {
             auto idx = std::array<idx_t, Rank>{};
             detail::nested_for<0, Rank>(grid_mds.extents(), wrapped_f, idx);
         }
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
         const auto indices = sstd::index_space(grid_mds);
         thrust::for_each(handle_.on_stream(), indices.begin(), indices.end(), std::move(wrapped_f));
 #else
@@ -408,7 +419,7 @@ class mdgrid_work {
                 auto idx = std::array<idx_t, Rank>{};
                 detail::nested_for<0, Rank>(mds.extents(), f, idx);
             }
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
             thrust::for_each(handle_.on_stream(), indices.begin(), indices.end(), std::move(f));
 #else
             static_assert(false, "Unregonized backend!");
@@ -430,7 +441,7 @@ class mdgrid_work {
                 auto idx = std::array<idx_t, Rank>{};
                 detail::nested_for<0, Rank>(mds.extents(), wrapped_f, idx);
             }
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
             thrust::for_each(handle_.on_stream(),
                              indices.begin(),
                              indices.end(),
@@ -455,7 +466,7 @@ class mdgrid_work {
                      mdg.device_buff_.begin(),
                      mdg.device_buff_.end(),
                      mdg.staging_buff_.begin());
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
         thrust::copy(handle_.on_stream(),
                      mdg.device_buff_.begin(),
                      mdg.device_buff_.end(),
@@ -474,7 +485,7 @@ class mdgrid_work {
                      mdg.staging_buff_.begin(),
                      mdg.staging_buff_.end(),
                      mdg.device_buff_.begin());
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
         thrust::copy(handle_.on_stream(),
                      mdg.staging_buff_.begin(),
                      mdg.staging_buff_.end(),
@@ -490,7 +501,7 @@ class mdgrid_work {
     void wait() const {
 #if defined(TYVI_BACKEND_CPU)
         // MVP cpu backend in eager, so there is nothing to wait.
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
         handle_.wait();
 #else
         static_assert(false, "Unregonized backend!");
@@ -516,7 +527,7 @@ class mdgrid_work {
 #if defined(TYVI_BACKEND_CPU)
         // MVP cpu backend is eager.
         return thrust::device;
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
         return handle_.on_stream();
 #else
         static_assert(false, "Unregonized backend!");
@@ -531,7 +542,7 @@ void
 when_all([[maybe_unused]] const T&... w) {
 #if defined(TYVI_BACKEND_CPU)
     // MVP cpu backend in eager, so there is nothing to wait.
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) | defined(TYVI_BACKEND_CUDA)
     // https://rocm.docs.amd.com/projects/HIP/en/develop/reference/hip_runtime_api/modules/event_management.html#_CPPv415hipEventDestroy10hipEvent_t
     //
     // "Releases memory associated with the event. If the event is recording but has not completed
