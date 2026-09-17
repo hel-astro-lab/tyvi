@@ -19,10 +19,8 @@
 #include "thrust/host_vector.h"
 
 #if defined(TYVI_BACKEND_CPU)
-#elif defined(TYVI_BACKEND_HIP)
+#elif defined(TYVI_BACKEND_HIP) || defined(TYVI_BACKEND_CUDA)
 #    include "hip/hip_runtime.h"
-#elif defined(TYVI_BACKEND_CUDA)
-#    include "cuda.h"
 #else
 static_assert(false, "Unregonized backend!");
 #endif
@@ -303,16 +301,14 @@ class stream_factory : sstd::immovable {
         stream_t get() const;
 
         [[nodiscard]]
-        auto
-        stream_handle::on_stream() const {
+        auto on_stream() const {
             if (not active_) { throw std::runtime_error{ "Trying to use inactive stream." }; }
-#if defined(TYVI_BACKEND_CUDA)
+#    if defined(TYVI_BACKEND_CUDA)
             return thrust::cuda::par_nosync.on(stream_);
-#elif defined(TYVI_BACKEND_HIP)
+#    elif defined(TYVI_BACKEND_HIP)
             return thrust::hip_rocprim::execute_on_stream_nosync{ stream_ };
-#endif
+#    endif
         }
-
 
         void wait() const;
     };

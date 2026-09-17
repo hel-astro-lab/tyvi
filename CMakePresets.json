@@ -56,16 +56,10 @@
              "displayName": "Cuda debug build",
              "description": "For local development with cuda.",
              "inherits": "hip-debug",
-             "binaryDir": "$env{TMPDIR}/tyvi-build/${presetName}",
              "cacheVariables": {
-                 "CMAKE_CXX_STANDARD": {
-                     "type": "STRING",
-                     "value": "23"
-                 },
-                 "CMAKE_CUDA_FLAGS": {
- 			"type": "STRING",
- 			"value": "-DHOP_TARGET_CUDA"
- 		},
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
                 "tyvi_BACKEND": "cuda"
              }
  	},

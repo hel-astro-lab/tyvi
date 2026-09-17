@@ -32,8 +32,8 @@ const suite<"mdgrid_buffer component spans"> _ = [] {
         auto mdg_buff     = testing_mdgrid_buffer(10, 13);
         const auto span00 = mdg_buff.component_cspan<0, 0>();
         const auto span10 = mdg_buff.component_cspan<1, 0>();
-        const auto span01 = mdg_buff.component_cspan<{ 1, 0 }>();
-        const auto span11 = mdg_buff.component_cspan<{ 1, 1 }>();
+        const auto span01 = mdg_buff.component_cspan<std::array<std::size_t, 2>{ 1, 0 }>();
+        const auto span11 = mdg_buff.component_cspan<std::array<std::size_t, 2>{ 1, 1 }>();
         expect(span00.size() == 10uz * 13uz);
         expect(span10.size() == 10uz * 13uz);
         expect(span01.size() == 10uz * 13uz);
@@ -51,8 +51,8 @@ const suite<"mdgrid_buffer component spans"> _ = [] {
         auto mdg_buff     = testing_mdgrid_buffer(10, 13);
         const auto span00 = mdg_buff.component_span<0, 0>();
         const auto span10 = mdg_buff.component_span<1, 0>();
-        const auto span01 = mdg_buff.component_span<{ 0, 1 }>();
-        const auto span11 = mdg_buff.component_span<{ 1, 1 }>();
+        const auto span01 = mdg_buff.component_span<std::array<std::size_t, 2>{ 0, 1 }>();
+        const auto span11 = mdg_buff.component_span<std::array<std::size_t, 2>{ 1, 1 }>();
 
         std::ranges::fill(span00, 1);
         std::ranges::fill(span01, 2);
@@ -101,8 +101,8 @@ const suite<"mdgrid_buffer component spans"> _ = [] {
 
         const auto span00 = mdg_buff.component_span<0, 0>();
         const auto span10 = mdg_buff.component_span<1, 0>();
-        const auto span01 = mdg_buff.component_span<{ 0, 0 }>();
-        const auto span11 = mdg_buff.component_span<{ 1, 1 }>();
+        const auto span01 = mdg_buff.component_span<std::array<std::size_t, 2>{ 0, 0 }>();
+        const auto span11 = mdg_buff.component_span<std::array<std::size_t, 2>{ 1, 1 }>();
 
         const auto zip = std::views::zip(span11, span01, span10, span00);
 
