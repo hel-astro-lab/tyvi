@@ -1,19 +1,20 @@
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <thrust/sequence.h>
 
-double measure() {
+template <std::size_t N>
+double work() {
     using T = float;
-    auto vec = thrust::device_vector<T>(1000000);
+    auto vec = thrust::device_vector<T>(10000000);
     const auto w = tyvi::mdgrid_work{};
     thrust::sequence(w.on_this(), vec.begin(), vec.end());
 
     // begin measure
     const auto start = std::chrono::steady_clock::now();
-    static constexpr std::size_t N = 1uz;
     thrust::for_each(w.on_this(), vec.begin(), vec.end(), [](auto& x) {
         using T = std::remove_cvref_t<decltype(x)>;
         T sum = T{1.0};
@@ -33,15 +34,30 @@ double measure() {
     return diff.count();
 }
 
-int main() {
-
+template <std::size_t N>
+double measure() {
     double total_time = 0.0;
     static constexpr std::size_t n = 10;
     for (auto i = 0uz; i < n; i++) {
-        const double runtime = measure();
+        const double runtime = work<N>();
         total_time += i == 0 ? 0.0 : runtime;
     }
 
-    std::printf("Time taken: %f\n", total_time / static_cast<double>(n));
+    return total_time;
+}
+
+int main() {
+    const std::array<double, 5> measurements {
+        measure<1>(),
+        measure<2>(),
+        measure<4>(),
+        measure<8>(),
+        measure<16>(),
+    };
+
+    for (auto i = 0uz; i < measurements.size(); i++) {
+        std::printf("%d, %f\n", 1u << i, measurements[i]);
+    }
+
     return 0;
 }
