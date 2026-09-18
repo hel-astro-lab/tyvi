@@ -60,6 +60,7 @@ add_library(tyvi::tyvi_warnings ALIAS tyvi_warnings)
 
 # Adding the src:
 add_subdirectory(src)
+add_subdirectory(bench-test)
 
 if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
     message(STATUS "Adding tyvi tests.")

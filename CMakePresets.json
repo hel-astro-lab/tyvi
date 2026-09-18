@@ -56,10 +56,18 @@
              "displayName": "Cuda debug build",
              "description": "For local development with cuda.",
              "inherits": "hip-debug",
+             "binaryDir": "$env{TMPDIR}/tyvi/${presetName}",
              "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "tyvi_BACKEND": "cuda"
+             }
+ 	},
+ 	{
+             "name": "cuda-release",
+             "displayName": "Cuda release build",
+             "description": "For local development with cuda.",
+             "inherits": "hip-release",
+             "binaryDir": "$env{TMPDIR}/tyvi/${presetName}",
+             "cacheVariables": {
                 "tyvi_BACKEND": "cuda"
              }
  	},
