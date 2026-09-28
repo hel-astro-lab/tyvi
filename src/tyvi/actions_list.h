@@ -102,14 +102,14 @@ class [[nodiscard]] list_view {
   public:
     explicit constexpr list_view(null_type) {}
     explicit constexpr list_view(const cons& x) : begin_{ x } {}
-    explicit constexpr list_view(const sexpr& x) {
+    explicit constexpr list_view(const sexpr& s) {
         auto op = sstd::overloaded{
             [](const auto& y) { return list_view(y); },
             [](const atom&) -> list_view {
                 throw std::runtime_error{ "Can not construct list_view from atom sexpr!" };
             }
         };
-        *this = std::visit(op, x);
+        *this = std::visit(op, s);
     }
 
     constexpr auto begin() const -> list_iterator { return this->begin_; }

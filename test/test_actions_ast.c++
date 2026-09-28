@@ -219,8 +219,8 @@ const auto s = [] {
             tester.expect(b != y);
             tester.expect(y != b);
 
-            const auto op = tyvi::sstd::overloaded{ [](const ta::atom& arg) {
-                                                       return ta::atom_cast<int>(arg).value();
+            const auto op = tyvi::sstd::overloaded{ [](const ta::atom& A) {
+                                                       return ta::atom_cast<int>(A).value();
                                                    },
                                                     [](auto&&) { return 1; } };
 

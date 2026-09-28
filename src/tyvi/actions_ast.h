@@ -282,7 +282,7 @@ cons::cdr() const -> const sexpr& {
 constexpr auto
 operator==(const cons& LHS, const cons& RHS) -> bool {
     const auto op =
-        tyvi::sstd::overloaded{ []<sexpr_like T>(const T& lhs, const T& rhs) { return lhs == rhs; },
+        tyvi::sstd::overloaded{ []<sexpr_like T>(const T& l, const T& r) { return l == r; },
                                 [](auto&&, auto&&) { return false; } };
 
     return std::visit(op, LHS.car(), RHS.car()) and std::visit(op, LHS.cdr(), RHS.cdr());
