@@ -73,6 +73,33 @@ function(tyvi_setup_dependencies)
 
     # todo: way to optimize boost and pika 'Performing Test ...'
     if(NOT TARGET pika::pika)
+        cpmaddpackage(
+            NAME
+            fmt
+            GIT_TAG
+            12.1.0
+            GITHUB_REPOSITORY
+            "fmtlib/fmt"
+            OPTIONS
+            # Required to fix:
+            #
+            # CMake Error: install(EXPORT "pika_internal_targets" ...) includes target
+            # "pika_base_libraries" which requires target "fmt" that is not in any export set.
+            "FMT_INSTALL ON"
+        )
+        cpmaddpackage(
+            NAME
+            spdlog
+            GIT_TAG
+            v1.17.0
+            GITHUB_REPOSITORY
+            "gabime/spdlog"
+            OPTIONS
+            # Required to fix:
+            # CMake Error: install(EXPORT "pika_internal_targets" ...) includes target
+            # "pika_base_libraries" which requires target "spdlog" that is not in any export set.
+            "SPDLOG_INSTALL ON"
+        )
 
         # Compatibility alias for pika that expects Boost::boost.
         if(TARGET Boost::headers AND NOT TARGET Boost::boost)
