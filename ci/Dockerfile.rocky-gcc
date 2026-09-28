@@ -1,0 +1,37 @@
+FROM rockylinux:9.3
+LABEL org.opencontainers.image.source="https://github.com/hel-astro-lab/tyvi"
+
+
+ENV ROCTHRUST_PATH=/rocthrust/rocthrust \
+    ROCTHRUST_INSTALL_PREFIX=/rocthrust/install \
+    OMPI_ALLOW_RUN_AS_ROOT=1 \
+    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+
+RUN dnf -y update && \
+    dnf -y install \
+        gcc \
+        gcc-c++ \
+        gcc-toolset-14 \
+        gcc-toolset-14-gcc-c++ \
+        cmake \
+        git \
+        make \
+        boost \
+        boost-devel \
+        hwloc \
+        hwloc-devel \
+        openmpi \
+        openmpi-devel && \
+    dnf clean all
+
+RUN mkdir /rocthrust && \
+    git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git $ROCTHRUST_PATH && \
+    cd $ROCTHRUST_PATH && \
+    git sparse-checkout init --cone && \
+    git sparse-checkout set projects/rocthrust && \
+    git checkout develop && \
+    cd projects/rocthrust && \
+    cmake -Bbuild -DTHRUST_DEVICE_SYSTEM=CPP -DLINK_HIP_DEVICE_LIBS=OFF -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_INSTALL_PREFIX" . && \
+    make -C build install
+
+WORKDIR /workspace
