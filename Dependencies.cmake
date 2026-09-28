@@ -87,11 +87,11 @@ function(tyvi_setup_dependencies)
         endif()
 
         set(tyvi_enable_boost_context "OFF")
-  if (APPLE)
-    # Required by: https://pikacpp.org/usage.html
-        set(tyvi_enable_boost_context "ON")
+        if(APPLE)
+            # Required by: https://pikacpp.org/usage.html
+            set(tyvi_enable_boost_context "ON")
 
-    endif()
+        endif()
 
         cpmaddpackage(
             NAME
@@ -102,7 +102,7 @@ function(tyvi_setup_dependencies)
             "pika-org/pika"
             OPTIONS
             "PIKA_WITH_MALLOC system" # FIXME: don't use system malloc.
-            "PIKA_WITH_HIP ON"
+            "PIKA_WITH_HIP ${tyvi_pika_with_hip}"
             "PIKA_WITH_MPI ON"
             "PIKA_WITH_BOOST_CONTEXT ${tyvi_enable_boost_context}"
             "PIKA_WITH_CXX_STANDARD 26"
