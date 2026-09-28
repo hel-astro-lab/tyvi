@@ -93,6 +93,11 @@ function(tyvi_setup_dependencies)
 
         endif()
 
+        set(tyvi_pika_with_hip "OFF")
+        if(${tyvi_BACKEND} STREQUAL "hip")
+            set(tyvi_pika_with_hip "ON")
+        endif()
+
         cpmaddpackage(
             NAME
             pika
