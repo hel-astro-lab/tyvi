@@ -96,6 +96,16 @@ function(tyvi_setup_dependencies)
             # CMake Error: install(EXPORT "pika_internal_targets" ...) includes target
             # "pika_base_libraries" which requires target "spdlog" that is not in any export set.
             "SPDLOG_INSTALL ON"
+            # Required to fix:
+            # [ 68%] Linking CXX shared library ../lib/libpikad.so
+            # /opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld: \
+            #     /tmp/ccziSn5E.ltrans4.ltrans.o: relocation R_X86_64_TPOFF32 against \
+            #     `_ZGVZN6spdlog7details2os9thread_idEvE3tid' \
+            #     can not be used when making a shared object; recompile with -fPIC
+            # /opt/rh/gcc-toolset-14/root/usr/libexec/gcc/x86_64-redhat-linux/14/ld: \
+            #     failed to set dynamic section sizes: bad value
+            # collect2: error: ld returned 1 exit status
+            "SPDLOG_BUILD_PIC ON"
         )
 
         # Compatibility alias for pika that expects Boost::boost.
