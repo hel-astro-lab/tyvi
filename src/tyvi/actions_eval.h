@@ -11,8 +11,8 @@
 namespace tyvi::actions {
 
 static const auto intrinsic_env =
-    list(cons(intrinsic::car, procedure([](sexpr s) -> sexpr_sender {
-                  return exec::just(std::move(s)) | exec::then([](const sexpr& s) -> sexpr {
+    list(cons(intrinsic::car, procedure([](sexpr x) -> sexpr_sender {
+                  return exec::just(std::move(x)) | exec::then([](const sexpr& s) -> sexpr {
                              if (not std::holds_alternative<cons>(s)) {
                                  throw std::runtime_error{ "Car argument is not (one long) list!" };
                              }
@@ -27,8 +27,8 @@ static const auto intrinsic_env =
                              return std::get<cons>(arg).car();
                          });
               })),
-         cons(intrinsic::cdr, procedure([](sexpr s) -> sexpr_sender {
-                  return exec::just(std::move(s)) | exec::then([](const sexpr& s) -> sexpr {
+         cons(intrinsic::cdr, procedure([](sexpr x) -> sexpr_sender {
+                  return exec::just(std::move(x)) | exec::then([](const sexpr& s) -> sexpr {
                              if (not std::holds_alternative<cons>(s)) {
                                  throw std::runtime_error{ "Cdr argument is not (one long) list!" };
                              }

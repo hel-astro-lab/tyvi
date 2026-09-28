@@ -78,9 +78,10 @@ const suite<"actions_ast"> _ = [] {
             tester.expect(a == B);
             tester.expect(B == a);
 
-            // These are assumed to work with GCC and clang.
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#ifdef __llvm__
+#    pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#endif
             B = B;
 #pragma GCC diagnostic pop
             tester.expect(B == B);
@@ -127,7 +128,9 @@ const suite<"actions_ast"> _ = [] {
 
             // These are assumed to work with GCC and clang.
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#ifdef __llvm__
+#    pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#endif
             B = B;
 #pragma GCC diagnostic pop
             tester.expect(B == B);
@@ -169,8 +172,8 @@ const suite<"actions_ast"> _ = [] {
             tester.expect(b != empty);
             tester.expect(empty != b);
 
-            const auto op = tyvi::sstd::overloaded{ [](const ta::atom& a) {
-                                                       return ta::atom_cast<int>(a).value();
+            const auto op = tyvi::sstd::overloaded{ [](const ta::atom& x) {
+                                                       return ta::atom_cast<int>(x).value();
                                                    },
                                                     [](std::monostate) { return 1; },
                                                     [](auto&&) { return 2; } };
@@ -208,8 +211,8 @@ const suite<"actions_ast"> _ = [] {
             tester.expect(b != y);
             tester.expect(y != b);
 
-            const auto op = tyvi::sstd::overloaded{ [](const ta::atom& a) {
-                                                       return ta::atom_cast<int>(a).value();
+            const auto op = tyvi::sstd::overloaded{ [](const ta::atom& A) {
+                                                       return ta::atom_cast<int>(A).value();
                                                    },
                                                     [](auto&&) { return 1; } };
 
@@ -285,7 +288,9 @@ const suite<"actions_ast"> _ = [] {
 
             // These are assumed to work with GCC and clang.
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#ifdef __llvm__
+#    pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#endif
             B = B;
 #pragma GCC diagnostic pop
             tester.expect(B == B);

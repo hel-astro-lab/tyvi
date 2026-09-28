@@ -128,12 +128,12 @@ const suite<"actions_lists"> _ = [] {
         auto x2 = [](const ta::sexpr& s) -> ta::sexpr_sender {
             return te::just(s) | te::then([](ta::sexpr&& x) -> ta::sexpr {
                        auto op =
-                           tyvi::sstd::overloaded{ [](const ta::atom& x) -> ta::sexpr {
+                           tyvi::sstd::overloaded{ [](const ta::atom& a) -> ta::sexpr {
                                                       if (const auto str =
-                                                              ta::atom_cast<std::string>(x)) {
+                                                              ta::atom_cast<std::string>(a)) {
                                                           return str.value() + str.value();
                                                       }
-                                                      if (const auto i = ta::atom_cast<int>(x)) {
+                                                      if (const auto i = ta::atom_cast<int>(a)) {
                                                           return 2 * i.value();
                                                       }
                                                       expect(false);
