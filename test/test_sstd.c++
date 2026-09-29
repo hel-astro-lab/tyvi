@@ -496,7 +496,7 @@ const suite<"sstd"> _ = [] {
         constexpr const auto Nx{ 7uz }, Ny{ 9uz }, Nz{ 2uz };
         const auto buff     = std::array<int, Nx * Ny * Nz>{};
         const auto mds_full = MDS(buff.data(), Nx, Ny, Nz);
-        const auto mds      = std::submdspan(mds_full,
+        const auto mds = std::submdspan(mds_full,
                                         std::tuple{ 3, 6 },
                                         std::strided_slice{ .offset = 2, .extent = 8, .stride = 2 },
                                         std::full_extent);
