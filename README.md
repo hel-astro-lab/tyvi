@@ -1,3 +1,5 @@
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/hel-astro-lab/tyvi/main.svg)](https://results.pre-commit.ci/latest/github/hel-astro-lab/tyvi/main)
+
 Tyvi is C++23 GPU parallelization library which focuses on physics simulation applications.
 It is build on top of HIP and rocThrust library with `std::mdspan` playing a central role.
 
