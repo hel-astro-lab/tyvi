@@ -20,7 +20,7 @@ jobs:
         run: |
           rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust cmake \
           --preset cpu-debug \
-          -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-14/root/usr/bin/g++ \
+          -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-15/root/usr/bin/g++ \
           -DMPI_HOME=/usr/lib64/openmpi/
 
       - name: Build
@@ -42,7 +42,7 @@ jobs:
         run: |
           rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust cmake \
           --preset cpu-debug-static-analysis \
-          -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-14/root/usr/bin/g++ \
+          -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-15/root/usr/bin/g++ \
           -DMPI_HOME=/usr/lib64/openmpi/
 
       - name: Build

@@ -1,4 +1,4 @@
-FROM rockylinux:9.3
+FROM rockylinux/rockylinux:10
 LABEL org.opencontainers.image.source="https://github.com/hel-astro-lab/tyvi"
 
 
@@ -11,8 +11,8 @@ RUN dnf -y update && \
     dnf -y install \
         gcc \
         gcc-c++ \
-        gcc-toolset-14 \
-        gcc-toolset-14-gcc-c++ \
+        gcc-toolset-15 \
+        gcc-toolset-15-gcc-c++ \
         cmake \
         git \
         make \
