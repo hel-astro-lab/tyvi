@@ -149,9 +149,7 @@ function(tyvi_setup_dependencies)
         )
     endif()
 
-    # cmake-lint: disable=C0103
     set(CMAKE_CXX_CLANG_TIDY "${old_cmake_cxx_clang_tidy}")
     set(CMAKE_CXX_CPPCHECK "${old_cmake_cxx_cppcheck}")
-    # cmake-lint: disable=C0103
 
 endfunction()
