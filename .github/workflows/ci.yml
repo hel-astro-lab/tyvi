@@ -19,12 +19,34 @@ jobs:
       - name: Configure
         run: |
           rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust cmake \
-          --preset unixlike-g++-debug \
+          --preset cpu-debug \
           -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-14/root/usr/bin/g++ \
           -DMPI_HOME=/usr/lib64/openmpi/
 
       - name: Build
-        run: make -j4 -C out/build/unixlike-g++-debug
+        run: make -j4 -C out/build/cpu-debug
 
       - name: Test
-        run: ctest -j4 --test-dir out/build/unixlike-g++-debug --output-on-failure
+        run: ctest -j4 --test-dir out/build/cpu-debug --output-on-failure
+
+  rocky-gcc-debug-static-analysis:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/hel-astro-lab/tyvi-rocky-gcc:latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure
+        run: |
+          rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust cmake \
+          --preset cpu-debug-static-analysis \
+          -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-14/root/usr/bin/g++ \
+          -DMPI_HOME=/usr/lib64/openmpi/
+
+      - name: Build
+        run: make -j4 -C out/build/cpu-debug-static-analysis
+
+      - name: Test
+        run: ctest -j4 --test-dir out/build/cpu-debug-static-analysis --output-on-failure
