@@ -69,6 +69,22 @@ function(tyvi_setup_dependencies)
         )
     endif()
 
+    if(NOT TARGET mimalloc)
+        cpmaddpackage(
+            NAME
+            mimalloc
+            GIT_TAG
+            v3.5.4
+            GITHUB_REPOSITORY
+            "microsoft/mimalloc"
+            OPTIONS
+            "MI_USE_CXX ON"
+            "MI_BUILD_STATIC OFF"
+            "MI_BUILD_OBJECT OFF"
+            "MI_BUILD_TESTS OFF"
+        )
+    endif()
+
     if(NOT TARGET fmt::fmt)
         cpmaddpackage(
             NAME
@@ -146,9 +162,7 @@ function(tyvi_setup_dependencies)
             GITHUB_REPOSITORY
             "pika-org/pika"
             OPTIONS
-            # FIXME: don't use system malloc
-            # (jemalloc & gpu-aware-mpi -> crash).
-            "PIKA_WITH_MALLOC system"
+            "PIKA_WITH_MALLOC mimalloc"
             "PIKA_WITH_HIP ${tyvi_enable_pika_hip}"
             "PIKA_WITH_MPI ON"
             "PIKA_WITH_BOOST_CONTEXT ${tyvi_enable_pika_boost_context}"
