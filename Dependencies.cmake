@@ -152,7 +152,7 @@ function(tyvi_setup_dependencies)
             "PIKA_WITH_HIP ${tyvi_enable_pika_hip}"
             "PIKA_WITH_MPI ON"
             "PIKA_WITH_BOOST_CONTEXT ${tyvi_enable_pika_boost_context}"
-            "PIKA_WITH_CXX_STANDARD 26"
+            "PIKA_WITH_CXX_STANDARD 23"
         )
     endif()
 

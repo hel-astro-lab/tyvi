@@ -30,7 +30,7 @@ target_sources(
 
 target_link_libraries(tyvi PRIVATE tyvi_options tyvi_warnings)
 
-target_compile_features(tyvi PUBLIC cxx_std_26)
+target_compile_features(tyvi PUBLIC cxx_std_23)
 
 set_target_properties(tyvi PROPERTIES VERSION ${PROJECT_VERSION})
 
@@ -46,7 +46,7 @@ tyvi_target_link_system_libraries(
 
 if(${tyvi_BACKEND} STREQUAL "hip")
     set_source_files_properties(tyvi/mdgrid_work.cpp PROPERTIES LANGUAGE HIP)
-    set_property(TARGET tyvi PROPERTY HIP_STANDARD 26)
+    set_property(TARGET tyvi PROPERTY HIP_STANDARD 23)
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_HIP)
 elseif(${tyvi_BACKEND} STREQUAL "cpu")
     target_compile_definitions(tyvi PUBLIC TYVI_BACKEND_CPU)
