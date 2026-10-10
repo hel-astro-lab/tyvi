@@ -1,9 +1,12 @@
 // Copyright 2026 - 2026, Miro Palmu and the tyvi contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "constant_testing.h"
+// #include "constant_testing.h"
+
 #include <boost/ut.hpp> // import boost.ut;
 
+#include <format>
+#include <source_location>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -21,9 +24,20 @@ using namespace boost::ut;
 namespace ta = tyvi::actions;
 using namespace std::literals;
 
+// see: tests/README.md
+struct non_constant_tester {
+    static void expect(const bool x,
+                       const std::source_location location = std::source_location::current()) {
+        boost::ut::expect(x) << std::format("non_constant_tester invoked from line: {}\n",
+                                            location.line());
+    }
+};
+
+constexpr auto tester = non_constant_tester{};
+
 const auto suite_f = [] {
     "int atom"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto x     = ta::atom{ 10 };
             const ta::atom y = 42;
             tester.expect(ta::atom_cast<int>(x).value() == 10);
@@ -32,11 +46,11 @@ const auto suite_f = [] {
             tester.expect(y == y);
             tester.expect(x != y);
             tester.expect(y != x);
-        });
+        }
     };
 
     "string atom"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto x = ta::atom{ std::string{ "foo" } };
             const auto y = ta::atom{ std::string{ "bar" } };
             tester.expect(ta::atom_cast<std::string>(x).value() == "foo");
@@ -45,11 +59,11 @@ const auto suite_f = [] {
             tester.expect(y == y);
             tester.expect(x != y);
             tester.expect(y != x);
-        });
+        }
     };
 
     "int atoms are moveable"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             auto a = ta::atom{ 42 };
             auto b = ta::atom{ 42 };
             tester.expect(a == b);
@@ -65,11 +79,11 @@ const auto suite_f = [] {
             tester.expect(c == a);
 
             // Not testing self-move because it is most likely ub.
-        });
+        }
     };
 
     "int atoms are copyable"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a = ta::atom{ 42 };
             const auto A = ta::atom{ a };
 
@@ -94,11 +108,11 @@ const auto suite_f = [] {
             tester.expect(B == B);
             tester.expect(a == B);
             tester.expect(B == a);
-        });
+        }
     };
 
     "string atoms are movable"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             auto a = ta::atom{ std::string{ "foo" } };
             auto b = ta::atom{ std::string{ "foo" } };
             tester.expect(a == b);
@@ -115,11 +129,11 @@ const auto suite_f = [] {
             tester.expect(c == a);
 
             // Not testing self-move because it is most likely ub.
-        });
+        }
     };
 
     "string atoms are copyable"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a = ta::atom{ std::string{ "foo" } };
             const auto A = ta::atom{ a };
 
@@ -144,11 +158,11 @@ const auto suite_f = [] {
             tester.expect(B == B);
             tester.expect(a == B);
             tester.expect(B == a);
-        });
+        }
     };
 
     "empty cons"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto cons = ta::cons(std::monostate{}, std::monostate{});
 
             tester.expect(cons == cons);
@@ -161,11 +175,11 @@ const auto suite_f = [] {
 
             tester.expect(icar == 42);
             tester.expect(icdr == 42);
-        });
+        }
     };
 
     "car only cons"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a     = ta::cons(42, ta::null); // implicit atom
             const auto b     = ta::cons(ta::atom{ 42 }, ta::null);
             const auto empty = ta::cons(ta::null, ta::null);
@@ -194,11 +208,11 @@ const auto suite_f = [] {
             tester.expect(a_icdr == 1);
             tester.expect(b_icar == 42);
             tester.expect(b_icdr == 1);
-        });
+        }
     };
 
     "car and cdr in cons"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a = ta::cons(42, 43); // implicit atom
             const auto b = ta::cons(42, ta::atom(43));
             const auto x = ta::cons(std::monostate{}, std::monostate{});
@@ -232,11 +246,11 @@ const auto suite_f = [] {
             tester.expect(a_icdr == 43);
             tester.expect(b_icar == 42);
             tester.expect(b_icdr == 43);
-        });
+        }
     };
 
     "nested cons equality comparison"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a = ta::cons(1, ta::cons(ta::cons(2, 3), 4));
             const auto b = ta::cons(2, ta::cons(ta::cons(2, 3), 4));
             const auto c = ta::cons(1, ta::cons(ta::cons('3', 3), 4));
@@ -258,11 +272,11 @@ const auto suite_f = [] {
             tester.expect(e != a);
             tester.expect(f != a);
             tester.expect(g != a);
-        });
+        }
     };
 
     "nested cons are moveable"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             auto a = ta::cons("foo"s, ta::cons(ta::cons("foo"s, 3), 4));
             auto b = ta::cons("foo"s, ta::cons(ta::cons("foo"s, 3), 4));
             tester.expect(a == b);
@@ -276,11 +290,11 @@ const auto suite_f = [] {
             tester.expect(a == a);
             tester.expect(a == c);
             tester.expect(c == a);
-        });
+        }
     };
 
     "nested cons are copyable"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a = ta::cons("foo"s, ta::cons(ta::cons("foo"s, 3), 4));
             const auto A = a;
 
@@ -305,11 +319,11 @@ const auto suite_f = [] {
             tester.expect(B == B);
             tester.expect(a == B);
             tester.expect(B == a);
-        });
+        }
     };
 
     "atom_is_of_type"_test = []() {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto a = ta::atom{ "foo"s };
             const auto b = ta::atom{ 1 };
             const auto c = ta::atom{ '2' };
@@ -325,7 +339,7 @@ const auto suite_f = [] {
             tester.expect(ta::atom_is_of_type<int, char, std::string>(a));
             tester.expect(ta::atom_is_of_type<int, char, std::string>(b));
             tester.expect(ta::atom_is_of_type<int, char, std::string>(c));
-        });
+        }
     };
 };
 } // namespace

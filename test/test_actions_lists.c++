@@ -1,13 +1,17 @@
 // Copyright 2026 - 2026, Miro Palmu and the tyvi contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "constant_testing.h"
+// #include "constant_testing.h"
+
 #include <boost/ut.hpp> // import boost.ut;
 
+#include <format>
 #include <ranges>
+#include <source_location>
 #include <vector>
 
 #include "tyvi/actions_ast.h"
+#include "tyvi/actions_format.h"
 #include "tyvi/actions_list.h"
 #include "tyvi/execution.h"
 
@@ -17,31 +21,39 @@ namespace ta = tyvi::actions;
 namespace te = tyvi::exec;
 using namespace std::literals;
 
+// see: tests/README.md
+struct non_constant_tester {
+    static void expect(const bool x,
+                       const std::source_location location = std::source_location::current()) {
+        boost::ut::expect(x) << std::format("non_constant_tester invoked from line: {}\n",
+                                            location.line());
+    }
+};
+
+constexpr auto tester = non_constant_tester{};
+
 const auto suite_f = [] {
-    "C++: empty list creation"_test = [] {
-        tyvi::constant_testing(
-            [](auto& tester) static consteval { tester.expect(ta::list() == ta::sexpr{}); });
-    };
+    "C++: empty list creation"_test = [] { expect(ta::list() == ta::sexpr{}); };
 
     "C++: one long list creation"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             tester.expect(ta::list(42) == ta::sexpr{ ta::cons(42, ta::null) });
             tester.expect(ta::list("foo"s) == ta::sexpr{ ta::cons("foo"s, ta::null) });
             tester.expect(ta::list(ta::null) == ta::sexpr{ ta::cons(ta::null, ta::null) });
             tester.expect(ta::list(ta::cons(1, 2))
                           == ta::sexpr{ ta::cons(ta::cons(1, 2), ta::null) });
-        });
+        }
     };
     "C++: two long list creation"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             tester.expect(ta::list(1, 2) == ta::sexpr{ ta::cons(1, ta::cons(2, ta::null)) });
             tester.expect(ta::list("foo"s, "bar"s)
                           == ta::sexpr{ ta::cons("foo"s, ta::cons("bar"s, ta::null)) });
-        });
+        }
     };
 
     "C++: list is constructible from range of atoms"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto empty = ta::list(std::from_range_t{}, std::vector<int>{});
             const auto one   = ta::list(std::from_range_t{}, std::vector<int>{ 1 });
             const auto two   = ta::list(std::from_range_t{}, std::vector<int>{ 1, 2 });
@@ -55,11 +67,11 @@ const auto suite_f = [] {
             const auto s = ta::list(std::from_range_t{}, std::vector<ta::atom>{ 1, "2"s, '3' });
             tester.expect(s == ta::sexpr{ ta::list(1, "2"s, '3') });
             tester.expect(s != ta::sexpr{ ta::list(1, 2, 3) });
-        });
+        }
     };
 
     "C++: is_list"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             tester.expect(std::visit(ta::is_list, ta::list()));
             tester.expect(std::visit(ta::is_list, ta::list(1)));
             tester.expect(std::visit(ta::is_list, ta::list(1, 2)));
@@ -67,11 +79,11 @@ const auto suite_f = [] {
             tester.expect(not std::visit(ta::is_list, ta::sexpr{ ta::cons(1, 2) }));
             tester.expect(not std::visit(ta::is_list, ta::sexpr{ ta::cons(1, ta::cons(2, 3)) }));
             tester.expect(std::visit(ta::is_list, ta::sexpr{ ta::cons(1, ta::cons(2, ta::null)) }));
-        });
+        }
     };
 
     "C++: list append"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto foo   = ta::list(1, 2);
             const auto bar   = ta::list(3);
             const auto empty = ta::list();
@@ -94,11 +106,11 @@ const auto suite_f = [] {
             // See comment above list_append_closure, why this is not possible.
             // Multiple lists:
             // tester.expect(std::visit(ta::list_append, foo, empty, bar) == ta::list(1, 2, 3));
-        });
+        }
     };
 
     "C++: list_view"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             tester.expect(std::ranges::empty(ta::list_view(ta::list())));
             tester.expect(std::ranges::empty(ta::list_view(ta::null)));
 
@@ -111,11 +123,11 @@ const auto suite_f = [] {
             tester.expect(std::get<ta::cons>(*it++) == ta::cons(2, 3));
             tester.expect(std::holds_alternative<ta::null_type>(*it++));
             tester.expect(it == std::ranges::end(list_view));
-        });
+        }
     };
 
     "C++: assoc"_test = [] {
-        tyvi::constant_testing([](auto& tester) static consteval {
+        {
             const auto list = ta::list(ta::cons("foo"s, "bar"s), ta::cons(2, 3));
             tester.expect(not std::visit(ta::assoc("bar"s), list).has_value());
             tester.expect(not std::visit(ta::assoc(3), list).has_value());
@@ -123,7 +135,7 @@ const auto suite_f = [] {
             tester.expect(ta::cons(2, 3) == std::visit(ta::assoc(2), list).value());
 
             tester.expect(not std::visit(ta::assoc(2), ta::list()).has_value());
-        });
+        }
     };
 
     "C++: map"_test = [] {
