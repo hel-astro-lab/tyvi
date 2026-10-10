@@ -69,7 +69,7 @@ function(tyvi_setup_dependencies)
         )
     endif()
 
-    if(NOT TARGET pika::pika)
+    if(NOT TARGET fmt::fmt)
         cpmaddpackage(
             NAME
             fmt
@@ -84,6 +84,9 @@ function(tyvi_setup_dependencies)
             # "pika_base_libraries" which requires target "fmt" that is not in any export set.
             "FMT_INSTALL ON"
         )
+    endif()
+
+    if(NOT TARGET spdlog::spdlog)
         cpmaddpackage(
             NAME
             spdlog
@@ -106,7 +109,11 @@ function(tyvi_setup_dependencies)
             #     failed to set dynamic section sizes: bad value
             # collect2: error: ld returned 1 exit status
             "SPDLOG_BUILD_PIC ON"
+            "SPDLOG_FMT_EXTERNAL ON"
         )
+    endif()
+
+    if(NOT TARGET pika::pika)
 
         # Compatibility alias for pika that expects Boost::boost.
         if(TARGET Boost::headers AND NOT TARGET Boost::boost)
