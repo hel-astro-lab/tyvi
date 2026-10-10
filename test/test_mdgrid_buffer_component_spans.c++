@@ -13,7 +13,7 @@
 namespace {
 using namespace boost::ut;
 
-const auto s = [] {
+const auto suite_f = [] {
     using element_type          = int;
     using vec                   = std::vector<element_type>;
     using element_extents       = tyvi::sstd::geometric_extents<2, 2>;
@@ -120,6 +120,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"mdgrid_buffer component spans"> _ = s;
+    const suite<"mdgrid_buffer component spans"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

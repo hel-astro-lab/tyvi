@@ -28,7 +28,7 @@ mds_is_usable(const auto mds) {
     return all_good;
 }
 
-const auto s = [] {
+const auto suite_f = [] {
     using element_type          = int;
     using vec                   = std::vector<element_type>;
     using element_extents       = tyvi::sstd::geometric_extents<2, 2>;
@@ -93,6 +93,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"mdgrid_buffer resize"> _ = s;
+    const suite<"mdgrid_buffer resize"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

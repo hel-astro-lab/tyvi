@@ -17,7 +17,7 @@
 namespace {
 using namespace boost::ut;
 
-const auto s = [] {
+const auto suite_f = [] {
     "work can split to one"_test = [] {
         expect(nothrow([] {
             const auto w1   = tyvi::mdgrid_work{};
@@ -118,6 +118,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"mdgrid_work"> _ = s;
+    const suite<"mdgrid_work"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

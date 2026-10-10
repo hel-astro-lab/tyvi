@@ -14,7 +14,7 @@
 namespace {
 using namespace boost::ut;
 
-const auto s = [] {
+const auto suite_f = [] {
     using T                 = int;
     static constexpr auto N = 37;
     using segments          = tyvi::
@@ -96,6 +96,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"mdsegments component views"> _ = s;
+    const suite<"mdsegments component views"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

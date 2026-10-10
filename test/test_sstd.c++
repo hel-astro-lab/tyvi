@@ -22,7 +22,7 @@
 namespace {
 using namespace boost::ut;
 
-const auto s = [] {
+const auto suite_f = [] {
     "constexpr integer pow"_test = [] {
         // Use consteval lambda to make sure integer_pow is usable during compilation.
         constexpr auto buff0 = []() consteval {
@@ -596,6 +596,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"sstd"> _ = s;
+    const suite<"sstd"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

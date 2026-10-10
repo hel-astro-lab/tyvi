@@ -20,7 +20,7 @@ check(const auto& x, const auto expected) {
     expect(f == expected) << std::format("expected: '{}'\ngot: '{}'", expected, f);
 }
 
-const auto s = [] {
+const auto suite_f = [] {
     "null -> ()"_test = [] {
         check(ta::null, "()");
         check(ta::sexpr{ ta::null }, "()");
@@ -45,6 +45,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"actions_format"> _ = s;
+    const suite<"actions_format"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

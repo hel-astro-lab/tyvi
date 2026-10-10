@@ -14,7 +14,7 @@
 namespace {
 using namespace boost::ut;
 
-const auto s = [] {
+const auto suite_f = [] {
     "random access semantics"_test = [] {
         struct test_iterator : tyvi::sstd::offset_iterator<test_iterator, int> {
             int* ptr{ nullptr }; // NOLINT
@@ -176,6 +176,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"sstd::offset_iterator<T>"> _ = s;
+    const suite<"sstd::offset_iterator<T>"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

@@ -17,7 +17,7 @@ namespace ta = tyvi::actions;
 namespace te = tyvi::exec;
 using namespace std::literals;
 
-const auto s = [] {
+const auto suite_f = [] {
     "C++: empty list creation"_test = [] {
         tyvi::constant_testing(
             [](auto& tester) static consteval { tester.expect(ta::list() == ta::sexpr{}); });
@@ -162,7 +162,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"actions_lists"> _ = s;
-
+    const suite<"actions_lists"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }

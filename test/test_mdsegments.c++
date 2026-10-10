@@ -23,7 +23,7 @@
 namespace {
 using namespace boost::ut;
 
-const auto s = [] {
+const auto suite_f = [] {
     using T                 = int;
     static constexpr auto N = 3;
     using E                 = tyvi::sstd::geometric_extents<2, 2>;
@@ -251,6 +251,6 @@ const auto s = [] {
 int
 main(int argc, const char** argv) {
     [[maybe_unused]]
-    const suite<"mdsegments"> _ = s;
+    const suite<"mdsegments"> _ = suite_f;
     return static_cast<int>(cfg<override>.run(run_cfg{ .argc = argc, .argv = argv }));
 }
