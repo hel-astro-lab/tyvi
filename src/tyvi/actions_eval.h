@@ -59,10 +59,14 @@ eval(const sexpr& body, const sexpr& env) -> sexpr_sender {
     auto op = tyvi::sstd::overloaded{
         [&](const atom& x) -> sexpr_sender {
             if (atom_is_of_type<intrinsic, Symbols...>(x)) {
-                return exec::just(
-                    std::visit(assoc(x), std::visit(list_append, get_intrinsic_env(), env))
-                        .value()
-                        .cdr());
+                const auto f = assoc(x);
+                auto lookup =
+                    std::visit(f, get_intrinsic_env()).or_else([&] { return std::visit(f, env); });
+
+                if (not lookup) {
+                    throw std::runtime_error{ std::format("Use of undefined symbol: {}", x) };
+                }
+                return exec::just(std::move(lookup).value().cdr());
             }
             return exec::just(sexpr{ x }); // Not a symbol type, i.e. it is "built-in type".
         },
@@ -106,7 +110,9 @@ eval(const sexpr& body, const sexpr& env) -> sexpr_sender {
             return exec::when_all(std::move(proc), std::move(args))
                    | exec::let_value([env](const sexpr& p, const sexpr& a) -> sexpr_sender {
                          if (not std::holds_alternative<atom>(p)) {
-                             throw std::runtime_error{ "Trying to invoke non-procedure!" };
+                             throw std::runtime_error{
+                                 std::format("Trying to invoke non-procedure: {}", p)
+                             };
                          }
 
                          if (const auto f = atom_cast<procedure>(std::get<atom>(p))) {
@@ -118,7 +124,9 @@ eval(const sexpr& body, const sexpr& env) -> sexpr_sender {
                                                 a,
                                                 std::bind_back(&eval<Symbols...>, env));
                          }
-                         throw std::runtime_error{ "Trying to invoke non-procedure!" };
+                         throw std::runtime_error{
+                             std::format("Trying to invoke non-procedure atom: {}", p)
+                         };
                      });
         },
         [](null_type) -> sexpr_sender { throw std::runtime_error{ "Trying to eval null!" }; }
