@@ -166,6 +166,7 @@ const auto suite_f = [] {
             const auto cons = ta::cons(std::monostate{}, std::monostate{});
 
             tester.expect(cons == cons);
+            tester.expect(cons == ta::cons());
 
             const auto op = tyvi::sstd::overloaded{ [](std::monostate) { return 42; },
                                                     [](auto&&) { return 1; } };

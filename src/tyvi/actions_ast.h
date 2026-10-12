@@ -97,6 +97,7 @@ class [[nodiscard]] cons {
     template<typename T, typename U>
     constexpr cons(T&& car, U&& cdr);
 
+    /* constexpr */ cons()                                = default;
     /* constexpr */ ~cons()                               = default;
     /* constexpr */ cons(const cons&) noexcept            = default;
     /* constexpr */ cons& operator=(const cons&) noexcept = default;
