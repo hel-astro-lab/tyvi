@@ -8,6 +8,9 @@ ENV ROCTHRUST_PATH=/rocthrust/rocthrust \
     OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 RUN dnf -y update && \
+    dnf -y install 'dnf-command(config-manager)' && \
+    dnf config-manager --set-enabled crb && \
+    dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
     dnf -y install \
         gcc \
         gcc-c++ \
@@ -21,7 +24,9 @@ RUN dnf -y update && \
         hwloc \
         hwloc-devel \
         openmpi \
-        openmpi-devel && \
+        openmpi-devel \
+        cppcheck \
+        clang-tools-extra && \
     dnf clean all
 
 RUN mkdir /rocthrust && \
