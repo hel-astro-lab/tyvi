@@ -46,7 +46,11 @@ function(tyvi_setup_dependencies)
         cpmaddpackage(
             NAME
             mdspan
+            # std::strided_slice got removed from C++26 and this was implemented to kokkos/mdspan.
+            # In order to not break current code, we pin the commit to the one before the changes.
+            # see: https://isocpp.org/files/papers/P3982R2.html
             GIT_TAG
+            c6eaf162189f34b100aadd8b7705223674df719a
             stable
             GITHUB_REPOSITORY
             "kokkos/mdspan"
