@@ -49,7 +49,10 @@ main(int argc, char** argv) {
     int provided{}, preferred = mpix::get_preferred_thread_mode();
 
     MPI_Init_thread(&argc, &argv, preferred, &provided);
-    if (provided != preferred) { throw std::runtime_error{ "Provided MPI is not as requested" }; }
+    if (provided != preferred) {
+        std::println("Provided MPI is not as requested");
+        return 1;
+    }
 
     pika::init_params init_args;
     init_args.cfg.emplace_back("pika.mpi.enable_pool=true");
@@ -64,7 +67,10 @@ main(int argc, char** argv) {
         nullptr,
         init_args);
 
-    if (static_cast<bool>(MPI_Finalize())) { throw std::runtime_error{ "MPI_Finalize() failed!" }; }
+    if (static_cast<bool>(MPI_Finalize())) {
+        std::println("MPI_Finalize() failed!");
+        return 1;
+    }
 
     return result;
 }

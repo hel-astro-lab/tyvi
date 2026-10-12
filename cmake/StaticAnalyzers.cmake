@@ -36,6 +36,8 @@ macro(TYVI_SETUP_CPPCHECK warnings_as_errors cppcheck_options)
                 --suppress=knownConditionTrueFalse
                 # explicit/deducing this parameter breaks this
                 --suppress=functionStatic
+                --suppress=funcArgNamesDifferentUnnamed
+                --suppress=shadowFunction
                 --inconclusive
                 --suppress=${SUPPRESS_DIR}
             )

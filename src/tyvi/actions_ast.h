@@ -120,7 +120,8 @@ class [[nodiscard]] cons {
 
 // Implementations:
 
-inline cons::sexpr_holder cons::shared_null = std::make_shared<sexpr>();
+// If this throws and program crashes, so be it. Ignoring bugprone-throwing-static-initialization.
+inline cons::sexpr_holder cons::shared_null = std::make_shared<sexpr>(); // NOLINT
 
 constexpr auto
 operator==(const atom& lhs, const atom& rhs) -> bool {
