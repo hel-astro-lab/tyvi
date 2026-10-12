@@ -1,6 +1,10 @@
 // Copyright 2026 - 2026, Miro Palmu and the tyvi contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+/* Note that actions ast was constexpr capable until downgrade to C++23
+   and move to shared_ptr based memory handling. However, all constexpr specifiers
+   are left in place in anticipation of C++26. */
+
 #pragma once
 
 #include <concepts>
@@ -57,35 +61,21 @@ concept not_sexpr_like = (not sexpr_like<T>);
 
 class [[nodiscard]] atom {
     /// FIXME: refactor to smart pointers
-    void* value_ptr_{ nullptr };
-    void (*value_deleter_)(void*){ nullptr };
+    std::shared_ptr<void> value_ptr_{ nullptr };
     bool (*comparison_op_)(void const*, void const*){ nullptr };
-    void* (*clone_op_)(void const*){ nullptr };
     std::string (*format_op_)(void const*){ nullptr };
     std::type_info const* value_type_info_{ nullptr };
-
-    [[nodiscard]]
-    constexpr auto no_null_members_() const -> bool;
-    constexpr void set_null_();
 
     constexpr atom() = default;
 
   public:
     // cppcheck-suppress noExplicitConstructor
     constexpr atom(not_sexpr_like auto&& x); // NOLINT{hicpp-explicit-conversions}
-    constexpr atom(const atom&);
-    constexpr atom(atom&&) noexcept;
-    constexpr atom& operator=(const atom&);
-    constexpr atom& operator=(atom&&) noexcept;
-
-    constexpr ~atom();
 
     template<typename T>
     friend constexpr auto atom_cast(const atom&) -> std::optional<T>;
 
     friend constexpr auto operator==(const atom&, const atom&) -> bool;
-
-    friend constexpr void swap(atom& lhs, atom& rhs) noexcept;
 
     template<typename T, typename... U>
     friend constexpr auto atom_is_of_type(const atom&) -> bool;
@@ -95,26 +85,25 @@ class [[nodiscard]] atom {
 };
 
 class [[nodiscard]] cons {
-    using sexpr_holder = std::unique_ptr<sexpr>;
+    using sexpr_holder = std::shared_ptr<sexpr>;
 
     // class invariant: car_ and cdr_ always point to valid sexprs.
 
-    sexpr_holder car_{ new sexpr{} };
-    sexpr_holder cdr_{ new sexpr{} };
-
-    [[nodiscard]]
-    constexpr auto any_null_members_() const;
+    static sexpr_holder shared_null;
+    sexpr_holder car_{ shared_null };
+    sexpr_holder cdr_{ shared_null };
 
   public:
     template<typename T, typename U>
     constexpr cons(T&& car, U&& cdr);
 
-    constexpr cons()  = default;
-    constexpr ~cons() = default;
-    constexpr cons(const cons&);
-    constexpr cons(cons&&) noexcept = default;
-    constexpr auto operator=(const cons&) -> cons&;
-    constexpr auto operator=(cons&&) noexcept -> cons& = default;
+    /* constexpr */ ~cons()                               = default;
+    /* constexpr */ cons(const cons&) noexcept            = default;
+    /* constexpr */ cons& operator=(const cons&) noexcept = default;
+
+    // These can not be defaulted, as they would violate the class invariant.
+    constexpr cons(cons&&) noexcept;
+    constexpr cons& operator=(cons&&) noexcept;
 
     [[nodiscard]]
     constexpr auto car() const -> const sexpr&;
@@ -130,11 +119,12 @@ class [[nodiscard]] cons {
 
 // Implementations:
 
+inline cons::sexpr_holder cons::shared_null = std::make_shared<sexpr>();
+
 constexpr auto
 operator==(const atom& lhs, const atom& rhs) -> bool {
-    if (lhs.no_null_members_() and rhs.no_null_members_()
-        and (lhs.value_type_info_ == rhs.value_type_info_)) {
-        return (*lhs.comparison_op_)(lhs.value_ptr_, rhs.value_ptr_);
+    if (lhs.value_ptr_ and rhs.value_ptr_ and (lhs.value_type_info_ == rhs.value_type_info_)) {
+        return (*lhs.comparison_op_)(lhs.value_ptr_.get(), rhs.value_ptr_.get());
     }
     return false;
 }
@@ -142,22 +132,18 @@ operator==(const atom& lhs, const atom& rhs) -> bool {
 template<not_sexpr_like T>
 constexpr atom::atom(T&& value)
     : // NOLINTBEGIN{cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay}
-      value_ptr_{ static_cast<void*>(new std::decay_t<T>{ std::forward<T>(value) }) },
+      value_ptr_(static_cast<void*>(new std::decay_t<T>{ std::forward<T>(value) }),
+                 [](void* const ptr) {
+                     // NOLINTBEGIN{cppcoreguidelines-owning-memory}
+                     delete static_cast<std::decay_t<T>* const>(ptr);
+                     // NOLINTEND{cppcoreguidelines-owning-memory}
+                 }),
       // NOLINTEND{cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay}
-      value_deleter_{ [](void* const ptr) {
-          // NOLINTBEGIN{cppcoreguidelines-owning-memory}
-          delete static_cast<std::decay_t<T>* const>(ptr);
-          // NOLINTEND{cppcoreguidelines-owning-memory}
-      } },
       comparison_op_{ [](void const* const lhs_ptr, void const* const rhs_ptr) {
           using ptr_type  = std::decay_t<T> const* const;
           const auto& lhs = *static_cast<ptr_type>(lhs_ptr);
           const auto& rhs = *static_cast<ptr_type>(rhs_ptr);
           return lhs == rhs;
-      } },
-      clone_op_{ [](void const* const src_ptr) {
-          const auto& src = *static_cast<std::decay_t<T> const* const>(src_ptr);
-          return static_cast<void*>(new std::decay_t<T>{ src });
       } },
       format_op_{ [](void const* const src_ptr) -> std::string {
           const auto& src = *static_cast<std::decay_t<T> const* const>(src_ptr);
@@ -169,80 +155,20 @@ constexpr atom::atom(T&& value)
       } },
       value_type_info_{ &typeid(std::decay_t<T>) } {}
 
-constexpr auto
-atom::no_null_members_() const -> bool {
-    return std::invoke([]<typename... T>(T... p) static { return ((nullptr != p) and ...); },
-                       this->value_ptr_,
-                       this->value_deleter_,
-                       this->comparison_op_,
-                       this->clone_op_,
-                       this->value_type_info_,
-                       this->format_op_);
-}
-
-constexpr void
-atom::set_null_() {
-    this->value_ptr_       = nullptr;
-    this->value_deleter_   = nullptr;
-    this->comparison_op_   = nullptr;
-    this->clone_op_        = nullptr;
-    this->value_type_info_ = nullptr;
-    this->format_op_       = nullptr;
-}
-
-constexpr atom::~atom() {
-    if (this->no_null_members_()) {
-        (*this->value_deleter_)(this->value_ptr_);
-        this->set_null_();
-    }
-}
-
-constexpr atom::atom(const atom& other)
-    : value_ptr_{ (*other.clone_op_)(other.value_ptr_) },
-      value_deleter_{ other.value_deleter_ },
-      comparison_op_{ other.comparison_op_ },
-      clone_op_{ other.clone_op_ },
-      format_op_{ other.format_op_ },
-      value_type_info_{ other.value_type_info_ } {}
-
-constexpr atom::atom(atom&& other) noexcept { swap(*this, other); }
-
-constexpr atom&
-atom::operator=(const atom& other) {
-    auto tmp     = other; // Makes sure self assignment is benign.
-    return *this = std::move(tmp);
-}
-
-constexpr atom&
-atom::operator=(atom&& other) noexcept {
-    swap(*this, other);
-    return *this;
-}
-
 template<typename T>
 constexpr auto
 atom_cast(const atom& x) -> std::optional<T> {
-    if (x.no_null_members_() and typeid(T) == *x.value_type_info_) {
-        return *static_cast<T*>(x.value_ptr_);
+    if (x.value_ptr_ and typeid(T) == *x.value_type_info_) {
+        return *static_cast<T*>(x.value_ptr_.get());
     }
     return {};
-}
-
-constexpr void
-swap(atom& lhs, atom& rhs) noexcept {
-    std::swap(lhs.value_ptr_, rhs.value_ptr_);
-    std::swap(lhs.value_deleter_, rhs.value_deleter_);
-    std::swap(lhs.comparison_op_, rhs.comparison_op_);
-    std::swap(lhs.clone_op_, rhs.clone_op_);
-    std::swap(lhs.format_op_, rhs.format_op_);
-    std::swap(lhs.value_type_info_, rhs.value_type_info_);
 }
 
 template<typename T, typename... U>
 [[nodiscard]]
 constexpr auto
 atom_is_of_type(const atom& x) -> bool {
-    if (x.no_null_members_()) {
+    if (x.value_ptr_) {
         return *x.value_type_info_ == typeid(T) or ((*x.value_type_info_ == typeid(U)) or ...);
     }
     return false;
@@ -250,24 +176,14 @@ atom_is_of_type(const atom& x) -> bool {
 
 constexpr std::string
 atom::format() const {
-    if (this->no_null_members_()) { return (*this->format_op_)(this->value_ptr_); }
+    if (this->value_ptr_) { return (*this->format_op_)(this->value_ptr_.get()); }
     throw std::format_error{ "Trying to format empty" };
 }
 
 template<typename T, typename U>
 constexpr cons::cons(T&& car, U&& cdr)
-    : car_{ std::make_unique<sexpr>(std::forward<T>(car)) },
-      cdr_{ std::make_unique<sexpr>(std::forward<U>(cdr)) } {}
-
-constexpr cons::cons(const cons& other) {
-    this->car_ = std::make_unique<sexpr>(*other.car_);
-    this->cdr_ = std::make_unique<sexpr>(*other.cdr_);
-}
-
-constexpr auto
-cons::operator=(const cons& other) -> cons& {
-    return *this = auto{ other }; // Makes sure self assignment is benign.
-}
+    : car_{ std::make_shared<sexpr>(std::forward<T>(car)) },
+      cdr_{ std::make_shared<sexpr>(std::forward<U>(cdr)) } {}
 
 constexpr auto
 cons::car() const -> const sexpr& {
@@ -286,6 +202,18 @@ operator==(const cons& LHS, const cons& RHS) -> bool {
                                 [](auto&&, auto&&) { return false; } };
 
     return std::visit(op, LHS.car(), RHS.car()) and std::visit(op, LHS.cdr(), RHS.cdr());
+}
+
+constexpr cons::cons(cons&& other) noexcept {
+    this->car_ = std::exchange(other.car_, cons::shared_null);
+    this->cdr_ = std::exchange(other.cdr_, cons::shared_null);
+}
+
+constexpr cons&
+cons::operator=(cons&& other) noexcept {
+    this->car_ = std::exchange(other.car_, cons::shared_null);
+    this->cdr_ = std::exchange(other.cdr_, cons::shared_null);
+    return *this;
 }
 
 } // namespace tyvi::actions

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "tyvi/actions_ast.h"
+#include "tyvi/actions_format.h"
 
 namespace tyvi::actions {
 
@@ -182,30 +183,45 @@ map(const procedure_like auto& f, const sexpr& s) -> sexpr_sender {
 //  1098 |       static constexpr _Array_type _S_vtable
 //
 // Even if this is not used in device context.
+//
+// (At least before moving to shared pointers. Not tested with them.)
 struct list_append_closure {
-    template<typename... Tail>
-    static constexpr auto operator()(cons lhs, auto rhs /*, Tail&&... tail*/) -> sexpr {
-        if (not is_list(lhs)) { throw std::runtime_error{ "Trying to append a non-list." }; }
-
-        auto* ptr = &lhs;
-        while (std::holds_alternative<cons>(ptr->cdr())) { ptr = &std::get<cons>(*ptr->cdr_); }
-        *ptr->cdr_ = std::move(rhs);
-
-        /* if (sizeof...(tail) == 0) { */
-        return lhs;
-        /* } else {
-            std::visit(list_append_closure{},
-                       sexpr{ std::move(lhs) },
-                       sexpr{ std::forward<Tail>(tail) }...);
-        } */
-    }
-    static constexpr auto operator()(null_type, const cons& rhs) -> sexpr { return rhs; }
-    static constexpr auto operator()(const cons& lhs, null_type) -> sexpr { return lhs; }
-    static constexpr auto operator()(auto&&, auto&& /*, auto&&... */) -> sexpr {
+    /* As list append is designed to be used with std::visit,
+       we have to support every type combination from which some of them are invalid. */
+    static constexpr auto operator()(auto&&, auto&&) -> sexpr {
         throw std::runtime_error{ "Invalid list_append!" };
     }
-    static constexpr auto operator()(auto&& x) -> sexpr { return x; }
+
     static constexpr auto operator()() -> sexpr { return null; }
+
+    template<std::convertible_to<sexpr> T>
+    static constexpr auto operator()(T&& x) -> sexpr {
+        return std::forward<T>(x);
+    }
+
+    template<std::convertible_to<sexpr> T>
+    static constexpr auto operator()(null_type, T&& rhs) -> sexpr {
+        return std::forward<T>(rhs);
+    }
+
+    template<std::convertible_to<sexpr> T>
+    static constexpr auto operator()(const cons& lhs, T&& rhs) -> sexpr {
+        if (not is_list(lhs)) {
+            throw std::runtime_error{ std::format("Trying to append a non-list: {}", lhs) };
+        }
+
+        auto copy_cons = [](const cons& c) { return cons(c.car(), c.cdr()); };
+
+        auto combined = copy_cons(lhs);
+        auto* ptr     = &combined;
+        while (std::holds_alternative<cons>(ptr->cdr())) {
+            ptr->cdr_ = std::make_shared<sexpr>(copy_cons(std::get<cons>(ptr->cdr())));
+            ptr       = &std::get<cons>(*ptr->cdr_);
+        }
+        // Now combined.cdr() must be holding null because lhs was a list.
+        ptr->cdr_ = std::make_shared<sexpr>(std::forward<T>(rhs));
+        return combined;
+    }
 };
 
 constexpr auto list_append = list_append_closure{};
