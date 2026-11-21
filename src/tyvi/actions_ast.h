@@ -145,7 +145,12 @@ constexpr atom::atom(T&& value)
           using ptr_type  = std::decay_t<T> const* const;
           const auto& lhs = *static_cast<ptr_type>(lhs_ptr);
           const auto& rhs = *static_cast<ptr_type>(rhs_ptr);
-          return lhs == rhs;
+          // Values without == (e.g. std::function, whose == libc++ deletes) compare by identity.
+          if constexpr (std::equality_comparable<std::decay_t<T>>) {
+              return lhs == rhs;
+          } else {
+              return lhs_ptr == rhs_ptr;
+          }
       } },
       format_op_{ [](void const* const src_ptr) -> std::string {
           const auto& src = *static_cast<std::decay_t<T> const* const>(src_ptr);
