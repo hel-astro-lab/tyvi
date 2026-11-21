@@ -122,7 +122,9 @@ eval(const sexpr& body, const sexpr& env) -> sexpr_sender {
                          if (const auto f = atom_cast<procedure_with_eval>(std::get<atom>(p))) {
                              return std::invoke(f.value(),
                                                 a,
-                                                std::bind_back(&eval<Symbols...>, env));
+                                                // Not std::bind_back: libc++ builds its tuple<sexpr>
+                                                // from a tuple, which sexpr wraps into an atom.
+                                                [env](sexpr x) { return eval<Symbols...>(x, env); });
                          }
                          throw std::runtime_error{
                              std::format("Trying to invoke non-procedure atom: {}", p)
