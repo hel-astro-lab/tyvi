@@ -48,7 +48,8 @@ list(std::from_range_t, const std::ranges::bidirectional_range auto& range) -> s
 struct is_list_closure {
     // cppcheck-suppress functionConst
     constexpr auto operator()(this const auto& self, const cons& c) -> bool {
-        return std::visit(self, c.cdr());
+        // Explicit result type: libc++ instantiates this body while deducing visit's.
+        return std::visit<bool>(self, c.cdr());
     }
     static constexpr auto operator()(const null_type&) { return true; }
     static constexpr auto operator()(const atom&) { return false; }
